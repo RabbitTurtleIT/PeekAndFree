@@ -9,6 +9,7 @@ on:
 jobs:
   build_and_preview:
     runs-on: ubuntu-latest
+    permissions: write-all
     steps:
       - uses: actions/checkout@v4
       # Add any build steps here. For example:
