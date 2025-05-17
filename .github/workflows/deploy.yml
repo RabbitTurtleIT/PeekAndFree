@@ -4,11 +4,14 @@ on:
   pull_request:
     # Optionally configure to run only for specific files. For example:
     # paths:
-    # - "website/**"
+    # - "public/**"
 
 jobs:
   build_and_preview:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@v4
       # Add any build steps here. For example:
