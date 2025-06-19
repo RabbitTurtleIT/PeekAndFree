@@ -29,26 +29,106 @@ $(document).ready(function() {
         map.addSource('airport', {
             type: 'geojson',
             data: 'Airport.geojson',
+            cluster: true,
+            clusterMaxZoom: 14, // Max zoom to cluster points on
+            clusterRadius: 50 // Radius of each cluster when clustering points (defaults to 50)
+        });
+
+        map.addLayer({
+            id: 'clusters',
+            type: 'circle',
+            source: 'airport',
+            filter: ['has', 'point_count'],
+            paint: {
+                'circle-color': [
+                    'step',
+                    ['get', 'point_count'],
+                    '#51bbd6',
+                    50,
+                    '#f1f075',
+                    100,
+                    '#f28cb1'
+                ],
+                'circle-radius': [
+                    'step',
+                    ['get', 'point_count'],
+                    20,
+                    100,
+                    30,
+                    750,
+                    40
+                ],
+                'circle-emissive-strength': 1
+            }
         });
         
+
 
         map.addLayer({
                     id: 'unclustered-point',
                     type: 'circle',
                     source: 'airport',
+                    filter: ['!', ['has', 'point_count']],
                     paint: {
                         'circle-color': '#11b4da',
-                        'circle-radius': 5,
+                        'circle-radius': 20,
                         'circle-stroke-width': 1,
                         'circle-stroke-color': '#fff',
                         'circle-emissive-strength': 1
-                    }
+                    },
                 });
+
+        map.addLayer({
+            id: 'unclusterd-text',
+            type: 'symbol',
+            source: 'airport',
+            filter: ['!', ['has', 'point_count']],
+            layout: {
+                'text-field': ['get', '공항코드1.IATA.'],
+                'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                'text-size': 12
+            }
+        });
+
+
+        map.addLayer({
+            id: 'cluster-count',
+            type: 'symbol',
+            source: 'airport',
+            filter: ['has', 'point_count'],
+            layout: {
+                'text-field': ['get', 'point_count_abbreviated'],
+                'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                'text-size': 12
+            }
+        });
+
                 
                 
     });
 
-    map.on('click', 'unclustered-point', (e) => {
+    
+
+        // inspect a cluster on click
+        map.on('click', 'clusters', (e) => {
+            const features = map.queryRenderedFeatures(e.point, {
+                layers: ['clusters']
+            });
+            const clusterId = features[0].properties.cluster_id;
+            map.getSource('airport').getClusterExpansionZoom(
+                clusterId,
+                (err, zoom) => {
+                    if (err) return;
+
+                    map.easeTo({
+                        center: features[0].geometry.coordinates,
+                        zoom: zoom
+                    });
+                }
+            );
+        });
+
+        map.on('click', 'unclustered-point', (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
             const airport_kor = e.features[0].properties.한글공항;
             const airport_eng = e.features[0].properties.영문공항명;
@@ -61,14 +141,23 @@ $(document).ready(function() {
                     `
                     <p><span style="font-size:16px">${airport_kor}</span><br>
                     ${airport_eng}<br>${nation_kor} ${iata}</p>
-                    <a style="width:100%" class='btn btn-info' id="browse">여행지 상세보기</a>
+                    <a style="width:100%" class='btn btn-info' onclick="browse('${iata}')">여행지 상세보기</a>
                     `
                 )
                 .setMaxWidth("500px")
                 .addTo(map);
         });
 
+
 })
+
+function browse(iata) {
+    if(!iata) {
+        alert("IATA 코드가 존재하지 않는 공항입니다. 티켓 조회가 불가능합니다.")
+        return
+    }
+    alert(iata)
+}
 
 // 중복된 국가명+도시명 조합 제거
         function removeDuplicateCities(data) {
