@@ -1,0 +1,27 @@
+    .selection-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      cursor: pointer;
+      height: 200px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    .selection-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    }
+    
+    .selection-icon {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+
+    #selection-view {
+        padding-top: 12px;
+    }
