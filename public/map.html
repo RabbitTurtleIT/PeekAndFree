@@ -4,10 +4,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1,user-scalable=no">
-  <title>피크앤프리 - 장소 탐색</title>
+  <title>피크앤프리 - 지도</title>
   <!-- Google 애드센스 -->
-   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6014668630461832"
-     crossorigin="anonymous"></script>
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6014668630461832"
+    crossorigin="anonymous"></script>
   <!-- update the version number as needed -->
   <script defer src="/__/firebase/11.7.1/firebase-app-compat.js"></script>
   <!-- include only the Firebase features as you need -->
@@ -28,7 +28,7 @@
   <!-- BOOTSTRAP -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
-  
+
   <!-- 맵박스 라이브러리입니다! 지우면 지도 안나옵니다 -->
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.js"></script>
@@ -38,6 +38,15 @@
   <script src="js/map.js"></script>
 
   <script defer src="/__/firebase/init.js?useEmulator=true"></script>
+
+  <script>
+    (g => { var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__", m = document, b = window; b = b[c] || (b[c] = {}); var d = b.maps || (b.maps = {}), r = new Set, e = new URLSearchParams, u = () => h || (h = new Promise(async (f, n) => { await (a = m.createElement("script")); e.set("libraries", [...r] + ""); for (k in g) e.set(k.replace(/[A-Z]/g, t => "_" + t[0].toLowerCase()), g[k]); e.set("callback", c + ".maps." + q); a.src = `https://maps.${c}apis.com/maps/api/js?` + e; d[q] = f; a.onerror = () => h = n(Error(p + " could not load.")); a.nonce = m.querySelector("script[nonce]")?.nonce || ""; m.head.append(a) })); d[l] ? console.warn(p + " only loads once. Ignoring:", g) : d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n)) })({
+      key: "AIzaSyD5ePlhz_DCgGf93MzT1UZ12xFBna1HUog",
+      v: "weekly",
+      // Use the 'v' parameter to indicate the version to use (weekly, beta, alpha, etc.).
+      // Add other bootstrap parameters as needed, using camel case.
+    });
+  </script>
 
   <style media="screen">
     #map {
@@ -78,14 +87,40 @@
       </form>
     </div>
   </div>
-  
+
   <div id="map"></div>
 
 
+  <div class="modal fade" id="detailModal" tabindex="-1" aria-labelledby="detailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-body ">
+          <div class="row">
+            <div class="col-lg-6 col-md-12">
+              <h3 id="countryName">일본</h3>
+              <img id="countryImg" style="max-height: 300px; max-width: 300px;"
+                src="https://cdn.huffingtonpost.kr/news/photo/201712/62011_117968.jpeg">
+              <p id="countryDesc">전통과 첨단이 어우러진 매혹의 나라, 일본.<br>사계절의 아름다움 속에서 섬세한 문화를 경험해보세요!</p>
+              
+              <h3>여행자 리뷰</h3>
+              <div class="reviewdiv">
+
+              </div>
+            </div>
+            <div class="col-lg-6 col-md-12 ">
+              <h3>정보<a style="float: right;" class="btn btn-light">예매하기</a></h3>
+              <div class="preferLocation">
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
-  
-    
-        
+
     document.addEventListener('DOMContentLoaded', function () {
       // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
       // // The Firebase SDK is initialized and available here!
