@@ -1,0 +1,18 @@
+name: Functions Real Deploy
+
+on:
+  push:
+    paths:
+    - "functions/**"
+    branches: [ deploy ]
+
+jobs:
+  deploy_function:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: jsryudev/deploy-firebase-functions@v20.0.1
+        env:
+          FIREBASE_TOKEN: "${{ secrets.GCP }}"
+          FIREBASE_PROJECT: peekandfree
+          FUNCTIONS_DIR: /
