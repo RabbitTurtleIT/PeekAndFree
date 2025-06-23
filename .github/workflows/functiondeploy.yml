@@ -15,4 +15,4 @@ jobs:
         env:
           FIREBASE_TOKEN: "${{ secrets.GCP }}"
           FIREBASE_PROJECT: peekandfree
-          FUNCTIONS_DIR: /
+          FUNCTIONS_DIR: functions/
