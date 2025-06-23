@@ -210,25 +210,28 @@ async function browse(iata, nation_kor, coordinates) {
                 </div>
                 `);
             $('.preferLocation').append($placeItem);
-
-            const $reviewItem = $(`
-                <div class="review-item" style="padding: 15px; margin: 10px 0; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                        <div>
-                            <div style="font-weight: bold; font-size: 14px;">${place.reviews[0].authorAttribution.displayName}</div>
-                            <div style="font-size: 12px; color: #666;">${place.reviews[0].relativePublishTimeDescription}</div>
+            console.log(place)
+            place.reviews.forEach((review) => {
+                const $reviewItem = $(`
+                    <div class="review-item" style="padding: 15px; margin: 10px 0; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <img class="img m-1" style="max-height: 30px; max-width: 30px;" src="${review.authorAttribution.photoURI}"/>
+                        
+                            <div>
+                                <div style="font-weight: bold; font-size: 14px;">${review.authorAttribution.displayName}</div>
+                                <div style="font-size: 12px; color: #666;">${review.relativePublishTimeDescription}</div>
+                            </div>
+                            <div style="margin-left: auto; color: #ffa500;">
+                                ${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}
+                            </div>
                         </div>
-                        <div style="margin-left: auto; color: #ffa500;">
-                            ${'★'.repeat(place.reviews[0].rating)}${'☆'.repeat(5 - place.reviews[0].rating)}
+                        <div style="font-size: 14px; line-height: 1.4;">
+                            ${review.text}
                         </div>
                     </div>
-                    <div style="font-size: 14px; line-height: 1.4;">
-                        ${place.reviews[0].text}
-                    </div>
-                </div>
-            `);
-            console.log($reviewItem)
-            $('.reviewdiv').append($reviewItem);
+                `);
+                $('.reviewdiv').append($reviewItem);
+            })
         })
 
 
