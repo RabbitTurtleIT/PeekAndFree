@@ -1,4 +1,4 @@
-name: Real Deploy
+name: Hosting Real Deploy
 
 on:
   push:
