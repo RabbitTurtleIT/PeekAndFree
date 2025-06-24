@@ -32,6 +32,7 @@
   <link href="css/index.css" rel="stylesheet">
   <script src="js/jquery-3.7.1.min"></script>
   <script src="js/auth.js"></script>
+  <script src="js/countryalert.js"></script>
 
   <script defer src="/__/firebase/init.js?useEmulator=true"></script>
 
@@ -118,7 +119,7 @@
         </div>
       </div>
       <div class="row justify-content-center g-3">
-        <div class="col-md-6 col-lg-5" onclick="location.href='calendar.html'">
+        <div class="col-md-6 col-lg-5" onclick="alert('준비중인 서비스에요!')">
           <div class="card selection-card border-success" onclick="showCalendarView()">
             <div class="card-body text-center">
               <div class="selection-icon text-success">
@@ -175,7 +176,12 @@
       // firebase.auth().onAuthStateChanged(user => { });
       // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
       // firebase.firestore().doc('/foo/bar').get().then(() => { });
-      // firebase.functions().httpsCallable('yourFunction')().then(() => { });
+      firebase.functions().httpsCallable('getInformationOfCountry')().then((result) => { 
+        displaySafetyNotices(result.data.response.body);
+      }).catch((error) => {
+        console.log("ERROR!")
+        console.log(error)
+      });
       // firebase.messaging().requestPermission().then(() => { });
       // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
       firebase.analytics(); // call to activate
