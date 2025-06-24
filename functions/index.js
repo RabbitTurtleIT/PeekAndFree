@@ -7,7 +7,7 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-const {onRequest, onCall} = require("firebase-functions/v2/https");
+const { onRequest, onCall } = require("firebase-functions/v2/https");
 const logger = require("firebase-functions/logger");
 const sendRequest = require("request-promise-native");
 
