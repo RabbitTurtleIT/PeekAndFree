@@ -24,7 +24,7 @@ exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app"]}
   const options = {
     uri: "https://apis.data.go.kr/1262000/CountrySafetyService6/getCountrySafetyList6",
     qs: {
-      serviceKey: process.env.COUNTRYINFO_APIKEY, // API키는 깃허브에서도 추가해주세요.(노션 참고)
+      serviceKey: process.env.COUNTRYINFO_APIKEY, // API키는 깃허브에서도 추가해주세요(노션 참고)
       numOfRows: 8, // 메인페이지의 몇개의 공지사항을 올릴지
       pageNo: 1 // 항상 최신 데이터
     },
