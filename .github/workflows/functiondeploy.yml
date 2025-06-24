@@ -15,3 +15,8 @@ jobs:
         env:
           FIREBASE_TOKEN: "${{ secrets.FIREBASE_CI }}"
           FIREBASE_PROJECT: peekandfree
+      - name: create dotenv
+        run: |
+          touch .env
+          echo COUNTRYINFO_APIKEY=${{ secrets.COUNTRYINFO_APIKEY }} >> .env
+          cat .env
