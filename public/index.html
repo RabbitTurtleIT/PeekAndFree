@@ -30,20 +30,81 @@
     integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
   <!-- <link href="css/bootstrap.css" rel="stylesheet"> -->
   <link href="css/index.css" rel="stylesheet">
-
+  <script src="js/jquery-3.7.1.min"></script>
+  <script src="js/auth.js"></script>
 
   <script defer src="/__/firebase/init.js?useEmulator=true"></script>
 
 </head>
 
 <body>
+  
+  <div class="modal" id="createAccount" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="exampleModalLabel">회원가입</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="mt-2 mx-3 text text-danger" id="createAccountErrorMessage"></div>
+        <div class="modal-body">
+          <div class="input-group mb-3">
+            <span class="input-group-text">이메일</span>
+            <input type="email" id="reg-email" class="form-control">
+          </div>
+          <div class="input-group mb-3">
+            <span class="input-group-text">비밀번호</span>
+            <input type="password" id="reg-pw" class="form-control">
+          </div>
+          <div class="input-group mb-3">
+            <span class="input-group-text">비밀번호 확인</span>
+            <input type="password" id="reg-pw-repeat" class="form-control">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" onclick="createAccount()" class="btn btn-primary">가입</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="loginModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="loginLabel">로그인</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="mt-2 mx-3 text text-danger" id="loginErrorMessage"></div>
+        <div class="modal-body">
+          <div class="input-group mb-3">
+            <input type="email" placeholder="이메일" id="login-email" class="form-control">
+          </div>
+          <div class="input-group mb-3">
+            <input type="password" placeholder="비밀번호" id="login-pw" class="form-control">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" onclick="login()" class="btn btn-success">로그인</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <nav class="navbar border-body" style="background-color: #FFC88D;" data-bs-theme="dark">
     <div class="container-fluid">
       <a class="navbar-brand" href="/">피크앤프리</a>
       <div class="col-md-3 text-end">
-        <button type="button" class="btn btn-light me-2">로그인</button>
-        <button type="button" class="btn btn-light me-2" data-bs-toggle="modal"
-          data-bs-target="#createAccount">회원가입</button>
+        <div id="needLogin">
+          <button type="button" class="btn btn-light me-2" data-bs-toggle="modal"
+            data-bs-target="#loginModal">로그인</button>
+          <button type="button" class="btn btn-light me-2" data-bs-toggle="modal"
+            data-bs-target="#createAccount">회원가입</button>
+        </div>
+        <div id="welcomeDiv">
+          <span id="welcomeUser"></span>
+          <button type="button" class="btn btn-light me-2" onclick="logout()">로그아웃</button>
+        </div>
       </div>
     </div>
   </nav>
@@ -92,33 +153,7 @@
     </div>
   </div>
 
-  <div class="modal fade" id="createAccount" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h1 class="modal-title fs-5" id="exampleModalLabel">회원가입</h1>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <div class="input-group mb-3">
-            <span class="input-group-text">이메일</span>
-            <input type="email" id="reg-email" class="form-control">
-          </div>
-          <div class="input-group mb-3">
-            <span class="input-group-text" >비밀번호</span>
-            <input type="password" id="reg-pw" class="form-control">
-          </div>
-          <div class="input-group mb-3">
-            <span class="input-group-text">비밀번호 확인</span>
-            <input type="password" id="reg-pw-repeat" class="form-control">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" onclick="createAccount()" class="btn btn-primary">가입</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  
 
 
   <!-- Google tag (gtag.js) -->
@@ -132,45 +167,8 @@
   </script>
 
   <script>
-    function emailCheck(email_address) {
-      email_regex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$/i;
-      if (!email_regex.test(email_address)) {
-        return false;
-      } else {
-        return true;
-      }
-    }
-    function createAccount() {
-      var emailInput = document.getElementById('reg-email');
-	    var pwInput = document.getElementById('reg-pw');
-	    var pwRInput = document.getElementById('reg-pw-repeat');
-      if (!emailCheck(emailInput.value)) {
-        alert("이메일 형식이 아닙니다.")
-        return
-      }
-      if(pwInput.value.length < 1) {
-        alert("비밀번호를 입력하세요.")
-        return
-      }
-      if(pwInput.value != pwRInput.value) {
-        alert("비밀번호가 다릅니다.")
-        return
-      }
-
-        firebase.auth().createUserWithEmailAndPassword(emailInput.value, pwInput.value)
-          .then((userCredential) => {
-            // Signed in 
-            var user = userCredential.user;
-            console.log(user)
-          })
-          .catch((error) => {
-            var errorCode = error.code;
-            var errorMessage = error.message;
-            alert(errorMessage)
-          });
-    }
+    
     document.addEventListener('DOMContentLoaded', function () {
-      const loadEl = document.querySelector('#load');
       // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
       // // The Firebase SDK is initialized and available here!
       //
@@ -199,10 +197,8 @@
           'remoteConfig',
           'performance',
         ].filter(feature => typeof app[feature] === 'function');
-        loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
       } catch (e) {
         console.error(e);
-        loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
       }
     });
   </script>
