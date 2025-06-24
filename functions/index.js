@@ -19,7 +19,7 @@ exports.helloWorld = onRequest((request, response) => {
   response.send("Hello from Firebase!");
 });
 require("dotenv").config();
-exports.getInformationOfCountry = onCall({cors: ["peekandfree.web.app"]}, (request) => {
+exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app"]}, (request) => {
   
   const options = {
     uri: "https://apis.data.go.kr/1262000/CountrySafetyService6/getCountrySafetyList6",
