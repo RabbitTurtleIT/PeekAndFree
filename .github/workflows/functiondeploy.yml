@@ -2,6 +2,8 @@ name: Functions Real Deploy
 
 on:
   push:
+    paths:
+    - "functions/**"
     branches: [ deploy ]
 
 jobs:
@@ -12,5 +14,4 @@ jobs:
       - uses: jsryudev/deploy-firebase-functions@v20.0.1
         env:
           FIREBASE_TOKEN: "${{ secrets.FIREBASE_CI }}"
-          GOOGLE_APPLICATION_CREDENTIALS: "${{ secrets.GCP }}"
           FIREBASE_PROJECT: peekandfree
