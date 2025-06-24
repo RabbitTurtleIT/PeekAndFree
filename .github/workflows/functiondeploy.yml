@@ -2,6 +2,8 @@ name: Functions Real Deploy
 
 on:
   push:
+    paths:
+    - "functions/**"
     branches: [ deploy ]
 
 jobs:
