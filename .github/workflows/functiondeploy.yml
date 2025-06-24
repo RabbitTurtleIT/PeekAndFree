@@ -11,13 +11,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: jsryudev/deploy-firebase-functions@v20.0.1
-        env:
-          FIREBASE_TOKEN: "${{ secrets.FIREBASE_CI }}"
-          FIREBASE_PROJECT: peekandfree
+      
       - name: create dotenv
         run: |
           cd functions
           touch .env
           echo COUNTRYINFO_APIKEY=${{ secrets.COUNTRYINFO_APIKEY }} >> .env
           cat .env
+
+      - uses: jsryudev/deploy-firebase-functions@v20.0.1
+        env:
+          FIREBASE_TOKEN: "${{ secrets.FIREBASE_CI }}"
+          FIREBASE_PROJECT: peekandfree
