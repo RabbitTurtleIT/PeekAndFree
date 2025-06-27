@@ -18,6 +18,8 @@ exports.helloWorld = onRequest((request, response) => {
   logger.info("Hello logs!", {structuredData: true});
   response.send("Hello from Firebase!");
 });
+
+
 require("dotenv").config();
 exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app"]}, (request) => {
   
@@ -48,4 +50,8 @@ exports.openpagetoo = onCall({cors: ["https://peekandfree.web.app"]}, (request) 
   
 return "또 열렸당 ~~"
 
+})
+
+exports.heejinTest = onCall({cors: ["https://peekandfree.web.app"]}, (request) => {
+  return "오빠 알려줘서 고마워~~";
 })
