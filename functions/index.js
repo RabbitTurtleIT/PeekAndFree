@@ -12,14 +12,14 @@ const logger = require("firebase-functions/logger");
 const sendRequest = require("request-promise-native"); // deprecated
 
 
-const functions = require('firebase-functions');
 const https = require('https');
 const agent = new https.Agent({keepAlive: true});
 require("dotenv").config();
 
-const admin = require('firebase-admin');
+const { initializeApp } = require("firebase-admin/app");
+const { getFirestore } = require("firebase-admin/firestore");
 
-admin.initializeApp();
+const app = initializeApp();
 
 
 
@@ -55,7 +55,7 @@ exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app"]}
 exports.getExchangeRate = onCall({
   cors: ["https://peekandfree.web.app"]
 }, async (data, context) => {
-  const db = admin.firestore();
+  const db = getFirestore(app, 'peekandfree')
   const snapshot = await db.collection('exchangerate').get();
 
   const exchangeRates = [];
@@ -102,6 +102,8 @@ exports.loadExchangeRate = onCall({
       res.on('end', () => {
         try {
           const result = JSON.parse(data);
+          console.log("API 결과 : ")
+          console.log(result) 
           resolve(result);
         } catch (error) {
           reject(new Error('JSON 파싱 실패'));
@@ -124,7 +126,7 @@ exports.loadExchangeRate = onCall({
 
   });
   
-  const db = admin.firestore();
+  const db = getFirestore(app, 'peekandfree');
   const batch = db.batch();
 
   for(const item of apiData.StatisticSearch.row) {
@@ -139,21 +141,3 @@ exports.loadExchangeRate = onCall({
   }
 
 });
-
-
-exports.openpage = onRequest((request, response) => {
-  logger.info("Hello logs!", {structuredData: true});
-  response.send("열렸당 ~~");
-});
-
-
-
-exports.openpagetoo = onCall({cors: ["https://peekandfree.web.app"]}, (request) => {
-  
-return "또 열렸당 ~~"
-
-})
-
-exports.heejinTest = onCall({cors: ["https://peekandfree.web.app"]}, (request) => {
-  return "오빠 알려줘서 고마워~~";
-})
