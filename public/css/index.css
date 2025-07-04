@@ -1,27 +1,148 @@
-    .selection-card {
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-      cursor: pointer;
-      height: 200px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-    }
-    
-    .selection-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    }
-    
-    .selection-icon {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-    }
-    
-    .hidden {
-      display: none !important;
-    }
+:root {
+  /* Color Palette */
+  --black: #303030;
+  --white: #FFFFFF;
+  --gray-white: #FAFAFA;
 
-    #selection-view {
-        padding-top: 12px;
-    }
+  --orange-primary: #FF9000;
+  --orange-light: #FFBA61;
+  --orange-pale: #FFE3BF;
+
+  --red: #EB3333;
+  --blue: #338FEB;
+
+  /* Font */
+  --font-main: 'Wanted Sans Variable', sans-serif;
+  --font-logo: 'Bookk Myungjo',sans-serif;
+}
+
+body {
+  font-family: var(--font-main);
+  color: var(--black);
+  margin: 0;
+  padding: 0;
+  background-color: var(--white);
+}
+
+/* 헤더 전체 */
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  border-bottom: 1px solid #ddd;
+}
+
+/* 로고 텍스트 */
+.logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--orange-primary);
+  font: optional;
+}
+
+/* 검색 바 전체 */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* 입력창 */
+.search-bar input {
+  padding: 8px 16px;
+  border: 2px solid var(--orange-primary);
+  border-radius: 30px;
+  outline: none;
+  width: 260px;
+  font-size: 0.95rem;
+}
+
+/* 검색 버튼 */
+.search-btn {
+  background-color: var(--white);
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+}
+
+/* 마이페이지 버튼 */
+.mypage_btn {
+  background-color: var(--white);
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+}
+
+/* TOP5 배너 */
+.top5 {
+  position: relative;
+  text-align: center;
+}
+
+.top5 img {
+  width: 100%;
+  max-height: 280px;
+  object-fit: cover;
+}
+
+.top5_text {
+  position: absolute;
+  top: 80%;
+  left: 25%;
+  transform: translate(-50%, -50%);
+  color: var(--white);
+  font-size: 2rem;
+  font-weight: bold;
+  text-align: left;
+  text-shadow: 1px 1px 5px #000;
+}
+
+.top5-indicator {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--white);
+  font-size: 0.5rem;
+}
+
+/* 질문 섹션 */
+.select {
+  text-align: center;
+  margin: 60px 0;
+}
+
+.select h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.additional-text {
+  color: var(--black);
+  margin-bottom: 30px;
+}
+
+.btn-toggle-wrap {
+  display: inline-flex;
+  border-radius: 50px;
+  overflow: hidden;
+  border: 2px solid #FFA500; /* 주황 테두리 */
+}
+
+.btn-toggle {
+  padding: 0.5rem 1.5rem;
+  font-weight: 600;
+  border: none;
+  background-color: white;
+  color: #FFA500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  font-size: 1rem;
+}
+
+.btn-toggle.active {
+  background-color: #FFA500;
+  color: white;
+}

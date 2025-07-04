@@ -30,7 +30,6 @@
     integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
   <!-- <link href="css/bootstrap.css" rel="stylesheet"> -->
   <link href="css/index.css" rel="stylesheet">
-  <script src="js/index.js"></script>
   <script src="js/jquery-3.7.1.min"></script>
   <script src="js/auth.js"></script>
   <script src="js/countryalert.js"></script>
@@ -39,48 +38,76 @@
 
 </head>
 
-  <body>
-  <!-- 로고, 검색창 -->
-  <header class="top d-flex justify-content-between align-items-center border-bottom px-4 py-3">
-    <div class= "logo">
-      <img src="img/peak and free.png">  
+<body>
+    <div class="modal" id="createAccount" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="exampleModalLabel">회원가입</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="mt-2 mx-3 text text-danger" id="createAccountErrorMessage"></div>
+        <div class="modal-body">
+          <div class="input-group mb-3">
+            <span class="input-group-text">이메일</span>
+            <input type="email" id="reg-email" class="form-control">
+          </div>
+          <div class="input-group mb-3">
+            <span class="input-group-text">비밀번호</span>
+            <input type="password" id="reg-pw" class="form-control">
+          </div>
+          <div class="input-group mb-3">
+            <span class="input-group-text">비밀번호 확인</span>
+            <input type="password" id="reg-pw-repeat" class="form-control">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" onclick="createAccount()" class="btn btn-primary">가입</button>
+        </div>
+      </div>
     </div>
-    <div class="search-bar d-flex align-items-center gap-2">
-      <input type="text" placeholder="장어 덮밥이 맛있는 일본 나고야" class="form-control rounded-pill border-2" style="width: 260px;">
-      <button class="search-btn btn p-1">
-        <img src="img/search.png" alt="검색">
-      </button>
-      <button class="btn-mypage btn p-1">
-        <img src="img/account_circle.png" alt="마이페이지">
-      </button>
+  </div>
+
+  <div class="modal" id="loginModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="loginLabel">로그인</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="mt-2 mx-3 text text-danger" id="loginErrorMessage"></div>
+        <div class="modal-body">
+          <div class="input-group mb-3">
+            <input type="email" placeholder="이메일" id="login-email" class="form-control">
+          </div>
+          <div class="input-group mb-3">
+            <input type="password" placeholder="비밀번호" id="login-pw" class="form-control">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" onclick="login()" class="btn btn-success">로그인</button>
+        </div>
+      </div>
     </div>
-  </header>
+  </div>
 
-  <!-- 상단 배너 -->
-  <main class="container py-4">
-    <section class="top5 position-relative text-center mb-5">
-      <img src="img/Rectangle 25.png" class="w-100 rounded" style="max-height: 422px; object-fit: cover;">
-      <div class="top5_text position-absolute top-289 start-30 text-white fwhadow">
-        예술과 낭만이 흐르는 도시,<br>
-        파리에서 당신만의 이야기를 시작하세요
+  <nav class="navbar border-body" style="background-color: #FFC88D;" data-bs-theme="dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">피크앤프리</a>
+      <div class="col-md-3 text-end">
+        <div id="needLogin">
+          <button type="button" class="btn btn-light me-2" data-bs-toggle="modal"
+            data-bs-target="#loginModal">로그인</button>
+          <button type="button" class="btn btn-light me-2" data-bs-toggle="modal"
+            data-bs-target="#createAccount">회원가입</button>
+        </div>
+        <div id="welcomeDiv">
+          <span id="welcomeUser"></span>
+          <button type="button" class="btn btn-light me-2" onclick="logout()">로그아웃</button>
+        </div>
       </div>
-      <div class="top5-indicator position-absolute top-500 start-50 translate-middle-x text-white pb-3">
-        ● ○ ○ ○ ○
-      </div>
-    </section>
-
-    <!-- 선택 섹션 -->
-    <section class="select text-center">
-      <h1 class="fw-bold mb-2">여행을 얼마나 계획하셨나요?</h1>
-      <p class="additional-text text-muted mb-4">peak and free가 여행 준비를 도와드릴게요!</p>
-      <div class="btn-toggle-wrap">
-        <button id="btn-when" class="btn-toggle">언제 떠날지 정했어요!</button>
-        <button id="btn-where" class="btn-toggle active">어디로 떠날지 정했어요!</button>
-      </div>
-    </section>
-  </main>
-</body>
-
+    </div>
+  </nav>
 
 
 
