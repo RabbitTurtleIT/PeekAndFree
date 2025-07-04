@@ -137,7 +137,6 @@ exports.loadExchangeRate = onCall({
       success: true,
       data: apiData
   }
-
 });
 
 
