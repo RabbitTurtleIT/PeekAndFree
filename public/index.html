@@ -39,7 +39,7 @@
 </head>
 
 <body>
-  
+  <button class="btn btn-light" onclick="loadExchangeRate()">환율 DB에 저장하기</button>
   <div class="modal" id="createAccount" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -169,6 +169,15 @@
 
   <script>
     
+    function loadExchangeRate() {
+      firebase.functions().httpsCallable('loadExchangeRate')().then((result) => { 
+        console.log("환율을 DB에 저장했습니다.")
+        console.log(result);
+      }).catch((error) => {
+        console.log("환율을 저장하지 못했습니다. : " + error)
+      });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
       // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
       // // The Firebase SDK is initialized and available here!
