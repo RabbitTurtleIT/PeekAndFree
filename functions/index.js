@@ -127,16 +127,16 @@ exports.loadExchangeRate = onCall({
   const db = admin.firestore();
   const batch = db.batch();
 
-    for(const item of apiData.StatisticSearch.row) {
+  for(const item of apiData.StatisticSearch.row) {
         const docRef = db.collection("exchangerate").doc(item.ITEM_NAME1.split("/")[1].split('(')[0]);
         batch.set(docRef, {id:item.ITEM_NAME1, value: item.DATA_VALUE})
-    }
-    await batch.commit()
+  }
+  await batch.commit()
 
-    return {
+  return {
       success: true,
       data: apiData
-    }
+  }
 });
 
 
