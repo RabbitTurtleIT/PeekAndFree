@@ -50,24 +50,55 @@
       <button class="search-btn btn p-1">
         <img src="img/search.png" alt="검색">
       </button>
-      <button class="btn-mypage btn p-1">
+      <button  id="btn-mypage" class="btn-mypage btn p-1" type="button">
         <img src="img/account_circle.png" alt="마이페이지">
       </button>
     </div>
   </header>
 
-  <!-- 상단 배너 -->
-  <main class="container py-4">
-    <section class="top5 position-relative text-center mb-5">
-      <img src="img/Rectangle 25.png" class="w-100 rounded" style="max-height: 422px; object-fit: cover;">
-      <div class="top5_text position-absolute top-289 start-30 text-white fwhadow">
-        예술과 낭만이 흐르는 도시,<br>
-        파리에서 당신만의 이야기를 시작하세요
+  <div id="mainCarousel" class="carousel slide md-5" data-bs-ride="carousel">
+  
+
+
+  <!-- 이미지 -->
+  <div class="carousel-inner rounded px-5">
+    <div class="carousel-item active px-5">
+      <img src="img/Rectangle 25.png" class="d-block w-100" style="object-fit: cover; max-height: 422px;">
+      <div class="carousel-caption d-none d-md-block">
+        <h2>예술과 낭만이 흐르는 도시</h2>
+        <h2>파리에서 당신만의 이야기를 시작하세요</h2>
       </div>
-      <div class="top5-indicator position-absolute top-500 start-50 translate-middle-x text-white pb-3">
-        ● ○ ○ ○ ○
-      </div>
-    </section>
+    </div>
+    <div class="carousel-item px-5">
+      <img src="img/Rectangle 25.png" class="d-block w-100" style="object-fit: cover; max-height: 422px;">
+    </div>
+    <div class="carousel-item px-5">
+      <img src="img/Rectangle 25.png" class="d-block w-100" style="object-fit: cover; max-height: 422px;">
+    </div>
+    <div class="carousel-item px-5">
+      <img src="img/Rectangle 25.png" class="d-block w-100" style="object-fit: cover; max-height: 422px;">
+    </div>
+    <div class="carousel-item px-5">
+      <img src="img/Rectangle 25.png" class="d-block w-100" style="object-fit: cover; max-height: 422px;">
+    </div>
+  </div>
+
+  <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon"></span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+    <span class="carousel-control-next-icon"></span>
+  </button>
+
+  <div class="custom-indicators text-center mt-3">
+    <img src="img/btn_unselected.png" class="indicator-dot" data-index="0">
+    <img src="img/btn_unselected.png" class="indicator-dot" data-index="1">
+    <img src="img/btn_unselected.png" class="indicator-dot" data-index="2">
+    <img src="img/btn_unselected.png" class="indicator-dot" data-index="3">
+    <img src="img/btn_unselected.png" class="indicator-dot" data-index="4">
+  </div>
+</div>
+
 
     <!-- 선택 섹션 -->
     <section class="select text-center">

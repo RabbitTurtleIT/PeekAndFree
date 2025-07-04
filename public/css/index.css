@@ -33,14 +33,6 @@ body {
   border-bottom: 1px solid #ddd;
 }
 
-/* 로고 텍스트 */
-.logo {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: var(--orange-primary);
-  font: optional;
-}
-
 /* 검색 바 전체 */
 .search-bar {
   display: flex;
@@ -74,22 +66,11 @@ body {
   padding: 6px;
 }
 
-/* TOP5 배너 */
-.top5 {
-  position: relative;
-  text-align: center;
-}
 
-.top5 img {
-  width: 100%;
-  max-height: 280px;
-  object-fit: cover;
-}
-
-.top5_text {
+.carousel-caption {
   position: absolute;
-  top: 80%;
-  left: 25%;
+  top: 75%;
+  left: 35%;
   transform: translate(-50%, -50%);
   color: var(--white);
   font-size: 2rem;
@@ -97,14 +78,8 @@ body {
   text-align: left;
   text-shadow: 1px 1px 5px #000;
 }
-
-.top5-indicator {
-  position: absolute;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: var(--white);
-  font-size: 0.5rem;
+.custom-indicators {
+  bottom: 100px; 
 }
 
 /* 질문 섹션 */
