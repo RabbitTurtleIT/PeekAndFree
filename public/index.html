@@ -34,6 +34,7 @@
   <script src="js/jquery-3.7.1.min"></script>
   <script src="js/auth.js"></script>
   <script src="js/countryalert.js"></script>
+  <script src="js/map.js"></script>
 
   <script defer src="/__/firebase/init.js?useEmulator=true"></script>
 
@@ -110,6 +111,35 @@
       </div>
     </section>
   </main>
+
+
+  <section id="when-content" class="select-result" style="display: none;">
+  <!-- 언제 떠날지 정했어요! 선택 시 노출될 콘텐츠 -->
+  <div>🗓️ 추천 일정, 가격대, 추천 시기 등</div>
+</section>
+
+<!--어디로 선택시-->
+<section id="where-content" class="select-result" style="display: none;">
+  <section class="map-section">
+  <!-- 배경 박스 전체 -->
+  <div class="map-background">
+
+    <!-- 검색 바 -->
+    <div class="map-search d-flex justify-content-center align-items-center">
+      <input type="text" class="form-control search-input" placeholder="도시, 나라 또는 공항">
+      <button class="btn btn-outline-warning nearby-btn">
+        <img src="img/btncloseplace.png">
+      </button>
+    </div>
+
+    <!-- 지도 들어갈 영역 -->
+    <div class="map-container">
+      <div id="map"></div>
+    </div>
+  </div>
+</section>
+
+
 </body>
 
 
