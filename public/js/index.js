@@ -62,13 +62,29 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'mypage.html';
     });
     
-  const slider = document.getElementById('budget-slider');
-  const valueDisplay = document.querySelector('.slider-value');
+ const slider = document.getElementById('budget-slider');
+const valueDisplay = document.querySelector('.slider-value');
 
-  slider.addEventListener('input', () => {
-    const value = parseInt(slider.value).toLocaleString('ko-KR');
-    valueDisplay.textContent = `₩${value}`;
-  });
+function updateSliderUI(value) {
+  const min = Number(slider.min);
+  const max = Number(slider.max);
+  const percent = ((value - min) / (max - min));
+  
+  valueDisplay.textContent = `₩${Number(value).toLocaleString('ko-KR')}`;
+
+  const sliderWidth = slider.offsetWidth;
+  const offset = percent * sliderWidth;
+  valueDisplay.style.left = `${offset}px`;
+
+  slider.style.background = `linear-gradient(to right, orange, yellow ${percent * 100}%, lightgray ${percent * 100}%)`;
+}
+
+updateSliderUI(slider.value);
+
+slider.addEventListener('input', (e) => {
+  updateSliderUI(e.target.value);
+});
+
 
 });
 

@@ -181,6 +181,7 @@ body {
  padding: 0;
   height: 45vh;
   display: flex;
+  background-color: #F9F9F9;
   justify-content: center;
   align-items: center;
 }
@@ -188,8 +189,10 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 16px;
   margin-top: 7vh;
+  height: 100%;
 }
 .title {
   text-align: center;
@@ -233,6 +236,7 @@ body {
   cursor: pointer;
 }
 
+
 .slider-value {
   background-color: yellow;
   border-radius: 12px;
@@ -243,30 +247,25 @@ body {
   
 }
 
-.calender-section{
+.calendar-section{
   margin: 0;
   background-color: var(--white);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  text-align: center;
   height: 100vh;
 
+}
+.title-calendar{
+  margin-top: 5em;
+  color: var(--orange-primary);
+  
 }
 .container{
   width: 100vw;
   max-width: 1120px;
   padding: 16px;
   box-sizing: border-box;
-}
-.calendar-section h2 {
-  color: #FF8000;
-  margin-bottom: 8px;
-}
-
-.calendar-section .desc {
-  color: #FF8000;
-  font-size: 14px;
-  margin-bottom: 16px;
 }
 
