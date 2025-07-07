@@ -8,6 +8,11 @@
  */
 
 const { onRequest, onCall } = require("firebase-functions/v2/https");
+
+const https = require('https');
+const agent = new https.Agent({keepAlive: true});
+require("dotenv").config();
+
 const logger = require("firebase-functions/logger");
 const sendRequest = require("request-promise-native");
 
@@ -20,24 +25,52 @@ exports.helloWorld = onRequest((request, response) => {
 });
 
 
-require("dotenv").config();
-exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app"]}, (request) => {
-  
-  // open api 쓸때
-  const options = {
-    uri: "https://apis.data.go.kr/1262000/CountrySafetyService6/getCountrySafetyList6",
-    qs: {
-      serviceKey: process.env.COUNTRYINFO_APIKEY, // API키는 깃허브에서도 추가해주세요(노션 참고)
-      numOfRows: 8, // 메인페이지의 몇개의 공지사항을 올릴지 개수
-      pageNo: 1 // 항상 최신 데이터
-    },
-    json: true, // json으로 받겠다
-  }
+exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app"]}, async (request) => { 
+  const apiData = await new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'apis.data.go.kr',
+      port: 443,
+      path: `/1262000/CountrySafetyService6/getCountrySafetyList6?serviceKey=${process.env.COUNTRYINFO_APIKEY}&numOfRows=5&pageNo`,
+      method: 'GET',
+      agent: agent
+    };
 
-  const result = sendRequest(options); //send request 
-  return result; // json으로 받아옴
+    const req = https.request(options, (res) => {
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          const result = JSON.parse(data);
+          console.log("API 결과 : ")
+          console.log(result) 
+          resolve(result);
+        } catch (error) {
+          reject(new Error('JSON 파싱 실패'));
+        }
+      });
+    });
+    
+    req.on('error', (error) => {
+      console.error("요청 에러:", error);
+      reject(error);
+    });
+    
+    req.setTimeout(30000, () => {
+      req.destroy();
+        reject(new Error('요청 타임아웃'));
+    });
+    
+    req.end();
+  })
+
+  return apiData;
 
 })
+
 
 exports.openpage = onRequest((request, response) => {
   logger.info("Hello logs!", {structuredData: true});

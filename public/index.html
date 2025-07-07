@@ -36,6 +36,10 @@
   <script src="js/countryalert.js"></script>
   <script src="js/map.js"></script>
 
+  <!-- 맵박스 라이브러리입니다! 지우면 지도 안나옵니다 -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.js"></script>
+
   <script defer src="/__/firebase/init.js?useEmulator=true"></script>
 
 </head>
@@ -133,11 +137,21 @@
     </div>
 
     <!-- 지도 들어갈 영역 -->
-    <div class="map-container">
-      <div id="map"></div>
+    <div class="container map-container">
+      <div id="map" style="width: 100% ;"></div>
     </div>
   </div>
+  </section>
 </section>
+
+<div class="container-sm">
+  <div class="content mt-3 mb-3">
+    <h4>해외 안전 소식도 알아가세요 ⛑️</h4>
+    <div id="countryalert" class="row justify-content-between">
+
+    </div>
+  </div>
+</div>
 
 
 </body>
@@ -193,6 +207,7 @@
 
 
       firebase.functions().httpsCallable('getInformationOfCountry')().then((result) => { 
+        console.log("해외안전정보")
         displaySafetyNotices(result.data.response.body);
       }).catch((error) => {
         console.log("ERROR!")
