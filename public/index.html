@@ -123,7 +123,7 @@
 </section>
 
 <!--어디로 선택시-->
-<section id="where-content" class="select-result" style="display: none;">
+<section id="where-content"style="display: none;">
   <section class="map-section">
   <!-- 배경 박스 전체 -->
   <div class="map-background">
@@ -131,19 +131,52 @@
     <!-- 검색 바 -->
     <div class="map-search d-flex justify-content-center align-items-center">
       <input type="text" class="form-control search-input" placeholder="도시, 나라 또는 공항">
-      <button class="btn btn-outline-warning nearby-btn">
-        <img src="img/btncloseplace.png">
-      </button>
+     
     </div>
 
     <!-- 지도 들어갈 영역 -->
     <div class="container map-container">
       <div id="map" style="width: 100% ;"></div>
+      
+      <button class="nearby-btn">
+        <img src="img/btncloseplace.png">
+      </button>
     </div>
   </div>
   </section>
+  <section class="recommandation-section">
+    <div class="slider-group">
+      <h4 class="title">예산에 맞는 여행날짜를 추천해드릴게요</h4>
+         <div class="budget-wrapper">
+        <span class="budget-label left">₩50,000 -</span>
+        <input 
+        type="range" 
+        min="50000" 
+        max="2000000" 
+        step="50000" 
+        value="1000000" 
+        class="slider" 
+        id="budget-slider"/>
+        <span class="budget-label right">₩2,000,000 +</span>
+      </div>
+      <div class="slider-value">₩1,000,000</div>
+    </div>
+  </section>
+  <section class="calender-section">
+  <h2>도쿄, 활기찬 시기와 여유로운 시기 중 언제가 좋을까요?</h2>
+      <p class="desc">예산 ±₩50,000 범위에서 추천된 여행날짜예요.</p>
+      <!-- 캘린더 추가 -->
+      <div class="container claender-container">
+
+      </div>
+      <div id="calendar"></div>
 </section>
 
+
+</section>
+
+
+<!---->
 <div class="container-sm">
   <div class="content mt-3 mb-3">
     <h4>해외 안전 소식도 알아가세요 ⛑️</h4>

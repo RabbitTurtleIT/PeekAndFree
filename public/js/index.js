@@ -61,5 +61,14 @@ document.addEventListener('DOMContentLoaded', () => {
     btnMypage.addEventListener('click', () => {
         window.location.href = 'mypage.html';
     });
+    
+  const slider = document.getElementById('budget-slider');
+  const valueDisplay = document.querySelector('.slider-value');
+
+  slider.addEventListener('input', () => {
+    const value = parseInt(slider.value).toLocaleString('ko-KR');
+    valueDisplay.textContent = `₩${value}`;
+  });
+
 });
 

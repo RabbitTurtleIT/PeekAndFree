@@ -15,26 +15,18 @@
   --font-main: 'Wanted Sans Variable', sans-serif;
   --font-logo: 'Bookk Myungjo',sans-serif;
 }
-
 body {
   font-family: var(--font-main);
   color: var(--black);
   margin: 0;
   padding: 0;
+  width: 100vw;
+  height: 100vh;
   background-color: var(--white);
 }
-
-/* 헤더 전체 */
-.top {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 24px;
-  border-bottom: 1px solid #ddd;
-}
-
-/* 검색 바 전체 */
+/* 검색 바 */
 .search-bar {
+  
   display: flex;
   align-items: center;
   gap: 10px;
@@ -67,10 +59,20 @@ body {
 }
 
 
+/* 헤더 전체 */
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  border-bottom: 1px solid #ddd;
+}
+
+
+
+
 .carousel-caption {
   position: absolute;
-  top: 75%;
-  left: 35%;
   transform: translate(-50%, -50%);
   color: var(--white);
   font-size: 2rem;
@@ -114,7 +116,7 @@ body {
   color: #FFA500;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
-  font-size: 1rem;
+  font-size: 1.2rem;
 }
 
 .btn-toggle.active {
@@ -131,32 +133,140 @@ body {
 
 .map-background {
   background-color: #FFBA61;
-  height: 816px;
-  margin: 0 ;
-  padding:0;
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+
+  
+}
+
+.map-container {
+  
+  width: 77.7vw;      
+  height: 62.5vh; 
+  position: relative; 
+  border-radius: 16px;
 }
 #map {
   
   width: 100%;
   height: 100%;
 }
-.map-container {
-  width: 1120px;
-  height: 640px;
-  border-radius: 16px;
-}
 
 .map-search {
+  
   display: flex;
   justify-content: center;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 32px;
 }
-
+.nearby-btn {
+  position: absolute;
+  top: 16px;       
+  right: 16px;     
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
 .search-input {
+  
+  margin-top: 40px;
   width: 400px;
   border-radius: 30px;
   padding: 8px 16px;
   border: none;
+}
+.recommendation-section {
+ padding: 0;
+  height: 45vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.slider-group{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-top: 7vh;
+}
+.title {
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+.budget-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.budget-label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 40vw;
+  height: 15px;
+  border-radius: 16px;
+  background: linear-gradient(to right, orange, yellow);
+  outline: none;
+  cursor: pointer;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #ffba00;
+  cursor: pointer;
+}
+
+.slider-value {
+  background-color: yellow;
+  border-radius: 12px;
+  padding: 4px 10px;
+  display: inline-block;
+  font-size: 14px;
+  font-weight: bold;
+  
+}
+
+.calender-section{
+  margin: 0;
+  background-color: var(--white);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+
+}
+.container{
+  width: 100vw;
+  max-width: 1120px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+.calendar-section h2 {
+  color: #FF8000;
+  margin-bottom: 8px;
+}
+
+.calendar-section .desc {
+  color: #FF8000;
+  font-size: 14px;
+  margin-bottom: 16px;
 }
 
