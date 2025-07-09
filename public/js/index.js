@@ -61,28 +61,33 @@ document.addEventListener('DOMContentLoaded', () => {
     btnMypage.addEventListener('click', () => {
         window.location.href = 'mypage.html';
     });
-    
- const slider = document.getElementById('budget-slider');
-const valueDisplay = document.querySelector('.slider-value');
+    btnNearby.addEventListener('click',()=>{
 
+    })
+    const slider = document.getElementById('budget-slider');
+    const valueDisplay = document.querySelector('.slider-value');
+function selestBtn(selectedBtn, unselectedBtn){
+    selectedBtn.classList.add('selected');
+    unselectedBtn.classList.remove('selected');
+}
 function updateSliderUI(value) {
-  const min = Number(slider.min);
-  const max = Number(slider.max);
-  const percent = ((value - min) / (max - min));
+    const min = Number(slider.min);
+    const max = Number(slider.max);
+    const percent = ((value - min) / (max - min));
   
-  valueDisplay.textContent = `₩${Number(value).toLocaleString('ko-KR')}`;
+    valueDisplay.textContent = `₩${Number(value).toLocaleString('ko-KR')}`;
 
-  const sliderWidth = slider.offsetWidth;
-  const offset = percent * sliderWidth;
-  valueDisplay.style.left = `${offset}px`;
+    const sliderWidth = slider.offsetWidth;
+    const offset = percent * sliderWidth;
+    valueDisplay.style.left = `${offset}px`;
 
-  slider.style.background = `linear-gradient(to right, orange, yellow ${percent * 100}%, lightgray ${percent * 100}%)`;
+    slider.style.background = `linear-gradient(to right, orange, yellow ${percent * 100}%, lightgray ${percent * 100}%)`;
 }
 
-updateSliderUI(slider.value);
+    updateSliderUI(slider.value);
 
-slider.addEventListener('input', (e) => {
-  updateSliderUI(e.target.value);
+    slider.addEventListener('input', (e) => {
+    updateSliderUI(e.target.value);
 });
 
 

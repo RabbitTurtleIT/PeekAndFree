@@ -55,36 +55,33 @@
       <button class="search-btn btn p-1">
         <img src="img/search.png" alt="검색">
       </button>
-      <button  id="btn-mypage" class="btn-mypage btn p-1" type="button">
+      <button  id="mypage-btn" class="mypage-btn btn p-1" type="button">
         <img src="img/account_circle.png" alt="마이페이지">
       </button>
     </div>
   </header>
-
+<section class="main-section">
+  <div class="carousel-wrapper">
   <div id="mainCarousel" class="carousel slide md-5" data-bs-ride="carousel">
   
 
 
   <!-- 이미지 -->
-  <div class="carousel-inner rounded px-5">
-    <div class="carousel-item active px-5">
-      <img src="img/Rectangle 25.png" class="d-block w-100" style="object-fit: cover; max-height: 422px;">
-      <div class="carousel-caption d-none d-md-block">
-        <h2>예술과 낭만이 흐르는 도시</h2>
-        <h2>파리에서 당신만의 이야기를 시작하세요</h2>
-      </div>
+  <div class="carousel-inner rounded">
+    <div class="carousel-item active">
+      <img src="img/epic_x.png" class="d-block w-100" style="object-fit: cover;">
     </div>
     <div class="carousel-item px-5">
-      <img src="img/Rectangle 25.png" class="d-block w-100" style="object-fit: cover; max-height: 422px;">
+      <img src="img/Rectangle 25.png" class="d-block w-100" style="object-fit: cover;">
     </div>
     <div class="carousel-item px-5">
-      <img src="img/Rectangle 25.png" class="d-block w-100" style="object-fit: cover; max-height: 422px;">
+      <img src="img/Rectangle 25.png" class="d-block w-100" style="object-fit: cover;">
     </div>
     <div class="carousel-item px-5">
-      <img src="img/Rectangle 25.png" class="d-block w-100" style="object-fit: cover; max-height: 422px;">
+      <img src="img/Rectangle 25.png" class="d-block w-100" style="object-fit: cover;">
     </div>
     <div class="carousel-item px-5">
-      <img src="img/Rectangle 25.png" class="d-block w-100" style="object-fit: cover; max-height: 422px;">
+      <img src="img/Rectangle 25.png" class="d-block w-100" style="object-fit: cover;">
     </div>
   </div>
 
@@ -94,7 +91,7 @@
   <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
     <span class="carousel-control-next-icon"></span>
   </button>
-
+</div>
   <div class="custom-indicators text-center mt-3">
     <img src="img/btn_unselected.png" class="indicator-dot" data-index="0">
     <img src="img/btn_unselected.png" class="indicator-dot" data-index="1">
@@ -104,7 +101,7 @@
   </div>
 </div>
 
-
+</section>
     <!-- 선택 섹션 -->
     <section class="select text-center">
       <h1 class="fw-bold mb-2">여행을 얼마나 계획하셨나요?</h1>
@@ -114,15 +111,65 @@
         <button id="btn-where" class="btn-toggle active">어디로 떠날지 정했어요!</button>
       </div>
     </section>
-  </main>
+  
 
+    <!--when-section-->
 
   <section id="when-content" class="select-result" style="display: none;">
   <!-- 언제 떠날지 정했어요! 선택 시 노출될 콘텐츠 -->
-  <div>🗓️ 추천 일정, 가격대, 추천 시기 등</div>
+    <section class="calendar-section">
+    <div class="title-calendar">
+  <h2 >도쿄, 활기찬 시기와 여유로운 시기 중 언제가 좋을까요?</h2>
+      <p class="desc">예산 ±₩50,000 범위에서 추천된 여행날짜예요.</p>
+      </div>
+      <!-- 캘린더 추가 -->
+      <div class="container calendar-container">
+
+      </div>
+      <div id="calendar"></div>
+</section>
+  <section class="recommendation-section">
+    <div class="slider-group">
+      <h4 class="title">예산에 맞는 여행날짜를 추천해드릴게요</h4>
+         <div class="budget-wrapper">
+        <span class="budget-label left">₩50,000 -</span>
+        <input 
+        type="range" 
+        min="50000" 
+        max="2000000" 
+        step="50000" 
+        value="1000000" 
+        class="slider" 
+        id="budget-slider"/>
+        <span class="budget-label right">₩2,000,000 +</span>
+      </div>
+      <div class="slider-value">₩1,000,000</div>
+    </div>
+  </section>
+  <section class="map-section">
+  <div class="map-background">
+
+    <!-- 검색 바 -->
+    <div class="map-search d-flex justify-content-center align-items-center">
+      <input type="text" class="form-control search-input" placeholder="도시, 나라 또는 공항">
+     
+    </div>
+
+    <!-- 지도 들어갈 영역 -->
+    <div class="container map-container">
+      <div id="map" style="width: 100% ;"></div>
+      
+      <div class="nearby-btn-group">
+  <button class="btn-budget">예산에 가까운 지역</button>
+  <button class="btn-nearby">나와 가까운 지역</button>
+</div>
+    </div>
+  </div>
+  </section>
+
 </section>
 
-<!--어디로 선택시-->
+<!--where-section-->
 <section id="where-content"style="display: none;">
   <section class="map-section">
   <!-- 배경 박스 전체 -->
@@ -139,6 +186,7 @@
       <div id="map" style="width: 100% ;"></div>
       
       <button class="nearby-btn">
+        <p class="text-">나와 가까운 지역</p>
         <img src="img/btncloseplace.png">
       </button>
     </div>
@@ -176,9 +224,18 @@
 
 
 </section>
+<section class="final-reservation">
+   <div class="reservation-background"></div>
+  <div class="reservation-content" style="z-index: 1;">
+  <h1 class="final-title">peak and free와 함께 만든 이번 여행이에요</h1>
+  <button class="btn-creatmytrip">
+    <img src="img/btn_background.png">
+  </button>
+  <button class= "btn-skyscanner">
+    <img src="img/btn_background.png">
+  </button>
 
-
-<!---->
+<!--해외 안전 정보-->
 <div class="container-sm">
   <div class="content mt-3 mb-3">
     <h4>해외 안전 소식도 알아가세요 ⛑️</h4>
@@ -187,7 +244,8 @@
     </div>
   </div>
 </div>
-
+</div>
+</section>
 
 </body>
 

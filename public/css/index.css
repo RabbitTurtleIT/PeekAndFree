@@ -15,22 +15,31 @@
   --font-main: 'Wanted Sans Variable', sans-serif;
   --font-logo: 'Bookk Myungjo',sans-serif;
 }
-body {
-  font-family: var(--font-main);
-  color: var(--black);
-  margin: 0;
-  padding: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: var(--white);
+.body{
+  max-width: 100%;
+  overflow-x: hidden;
 }
-/* 검색 바 */
+
+.top {
+  height: 10vh;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.logo{
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
 .search-bar {
   
   display: flex;
   align-items: center;
   gap: 10px;
 }
+
+
 
 /* 입력창 */
 .search-bar input {
@@ -58,31 +67,50 @@ body {
   padding: 6px;
 }
 
-
-/* 헤더 전체 */
-.top {
+.main-section {
+  font-family: var(--font-main);
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
-  padding: 12px 24px;
-  border-bottom: 1px solid #ddd;
+  justify-content: start;
+  max-width: 100%;
+  background-color: var(--white);
+}
+
+.carousel-wrapper {
+  width: 80vw;
+  aspect-ratio: 1542 / 422; 
+  display: flex;
+  flex-direction: column;
+}
+
+#mainCarousel {
+  max-width: 100%;
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+}
+
+.carousel-inner,
+.carousel-inner img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
 }
 
 
-
-
-.carousel-caption {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  color: var(--white);
-  font-size: 2rem;
-  font-weight: bold;
-  text-align: left;
-  text-shadow: 1px 1px 5px #000;
-}
 .custom-indicators {
-  bottom: 100px; 
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
 }
+
+
+
+
+
+
 
 /* 질문 섹션 */
 .select {
@@ -123,18 +151,96 @@ body {
   background-color: #FFA500;
   color: white;
 }
-.select-result {
-  padding: 2rem;
-  background-color: #fff5e0;
-  margin-top: 2rem;
-  border-radius: 12px;
+/*when-section*/
+
+.calendar-section{
+  margin: 0;
+  background-color: var(--white);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  height: 100vh;
+
 }
-/*where선택시*/
+.title-calendar{
+  margin-top: 5em;
+  color: var(--orange-primary);
+  
+}
+.container{
+  max-width: 1120px;
+  padding: 16px;
+  box-sizing: border-box;
+}
 
 .map-background {
   background-color: #FFBA61;
   margin: 0;
-  width: 100vw;
+  max-width: 100%;
+  height: 100vh; 
+}
+
+.map-container {
+  
+  width: 77.7vw;      
+  height: 62.5vh; 
+  position: relative; 
+  border-radius: 16px;
+}
+#map {
+  
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.map-search {
+  
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+.nearby-btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-budget,
+.btn-nearby {
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 2px solid #ccc;
+  background-color: white;
+  color: #333;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-budget.selected,
+.btn-nearby.selected {
+  border-color: #FF8A00;  /* 주황색 테두리 */
+  color: #FF8A00;         /* 주황색 글씨 */
+}
+
+.search-input {
+  
+  margin-top: 40px;
+  width: 400px;
+  border-radius: 30px;
+  padding: 8px 16px;
+  border: none;
+}
+
+
+
+
+/*where-section*/
+
+.map-background {
+  background-color: #FFBA61;
+  margin: 0;
+  max-width: 100%;
   height: 100vh;
 
   
@@ -149,8 +255,8 @@ body {
 }
 #map {
   
-  width: 100%;
-  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .map-search {
@@ -263,9 +369,28 @@ body {
   
 }
 .container{
-  width: 100vw;
   max-width: 1120px;
   padding: 16px;
   box-sizing: border-box;
 }
 
+.final-reservation-section{
+  margin: 0;
+  background-color: var(--white);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  height: 100vh;
+
+}
+.reservation-background {
+  position: absolute;
+  top: 0;
+  max-width: 100%;
+  height: 100vh;
+  background-color: var(--orange-light);
+  border-bottom-left-radius: 50% 100%;
+  border-bottom-right-radius: 50% 100%;
+  z-index: 0;
+}
