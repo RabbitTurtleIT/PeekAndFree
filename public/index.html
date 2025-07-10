@@ -39,7 +39,7 @@
 </head>
 
 <body>
-  <button class="btn btn-light" onclick="loadExchangeRate()">환율 DB에 저장하기</button>
+  <button class="btn btn-light" onclick="getWeather()">환율 DB에 저장하기</button>
   <div class="modal" id="createAccount" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -169,24 +169,18 @@
 
   <script>
     
-    function loadExchangeRate() {
-      firebase.functions().httpsCallable('loadExchangeRate')().then((result) => { 
-        console.log("환율을 DB에 저장했습니다.")
+    function getWeather() {
+      firebase.functions().httpsCallable('getWeather')().then((result) => { 
+        console.log("날씨를 DB에 저장했습니다.")
         console.log(result);
       }).catch((error) => {
-        console.log("환율을 저장하지 못했습니다. : " + error)
+        console.log("날씨를 저장하지 못했습니다. : " + error)
       });
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-      // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-      // // The Firebase SDK is initialized and available here!
-      //
-      // firebase.auth().onAuthStateChanged(user => { });
-      // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-      // firebase.firestore().doc('/foo/bar').get().then(() => { });
-      firebase.functions().httpsCallable('getExchangeRate')().then((result) => { 
-        console.log("환율");
+      firebase.functions().httpsCallable('loadWeather')().then((result) => { 
+        console.log("날씨");
         console.log(result);
       }).catch((error) => {
         console.log(error)
