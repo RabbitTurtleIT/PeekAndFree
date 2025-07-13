@@ -50,94 +50,6 @@ exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app", 
 
 })
 
-// 클라이언트 <- 서버(데이터베이스)
-exports.getExchangeRate = onCall({
-  cors: ["https://peekandfree.web.app"]
-}, async (data, context) => {
-  const db = admin.firestore();
-  const snapshot = await db.collection('exchangerate').get();
-
-  const exchangeRates = [];
-    snapshot.forEach(doc => {
-      exchangeRates.push({
-        id: doc.id,
-        ...doc.data() // 스프레드 연산자.
-        // id: doc.data().id // 마지막에 온 프로퍼티가 반영됨.
-        // value: doc.data().value 
-      });
-  });
-
-  return exchangeRates;
-
-})
-
-// 서버(데이터베이스) <- API
-exports.loadExchangeRate = onCall({
-  cors: ["https://peekandfree.web.app"]
-}, async (data, context) => {
-  
-  const apiData = await new Promise((resolve, reject) => {
-    const today = new Date(); 
-    const year = today.getFullYear(); 
-    const month = (today.getMonth() + 1).toString().padStart(2, '0'); 
-    const day = today.getDate().toString().padStart(2, '0');
-    const yyyymmdd = `${year}${month}${day}`;
-
-    const options = {
-      hostname: 'ecos.bok.or.kr',
-      port: 443,
-      path: `/api/StatisticSearch/${process.env.KOREABANK_APIKEY}/json/kr/1/53/731Y001/D/${yyyymmdd}/${yyyymmdd}`,
-      method: 'GET',
-      agent: agent
-    };
-
-    const req = https.request(options, (res) => {
-      let data = '';
-      
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
-      
-      res.on('end', () => {
-        try {
-          const result = JSON.parse(data);
-          resolve(result);
-        } catch (error) {
-          reject(new Error('JSON 파싱 실패'));
-        }
-      });
-    });
-    
-    req.on('error', (error) => {
-      console.error("요청 에러:", error);
-      reject(error);
-    });
-    
-    req.setTimeout(30000, () => {
-      req.destroy();
-        reject(new Error('요청 타임아웃'));
-    });
-    
-    req.end();
-
-
-  });
-  
-  const db = admin.firestore();
-  const batch = db.batch();
-
-  for(const item of apiData.StatisticSearch.row) {
-        const docRef = db.collection("exchangerate").doc(item.ITEM_NAME1.split("/")[1].split('(')[0]);
-        batch.set(docRef, {id:item.ITEM_NAME1, value: item.DATA_VALUE})
-  }
-  await batch.commit()
-
-  return {
-      success: true,
-      data: apiData
-  }
-});
-
 /////////////////////////////////////////////// 아래부터 수정
 
 
@@ -251,6 +163,4 @@ for (let i = 0; i < filtered.length; i += chunkSize) {
   };
 
 });
-  
-
 

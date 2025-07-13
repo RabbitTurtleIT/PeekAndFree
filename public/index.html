@@ -178,14 +178,21 @@
       });
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
+    // document.addEventListener('DOMContentLoaded', function () {
+    //   firebase.functions().httpsCallable('loadWeather')().then((result) => { 
+    //     console.log("날씨");
+    //     console.log(result);
+    //   }).catch((error) => {
+    //     console.log(error)
+    //   });
+      
+      document.addEventListener('DOMContentLoaded', function () {
       firebase.functions().httpsCallable('loadWeather')().then((result) => { 
-        console.log("날씨");
+        console.log("날씨정보");
         console.log(result);
       }).catch((error) => {
         console.log(error)
       });
-
 
 
       firebase.functions().httpsCallable('getInformationOfCountry')().then((result) => { 
