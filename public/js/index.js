@@ -64,12 +64,14 @@ document.addEventListener('DOMContentLoaded', () => {
     btnNearby.addEventListener('click',()=>{
 
     })
-    const slider = document.getElementById('budget-slider');
-    const valueDisplay = document.querySelector('.slider-value');
 function selestBtn(selectedBtn, unselectedBtn){
     selectedBtn.classList.add('selected');
     unselectedBtn.classList.remove('selected');
 }
+function setupSlider(sliderId, valueId) {
+    const slider = document.getElementById(sliderId);
+    const valueDisplay = document.getElementById(valueId);
+
 function updateSliderUI(value) {
     const min = Number(slider.min);
     const max = Number(slider.max);
@@ -80,8 +82,7 @@ function updateSliderUI(value) {
     const sliderWidth = slider.offsetWidth;
     const offset = percent * sliderWidth;
     valueDisplay.style.left = `${offset}px`;
-
-    slider.style.background = `linear-gradient(to right, orange, yellow ${percent * 100}%, lightgray ${percent * 100}%)`;
+    slider.style.background = `linear-gradient(to right, orange ${percent * 100}%, lightgray ${percent * 100}%)`;
 }
 
     updateSliderUI(slider.value);
@@ -89,7 +90,8 @@ function updateSliderUI(value) {
     slider.addEventListener('input', (e) => {
     updateSliderUI(e.target.value);
 });
-
-
+}
+setupSlider("budget-slider-when", "slider-value-when");
+setupSlider("budget-slider-where", "slider-value-where");
 });
 
