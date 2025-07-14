@@ -58,7 +58,11 @@ exports.getWeather = onCall({
   cors: ["https://peekandfree.web.app", "http://localhost:5002"]
 }, async (data, context) => {
   const db = getFirestore(app, 'peekandfree')
+  
   const snapshot = await db.collection('weather').get();
+
+  const snapshot = await db.collection('exchangerate').get();
+
 
   const weathers = [];
     snapshot.forEach(doc => {
@@ -98,6 +102,8 @@ exports.loadWeather = onCall({
       res.on('end', () => {
         try {
           const result = JSON.parse(data);
+          console.log("API 결과 : ")
+          console.log(result) 
           resolve(result);
         } catch (error) {
           reject(new Error('JSON 파싱 실패'));
@@ -112,6 +118,7 @@ exports.loadWeather = onCall({
       reject(new Error('요청 타임아웃'));
     });
     req.end();
+
   }); 
 
     console.log(JSON.stringify(apiData, null, 2));
@@ -133,11 +140,24 @@ try {
       temp: items.temp,
       wind: items.wind
     }];
+
+
+
+  });
+  
+  const db = getFirestore(app, 'peekandfree');
+  const batch = db.batch();
+
+  for(const item of apiData.StatisticSearch.row) {
+        const docRef = db.collection("exchangerate").doc(item.ITEM_NAME1.split("/")[1].split('(')[0]);
+        batch.set(docRef, {id:item.ITEM_NAME1, value: item.DATA_VALUE})
+   
   }
 } catch (e) {
   filtered = [];
   console.log("에러" + e) 
 }
+
 
 const db = getFirestore(app, 'peekandfree');
 const chunkSize = 500;
@@ -164,3 +184,9 @@ for (let i = 0; i < filtered.length; i += chunkSize) {
 
 });
 
+  return {
+      success: true,
+      data: apiData
+  }
+
+});
