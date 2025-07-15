@@ -17,6 +17,7 @@ jobs:
           cd functions
           touch .env
           echo COUNTRYINFO_APIKEY=${{ secrets.COUNTRYINFO_APIKEY }} >> .env
+          echo KOREABANK_APIKEY=${{ secrets.KOREABANK_APIKEY }} >> .env
           cat .env
 
       - uses: jsryudev/deploy-firebase-functions@v20.0.1
