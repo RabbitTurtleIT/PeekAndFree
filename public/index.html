@@ -30,209 +30,335 @@
     integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
   <!-- <link href="css/bootstrap.css" rel="stylesheet"> -->
   <link href="css/index.css" rel="stylesheet">
+  <script src="js/index.js"></script>
   <script src="js/jquery-3.7.1.min"></script>
   <script src="js/auth.js"></script>
   <script src="js/countryalert.js"></script>
+  <script src="js/map.js"></script>
+
+  <!-- 맵박스 라이브러리입니다! 지우면 지도 안나옵니다 -->
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.js"></script>
 
   <script defer src="/__/firebase/init.js?useEmulator=true"></script>
 
 </head>
 
 <body>
-  <button class="btn btn-light" onclick="loadExchangeRate()">환율 DB에 저장하기</button>
-  <div class="modal" id="createAccount" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h1 class="modal-title fs-5" id="exampleModalLabel">회원가입</h1>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="mt-2 mx-3 text text-danger" id="createAccountErrorMessage"></div>
-        <div class="modal-body">
-          <div class="input-group mb-3">
-            <span class="input-group-text">이메일</span>
-            <input type="email" id="reg-email" class="form-control">
-          </div>
-          <div class="input-group mb-3">
-            <span class="input-group-text">비밀번호</span>
-            <input type="password" id="reg-pw" class="form-control">
-          </div>
-          <div class="input-group mb-3">
-            <span class="input-group-text">비밀번호 확인</span>
-            <input type="password" id="reg-pw-repeat" class="form-control">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" onclick="createAccount()" class="btn btn-primary">가입</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal" id="loginModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h1 class="modal-title fs-5" id="loginLabel">로그인</h1>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="mt-2 mx-3 text text-danger" id="loginErrorMessage"></div>
-        <div class="modal-body">
-          <div class="input-group mb-3">
-            <input type="email" placeholder="이메일" id="login-email" class="form-control">
-          </div>
-          <div class="input-group mb-3">
-            <input type="password" placeholder="비밀번호" id="login-pw" class="form-control">
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" onclick="login()" class="btn btn-success">로그인</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <nav class="navbar border-body" style="background-color: #FFC88D;" data-bs-theme="dark">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="/">피크앤프리</a>
-      <div class="col-md-3 text-end">
-        <div id="needLogin">
-          <button type="button" class="btn btn-light me-2" data-bs-toggle="modal"
-            data-bs-target="#loginModal">로그인</button>
-          <button type="button" class="btn btn-light me-2" data-bs-toggle="modal"
-            data-bs-target="#createAccount">회원가입</button>
-        </div>
-        <div id="welcomeDiv">
-          <span id="welcomeUser"></span>
-          <button type="button" class="btn btn-light me-2" onclick="logout()">로그아웃</button>
-        </div>
-      </div>
-    </div>
-  </nav>
-
-  <div id="selection-view" class="view-selection">
-    <div class="container">
-      <div class="row justify-content-center">
-        <div class="col-12 text-center mb-5">
-          <h2 class="display-6 fw-bold">어떤 방식으로 여행을 계획하시겠어요?</h2>
-          <p class="text-muted">지도에서 직관적으로 선택하거나 캘린더에서 날짜별로 계획해보세요</p>
-        </div>
-      </div>
-      <div class="row justify-content-center g-3">
-        <div class="col-md-6 col-lg-5" onclick="alert('준비중인 서비스에요!')">
-          <div class="card selection-card border-success" onclick="showCalendarView()">
-            <div class="card-body text-center">
-              <div class="selection-icon text-success">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor"
-                  class="bi bi-calendar-event" viewBox="0 0 16 16">
-                  <path d="M11 6.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5z" />
-                  <path
-                    d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5M1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4z" />
-                </svg>
-              </div>
-              <h4 class="card-title">캘린더 보기</h4>
-              <p class="card-text text-muted">장소는 정했는데 날짜는 못정하셨나요?</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6 col-lg-5" onclick="location.href='map.html'">
-          <div class="card selection-card border-primary" onclick="showMapView()">
-            <div class="card-body text-center">
-              <div class="selection-icon text-primary">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" class="bi bi-map"
-                  viewBox="0 0 16 16">
-                  <path fill-rule="evenodd"
-                    d="M15.817.113A.5.5 0 0 1 16 .5v14a.5.5 0 0 1-.402.49l-5 1a.5.5 0 0 1-.196 0L5.5 15.01l-4.902.98A.5.5 0 0 1 0 15.5v-14a.5.5 0 0 1 .402-.49l5-1a.5.5 0 0 1 .196 0L10.5.99l4.902-.98a.5.5 0 0 1 .415.103M10 1.91l-4-.8v12.98l4 .8zm1 12.98 4-.8V1.11l-4 .8zm-6-.8V1.11l-4 .8v12.98z" />
-                </svg>
-              </div>
-              <h4 class="card-title">지도 보기</h4>
-              <p class="card-text text-muted">날짜는 정했는데 장소는 못정하셨나요?</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   
-
-
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-9CJ1EX0RKW"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
-
-    gtag('config', 'G-9CJ1EX0RKW');
-  </script>
-
-  <script>
-    
-    function loadExchangeRate() {
-      firebase.functions().httpsCallable('loadExchangeRate')().then((result) => { 
-        console.log("환율을 DB에 저장했습니다.")
-        console.log(result);
-      }).catch((error) => {
-        console.log("환율을 저장하지 못했습니다. : " + error)
-      });
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-      // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-      // // The Firebase SDK is initialized and available here!
-      //
-      // firebase.auth().onAuthStateChanged(user => { });
-      // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-      // firebase.firestore().doc('/foo/bar').get().then(() => { });
-      firebase.functions().httpsCallable('getExchangeRate')().then((result) => { 
-        console.log("환율");
-        console.log(result);
-      }).catch((error) => {
-        console.log(error)
-      });
+  <div id="loading" class="position-fixed w-100 h-100 text-center" style="z-index:10; display: flex;">
+    <div style="margin: auto;">
+      <div class="container spinner-border" role="status">
+      </div>
+    </div>
+  </div>
+  <!-- 로고, 검색창 -->
+  <header class="top d-flex justify-content-between align-items-center border-bottom px-4 py-3">
+    <div class="logo">
+      <img src="img/peak and free.png">
+    </div>
+    <div class="search-bar d-flex align-items-center gap-2">
+      <input type="text" placeholder="장어 덮밥이 맛있는 일본 나고야" class="form-control rounded-pill border-2"
+        style="width: 260px;">
+      <button class="search-btn btn p-1">
+        <img src="img/search.png" alt="검색">
+      </button>
+      <button id="mypage-btn" class="mypage-btn btn p-1" type="button">
+        <img src="img/account_circle.png" alt="마이페이지">
+      </button>
+    </div>
+  </header>
+  <section class="main-section">
+    <div class="carousel-wrapper">
+      <div id="mainCarousel" class="carousel slide md-5" data-bs-ride="carousel">
 
 
 
-      firebase.functions().httpsCallable('getInformationOfCountry')().then((result) => { 
-        displaySafetyNotices(result.data.response.body);
-      }).catch((error) => {
-        console.log("ERROR!")
-        console.log(error)
-      });
-      // firebase.messaging().requestPermission().then(() => { });
-      // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-      firebase.analytics(); // call to activate
-      //   firebase.analytics().logEvent('tutorial_completed');
-      // firebase.performance(); // call to activate
-      //
-      // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+        <!-- 이미지 -->
+        <div class="carousel-inner rounded">
+          <div class="carousel-item active px-5">
+            <img src="img/epic_x.png" class="d-block w-100" style="object-fit: cover;">
+          </div>
+          <div class="carousel-item px-5">
+            <img src="img/Rectangle 25.png" class="d-block w-100" style="object-fit: cover;">
+          </div>
+          <div class="carousel-item px-5">
+            <img src="img/Rectangle 25.png" class="d-block w-100" style="object-fit: cover;">
+          </div>
+          <div class="carousel-item px-5">
+            <img src="img/Rectangle 25.png" class="d-block w-100" style="object-fit: cover;">
+          </div>
+          <div class="carousel-item px-5">
+            <img src="img/Rectangle 25.png" class="d-block w-100" style="object-fit: cover;">
+          </div>
+        </div>
 
-      try {
-        let app = firebase.app();
-        let features = [
-          'auth',
-          'database',
-          'firestore',
-          'functions',
-          'messaging',
-          'storage',
-          'analytics',
-          'remoteConfig',
-          'performance',
-        ].filter(feature => typeof app[feature] === 'function');
-      } catch (e) {
-        console.error(e);
-      }
+        <button class="carousel-control-prev" type="button" data-bs-target="#mainCarousel" data-bs-slide="prev">
+          <span class="carousel-control-prev-icon"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#mainCarousel" data-bs-slide="next">
+          <span class="carousel-control-next-icon"></span>
+        </button>
+      </div>
+      <div class="custom-indicators text-center mt-3">
+        <img src="img/btn_unselected.png" class="indicator-dot" data-index="0">
+        <img src="img/btn_unselected.png" class="indicator-dot" data-index="1">
+        <img src="img/btn_unselected.png" class="indicator-dot" data-index="2">
+        <img src="img/btn_unselected.png" class="indicator-dot" data-index="3">
+        <img src="img/btn_unselected.png" class="indicator-dot" data-index="4">
+      </div>
+    </div>
+
+  </section>
+  <!-- 선택 섹션 -->
+  <section class="select text-center">
+    <h1 class="fw-bold mb-2">여행을 얼마나 계획하셨나요?</h1>
+    <p class="additional-text text-muted mb-4">peak and free가 여행 준비를 도와드릴게요!</p>
+    <div class="btn-toggle-wrap">
+      <button id="btn-when" class="btn-toggle active">언제 떠날지 정했어요!</button>
+      <button id="btn-where" class="btn-toggle">어디로 떠날지 정했어요!</button>
+    </div>
+  </section>
+
+
+  <!--when-section-->
+
+  <section id="when-content" class="select-result" style="display: block;">
+    <!-- 언제 떠날지 정했어요! 선택 시 노출될 콘텐츠 -->
+    <section class="calendar-section">
+      <!-- 캘린더 추가 -->
+      <div class="container calendar-container">
+
+        <div class="month-navigation">
+          <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
+          <div class="w-100 d-flex justify-content-around">
+            <div class="month-title" id="monthTitle1">2025년 7월</div>
+            <div class="month-title" id="monthTitle2">2025년 8월</div>
+          </div>
+          <button class="nav-btn" onclick="changeMonth(1)">›</button>
+        </div>
+
+        <div class="row">
+          <div class="col-md-6">
+            <div class="calendar-grid" id="calendar1"></div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="calendar-grid" id="calendar2"></div>
+          </div>
+        </div>
+
+      </div>
+      <div id="calendar"></div>
+    </section>
+    <section class="recommendation-section">
+      <div class="slider-group">
+        <h4 class="title">예산에 맞는 여행날짜를 추천해드릴게요</h4>
+        <div class="budget-wrapper">
+          <span class="budget-label left">₩50,000 -</span>
+          <input type="range" min="50000" max="2000000" step="50000" value="1000000" class="slider"
+            id="budget-slider-when" />
+          <span class="budget-label right">₩2,000,000 +</span>
+        </div>
+        <div class="slider-value" id="slider-value-when">₩1,000,000</div>
+      </div>
+    </section>
+    <section class="map-section">
+      <div class="map-background">
+
+        <!-- 검색 바 -->
+        <div class="map-search d-flex justify-content-center align-items-center">
+          <input type="text" class="form-control search-input" placeholder="도시, 나라 또는 공항">
+        </div>
+
+        <div class="container text-center text-white">
+          <h4>🌎 <span id="startDate"></span> ~ <span id="endDate"></span>에 어디가 여유롭고 어디가 활기찰까요?</h4>
+          <h5>예산 ±<span id="budget">₩50,000</span> 범위에서 추천된 여행지예요.</h5>
+        </div>
+
+
+        <!-- 지도 들어갈 영역 -->
+        <div class="container map-container">
+          <div id="map" style="width: 100%; height:100vh;">
+            <div class="nearby-btn-group" style="position: absolute; z-index: 1;">
+              <button class="btn-budget">예산에 가까운 지역</button>
+              <button class="btn-nearby">나와 가까운 지역</button>
+            </div>
+          </div>
+
+
+        </div>
+        <div class="container-sm">
+          <div id="nearbyFlightList" class="mt-3 text-center">
+            
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </section>
+
+  <!--where-section-->
+  <section id="where-content" style="display: block;">
+    <section class="map-section">
+      <!-- 배경 박스 전체 -->
+      <div class="map-background">
+
+        <!-- 검색 바 -->
+        <div class="map-search d-flex justify-content-center align-items-center">
+          <input type="text" class="form-control search-input" placeholder="도시, 나라 또는 공항">
+
+        </div>
+
+        <!-- 지도 들어갈 영역 -->
+        <div class="container map-container">
+          <div id="map2" style="width: 100%; height:100vh;"></div>
+
+          <button class="nearby-btn">
+            <p class="text-">나와 가까운 지역</p>
+            <img src="img/btncloseplace.png">
+          </button>
+        </div>
+      </div>
+    </section>
+    <section class="recommendation-section">
+      <div class="slider-group">
+        <h4 class="title">예산에 맞는 여행날짜를 추천해드릴게요</h4>
+        <div class="budget-wrapper">
+          <span class="budget-label left">₩50,000 -</span>
+          <input type="range" min="50000" max="2000000" step="50000" value="1000000" class="slider"
+            id="budget-slider-where" />
+          <span class="budget-label right">₩2,000,000 +</span>
+        </div>
+        <div class="slider-value" id="slider-value-where">₩1,000,000</div>
+      </div>
+    </section>
+    <section class="calendar-section">
+      <div class="title-calendar">
+        <h2>도쿄, 활기찬 시기와 여유로운 시기 중 언제가 좋을까요?</h2>
+        <p class="desc">예산 ±₩50,000 범위에서 추천된 여행날짜예요.</p>
+      </div>
+      <!-- 캘린더 추가 -->
+      <div class="container calendar-container">
+
+      </div>
+      <div id="calendar"></div>
+    </section>
+
+
+  </section>
+  <section class="final-reservation">
+    <div class="reservation-background"></div>
+    <div class="reservation-content" style="z-index: 1;">
+      <h1 class="final-title">peak and free와 함께 만든 이번 여행이에요</h1>
+      <button class="btn-creatmytrip">
+        <img src="img/btn_background.png">
+      </button>
+      <button class="btn-skyscanner">
+        <img src="img/btn_background.png">
+      </button>
+
+      <!--해외 안전 정보-->
+      <div class="container-sm">
+        <div class="content mt-3 mb-3">
+          <h4>해외 안전 소식도 알아가세요 ⛑️</h4>
+          <div id="countryalert" class="row justify-content-between">
+            
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</body>
+
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-9CJ1EX0RKW"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  gtag('config', 'G-9CJ1EX0RKW');
+</script>
+
+<script>
+
+  document.addEventListener('DOMContentLoaded', function () {
+    // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+    // // The Firebase SDK is initialized and available here!
+    //
+    // firebase.auth().onAuthStateChanged(user => { });
+    // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
+    // firebase.firestore().doc('/foo/bar').get().then(() => { });
+    firebase.functions().httpsCallable('heejinTest')().then((result) => {
+      console.log("heejinTest");
+      console.log(result);
+    }).catch((error) => {
+      console.log("heejinTest");
+      console.log("ERROR!")
+      console.log(error)
     });
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
-    crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
-    integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
-    crossorigin="anonymous"></script>
-  <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.min.js" integrity="sha384-RuyvpeZCxMJCqVUGFI0Do1mQrods/hhxYlcVfGPOfQtPJh0JCw12tUAZ/Mv10S7D" crossorigin="anonymous"></script> -->
+
+    firebase.functions().httpsCallable('openpage')().then((result) => {
+      console.log("openpage");
+      console.log(result);
+    }).catch((error) => {
+      console.log("openpage");
+      console.log("ERROR!")
+      console.log(error)
+    });
+
+    firebase.functions().httpsCallable('openpagetoo')().then((result) => {
+      console.log("openpagetoo");
+      console.log(result);
+    }).catch((error) => {
+      console.log("openpagetoo");
+      console.log("ERROR!")
+      console.log(error)
+    });
+
+
+    firebase.functions().httpsCallable('getInformationOfCountry')().then((result) => {
+      console.log("해외안전정보")
+      displaySafetyNotices(result.data.response.body);
+    }).catch((error) => {
+      console.log("ERROR!")
+      console.log(error)
+    });
+    // firebase.messaging().requestPermission().then(() => { });
+    // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
+    firebase.analytics(); // call to activate
+    //   firebase.analytics().logEvent('tutorial_completed');
+    // firebase.performance(); // call to activate
+    //
+    // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+
+    try {
+      let app = firebase.app();
+      let features = [
+        'auth',
+        'database',
+        'firestore',
+        'functions',
+        'messaging',
+        'storage',
+        'analytics',
+        'remoteConfig',
+        'performance',
+      ].filter(feature => typeof app[feature] === 'function');
+    } catch (e) {
+      console.error(e);
+    }
+  });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+  integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.min.js" integrity="sha384-RuyvpeZCxMJCqVUGFI0Do1mQrods/hhxYlcVfGPOfQtPJh0JCw12tUAZ/Mv10S7D" crossorigin="anonymous"></script> -->
 </body>
 
 </html>
