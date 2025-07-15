@@ -8,13 +8,14 @@
  */
 
 const { onRequest, onCall } = require("firebase-functions/v2/https");
-const logger = require("firebase-functions/logger");
-const sendRequest = require("request-promise-native"); // deprecated
-
 
 const https = require('https');
+const querystring = require('querystring');
 const agent = new https.Agent({keepAlive: true});
 require("dotenv").config();
+
+const logger = require("firebase-functions/logger");
+const sendRequest = require("request-promise-native"); // deprecated
 
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
@@ -26,13 +27,18 @@ const app = initializeApp();
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
 
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 exports.helloWorld = onRequest((request, response) => {
   logger.info("Hello logs!", {structuredData: true});
   response.send("Hello from Firebase!");
 });
 
 
-exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app", "http://localhost:5002"]}, (request) => {
+require("dotenv").config();
+exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app"]}, (request) => {
   
   // open api 쓸때
   const options = {
@@ -60,9 +66,6 @@ exports.getWeather = onCall({
   const db = getFirestore(app, 'peekandfree')
   
   const snapshot = await db.collection('weather').get();
-
-  const snapshot = await db.collection('exchangerate').get();
-
 
   const weathers = [];
     snapshot.forEach(doc => {
@@ -140,24 +143,12 @@ try {
       temp: items.temp,
       wind: items.wind
     }];
-
-
-
-  });
-  
-  const db = getFirestore(app, 'peekandfree');
-  const batch = db.batch();
-
-  for(const item of apiData.StatisticSearch.row) {
-        const docRef = db.collection("exchangerate").doc(item.ITEM_NAME1.split("/")[1].split('(')[0]);
-        batch.set(docRef, {id:item.ITEM_NAME1, value: item.DATA_VALUE})
-   
   }
-} catch (e) {
-  filtered = [];
-  console.log("에러" + e) 
-}
 
+  } catch (e) {
+    filtered = [];
+    console.log("에러" + e) 
+  }
 
 const db = getFirestore(app, 'peekandfree');
 const chunkSize = 500;
@@ -181,12 +172,5 @@ for (let i = 0; i < filtered.length; i += chunkSize) {
     count: filtered.length,
     data: filtered
   };
-
-});
-
-  return {
-      success: true,
-      data: apiData
-  }
 
 });
