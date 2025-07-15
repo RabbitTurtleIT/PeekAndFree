@@ -39,7 +39,6 @@ exports.helloWorld = onRequest((request, response) => {
   response.send("Hello from Firebase!");
 });
 
-
 require("dotenv").config();
 exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app"]}, async (request) => { 
   const apiData = await new Promise((resolve, reject) => {
