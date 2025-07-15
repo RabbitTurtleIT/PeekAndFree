@@ -15,7 +15,6 @@ const agent = new https.Agent({keepAlive: true});
 require("dotenv").config();
 
 const logger = require("firebase-functions/logger");
-const sendRequest = require("request-promise-native"); // deprecated
 
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
