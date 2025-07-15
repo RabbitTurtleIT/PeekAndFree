@@ -21,11 +21,7 @@ jobs:
           echo AMADEUS_KEY=${{ secrets.AMADEUS_KEY }} >> .env
           echo AMADEUS_SECRET=${{ secrets.AMADEUS_SECRET }} >> .env
           cat .env
-
-      - name: Install dependencies
-        run: |
-          npm install dotenv
-
+          
       - uses: jsryudev/deploy-firebase-functions@v20.0.1
         env:
           FIREBASE_TOKEN: "${{ secrets.FIREBASE_CI }}"
