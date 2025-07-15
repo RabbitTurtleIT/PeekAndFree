@@ -343,7 +343,7 @@ async function requestTestAccessKey() {
 exports.getExchangeRate = onCall({
   cors: ["https://peekandfree.web.app"]
 }, async (data, context) => {
-  const db = admin.firestore();
+  const db = getFirestore(app, 'peekandfree');
   const snapshot = await db.collection('exchangerate').get();
 
   const exchangeRates = [];
@@ -412,7 +412,7 @@ exports.loadExchangeRate = onCall({
 
   });
   
-  const db = admin.firestore();
+  const db = getFirestore(app, 'peekandfree');
   const batch = db.batch();
 
     for(const item of apiData.StatisticSearch.row) {
