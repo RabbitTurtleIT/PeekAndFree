@@ -7,7 +7,7 @@ $(document).ready(function () {
         container: 'map', // container ID
         style: 'mapbox://styles/chlwhdtn03/cmags3pq200s601rf85pfep41',
         center: [127, 37.5], // starting position [lng, lat]. Note that lat must be set between -90 and 90
-        zoom: 9 // starting zoom
+        zoom: 3 // starting zoom
     });
 
     // async function initMap() {
@@ -17,7 +17,7 @@ $(document).ready(function () {
     // initMap();
 
 
-    // $.get("airport.csv", function(CSVdata) {
+    // $.get("/airport.csv", function(CSVdata) {
     //     Papa.parse(CSVdata, {
     //         header: true,
     //         skipEmptyLines: true,
@@ -25,7 +25,7 @@ $(document).ready(function () {
     //             console.error('파싱 오류:', error);
     //         },
     //         complete: function(results) {
-    //             airports = removeDuplicateCities(results.data);
+    //             airports = results.data;
     //             console.log("공항 정보를 불러왔습니다.")
     //         }
     //     });
@@ -111,7 +111,6 @@ $(document).ready(function () {
         });
 
 
-
     });
 
 
@@ -148,7 +147,9 @@ $(document).ready(function () {
                 `
                     <p><span style="font-size:16px">${airport_kor}</span><br>
                     ${airport_eng}<br>${nation_kor} ${iata}</p>
-                    <a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class='btn btn-info' onclick="browse('${iata}', '${nation_kor}', '${e.features[0].geometry.coordinates}')">여행지 상세보기</a>
+                    <a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class='btn btn-info d-block' onclick="appendFlightCard('${iata}', '${nation_kor}', '${airport_kor}', '${e.features[0].geometry.coordinates}')">최저가 확인하기</a>
+                    <a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class='btn btn-info d-block mt-1' onclick="browse('${iata}', '${nation_kor}', '${e.features[0].geometry.coordinates}')">주변 리뷰 확인하기</a>
+                    
                     `
             )
             .setMaxWidth("500px")
@@ -161,6 +162,7 @@ $(document).ready(function () {
 
         })
     }
+
 
 })
 async function browse(iata, nation_kor, coordinates) {
@@ -179,11 +181,11 @@ async function browse(iata, nation_kor, coordinates) {
         fields: ["displayName", "photos", "businessStatus", "reviews"],
         locationRestriction: {
             center: center,
-            radius: 5000,
+            radius: 30000,
         },
-        // optional parameters
-        includedPrimaryTypes: ["restaurant"],
-        maxResultCount: 3,
+        // optional parameters https://developers.google.com/maps/documentation/javascript/place-types?hl=ko&_gl=1*1w1np5t*_up*MQ..*_ga*MTM5MTUxNTEyMy4xNzUyNjUyODcy*_ga_NRWSTWS78N*czE3NTI2NTI4NzIkbzEkZzEkdDE3NTI2NTI4NzgkajU0JGwwJGgw#table-a
+        includedPrimaryTypes: ["cultural_landmark","historical_landmark", "beach", "event_venue", "hiking_area"],
+        maxResultCount: 10,
         rankPreference: SearchNearbyRankPreference.POPULARITY,
         language: "ko-kr",
         // region: "us",
@@ -195,7 +197,7 @@ async function browse(iata, nation_kor, coordinates) {
     if (places.length) {
 
         // Loop through and get all the results.
-        places.forEach((place) => {
+        places.forEach((place) => { 
             const $placeItem = $(`
                 <div class="place-item" style="display: flex; align-items: center; padding: 10px; margin: 5px 0; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
                     <img class="img-thumbnail" style="max-height: 200px; max-width: 200px;" src="${place.photos[Math.floor(Math.random() * place.photos.length)].getURI()}"/>
@@ -214,6 +216,7 @@ async function browse(iata, nation_kor, coordinates) {
             place.reviews.forEach((review) => {
                 const $reviewItem = $(`
                     <div class="review-item" style="padding: 15px; margin: 10px 0; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <p class="text-center">${place.displayName}에 대한 리뷰</p>
                         <div style="display: flex; align-items: center; margin-bottom: 10px;">
                         <img class="img m-1" style="max-height: 30px; max-width: 30px;" src="${review.authorAttribution.photoURI}"/>
                         

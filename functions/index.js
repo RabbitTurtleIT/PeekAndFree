@@ -33,6 +33,11 @@ exports.helloWorld = onRequest((request, response) => {
   response.send("Hello from Firebase!");
 });
 
+exports.getGoogleMapAPIKey = onCall({cors: ["https://peekandfree.web.app"]}, (context) => {
+  return process.env.GOOGLEMAP_API_KEY
+});
+
+
 exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app"]}, async (request) => { 
   const apiData = await new Promise((resolve, reject) => {
     const options = {
@@ -81,121 +86,121 @@ exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app"]}
 /////////////////////////////////////////////// 아래부터 수정
 
 
-// // 클라이언트 <- 서버(데이터베이스) 
-// exports.getWeather = onCall({
-//   cors: ["https://peekandfree.web.app", "http://localhost:5002"]
-// }, async (data, context) => {
-//   const db = getFirestore(app, 'peekandfree')
+// 클라이언트 <- 서버(데이터베이스) 
+exports.getWeather = onCall({
+  cors: ["https://peekandfree.web.app", "http://localhost:5002"]
+}, async (data, context) => {
+  const db = getFirestore(app, 'peekandfree')
   
-//   const snapshot = await db.collection('weather').get();
+  const snapshot = await db.collection('weather').get();
 
-//   const weathers = [];
-//     snapshot.forEach(doc => {
-//       weathers.push({
-//         id: doc.id,
-//         ...doc.data() // 스프레드 연산자.
-//         // id: doc.data().id // 마지막에 온 프로퍼티가 반영됨.
-//         // value: doc.data().value 
-//       });
-//   });
+  const weathers = [];
+    snapshot.forEach(doc => {
+      weathers.push({
+        id: doc.id,
+        ...doc.data() // 스프레드 연산자.
+        // id: doc.data().id // 마지막에 온 프로퍼티가 반영됨.
+        // value: doc.data().value 
+      });
+  });
 
-//   return weathers;
+  return weathers;
 
-// })
+})
 
-// // 서버(데이터베이스) <- API
-// exports.loadWeather = onCall({
-//   cors: ["https://peekandfree.web.app"]
-// }, async (data, context) => {
+// 서버(데이터베이스) <- API
+exports.loadWeather = onCall({
+  cors: ["https://peekandfree.web.app"]
+}, async (data, context) => {
 
-//   const apiData = await new Promise((resolve, reject) => {
-//     const options = {
-//       hostname: 'apis.data.go.kr',  
-//       port: 443,
-//       path: '/B551177/StatusOfPassengerWorldWeatherInfo/getPassengerArrivalsWorldWeather' +
-//             '?serviceKey=' + process.env.WEATHER_APIKEY +
-//             '&numOfRows=10000&pageNo=1&lang=K&type=json',
-//       method: 'GET',
-//       agent: agent
-//     };
+  const apiData = await new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'apis.data.go.kr',  
+      port: 443,
+      path: '/B551177/StatusOfPassengerWorldWeatherInfo/getPassengerArrivalsWorldWeather' +
+            '?serviceKey=' + process.env.WEATHER_APIKEY +
+            '&numOfRows=10000&pageNo=1&lang=K&type=json',
+      method: 'GET',
+      agent: agent
+    };
 
-//     const req = https.request(options, (res) => {
-//       let data = '';
-//       res.on('data', (chunk) => {
-//         data += chunk;
-//       });
-//       res.on('end', () => {
-//         try {
-//           const result = JSON.parse(data);
-//           console.log("API 결과 : ")
-//           console.log(result) 
-//           resolve(result);
-//         } catch (error) {
-//           reject(new Error('JSON 파싱 실패'));
-//         }
-//       });
-//     });
-//     req.on('error', (error) => {
-//       reject(error);
-//     });
-//     req.setTimeout(30000, () => {
-//       req.destroy();
-//       reject(new Error('요청 타임아웃'));
-//     });
-//     req.end();
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      res.on('end', () => {
+        try {
+          const result = JSON.parse(data);
+          console.log("API 결과 : ")
+          console.log(result) 
+          resolve(result);
+        } catch (error) {
+          reject(new Error('JSON 파싱 실패'));
+        }
+      });
+    });
+    req.on('error', (error) => {
+      reject(error);
+    });
+    req.setTimeout(30000, () => {
+      req.destroy();
+      reject(new Error('요청 타임아웃'));
+    });
+    req.end();
 
-//   }); 
+  }); 
 
-//     console.log(JSON.stringify(apiData, null, 2));
+    console.log(JSON.stringify(apiData, null, 2));
 
-//  let filtered = [];
-// try {
-//   const items = apiData.response.body.items;
-//   if (Array.isArray(items)) {
-//     filtered = items.map(item => ({
-//       airport: item.airport,
-//       himidity: item.himidity,
-//       temp: item.temp,
-//       wind: item.wind
-//     }));
-//   } else if (typeof items === 'object' && items !== null) {
-//     filtered = [{
-//       airport: items.airport,
-//       himidity: items.himidity,
-//       temp: items.temp,
-//       wind: items.wind
-//     }];
-//   }
+ let filtered = [];
+try {
+  const items = apiData.response.body.items;
+  if (Array.isArray(items)) {
+    filtered = items.map(item => ({
+      airport: item.airport,
+      himidity: item.himidity,
+      temp: item.temp,
+      wind: item.wind
+    }));
+  } else if (typeof items === 'object' && items !== null) {
+    filtered = [{
+      airport: items.airport,
+      himidity: items.himidity,
+      temp: items.temp,
+      wind: items.wind
+    }];
+  }
 
-//   } catch (e) {
-//     filtered = [];
-//     console.log("에러" + e) 
-//   }
+  } catch (e) {
+    filtered = [];
+    console.log("에러" + e) 
+  }
 
-// const db = getFirestore(app, 'peekandfree');
-// const chunkSize = 500;
+const db = getFirestore(app, 'peekandfree');
+const chunkSize = 500;
 
-// for (let i = 0; i < filtered.length; i += chunkSize) {
-//   const batch = db.batch();
-//   const chunk = filtered.slice(i, i + chunkSize);
+for (let i = 0; i < filtered.length; i += chunkSize) {
+  const batch = db.batch();
+  const chunk = filtered.slice(i, i + chunkSize);
 
-//   chunk.forEach(item => {
-//     const safeId = item.airport.replace(/\//g, '-');
-//     const docRef = db.collection('weather').doc(safeId);
-//     batch.set(docRef, item);
-//   });
+  chunk.forEach(item => {
+    const safeId = item.airport.replace(/\//g, '-');
+    const docRef = db.collection('weather').doc(safeId);
+    batch.set(docRef, item);
+  });
 
-//   await batch.commit();
-// }
+  await batch.commit();
+}
 
 
-//   return {
-//     success: true,
-//     count: filtered.length,
-//     data: filtered
-//   };
+  return {
+    success: true,
+    count: filtered.length,
+    data: filtered
+  };
 
-// });
+});
 
 
 
@@ -203,26 +208,32 @@ exports.fetchFlightNearby = onCall({cors: ["https://peekandfree.web.app"]}, asyn
   const { startDate, endDate, maxBudget } = data.data;
   let accessKey = await requestTestAccessKey()
   accessKey = accessKey.access_token
-  await delay(500); // 0.5초 대기
+  let result = []
+  await delay(300); // 0.3초 대기
   console.log("일본 불러오기")
   let tokyo = await requestFlightOffer(accessKey, 'ICN', 'NRT', startDate, endDate, maxBudget)
-  await delay(500); // 0.5초 대기
+  result.push(tokyo)
+  await delay(300); 
   let yokohama = await requestFlightOffer(accessKey, 'ICN', 'HND', startDate, endDate, maxBudget)
-  await delay(500); // 0.5초 대기
+  result.push(yokohama)
+  await delay(300);
   let nagoya = await requestFlightOffer(accessKey, 'ICN', 'NGO', startDate, endDate, maxBudget)
-  await delay(500); 
+  result.push(nagoya)
+  await delay(300); 
   let shanghai = await requestFlightOffer(accessKey, 'ICN', 'SHA', startDate, endDate, maxBudget)
-  await delay(500); 
+  result.push(shanghai)
+  await delay(300); 
   let hongkong = await requestFlightOffer(accessKey, 'ICN', 'HKG', startDate, endDate, maxBudget)
-  await delay(500); 
+  result.push(hongkong)
+  return result
 
-  return {
-    tokyo: tokyo, 
-    yokohama: yokohama, 
-    nagoya: nagoya, 
-    shanghai: shanghai, 
-    hongkong: hongkong
-  }
+})
+
+exports.fetchFlight = onCall({cors: ["https://peekandfree.web.app"]}, async (data, request) => { 
+  const { startDate, endDate, maxBudget, iata } = data.data;
+  let accessKey = await requestTestAccessKey()
+  accessKey = accessKey.access_token
+  return await requestFlightOffer(accessKey, 'ICN', iata, startDate, endDate, maxBudget)
 
 })
 
