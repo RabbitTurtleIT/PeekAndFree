@@ -37,7 +37,6 @@ exports.getGoogleMapAPIKey = onCall({cors: ["https://peekandfree.web.app"]}, (co
   return process.env.GOOGLEMAP_API_KEY
 });
 
-
 exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app"]}, async (request) => { 
   const apiData = await new Promise((resolve, reject) => {
     const options = {
