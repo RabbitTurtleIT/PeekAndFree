@@ -147,7 +147,7 @@ $(document).ready(function () {
                 `
                     <p><span style="font-size:16px">${airport_kor}</span><br>
                     ${airport_eng}<br>${nation_kor} ${iata}</p>
-                    <a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class='btn btn-info d-block' onclick="appendFlightCard('${iata}', '${nation_kor}', '${airport_kor}', '${e.features[0].geometry.coordinates}')">최저가 확인하기</a>
+                    <a style="width:100%" class='btn btn-info d-block' onclick="appendFlightCard('${iata}', '${nation_kor}', '${airport_kor}', '${e.features[0].geometry.coordinates}')">최저가 확인하기</a>
                     <a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class='btn btn-info d-block mt-1' onclick="browse('${iata}', '${nation_kor}', '${e.features[0].geometry.coordinates}')">주변 리뷰 확인하기</a>
                     
                     `
