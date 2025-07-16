@@ -1,29 +1,26 @@
-let nowMaxBudget = 0
-let startTripDate = ''
-let endTripDate = ''
-let isDateReady = false
+let nowMaxBudget = 0;
+let startTripDate = '';
+let endTripDate = '';
+let isDateReady = false;
 let isFetchingFlightNearby = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     const btnWhen = document.getElementById('btn-when');
-    const btnWhere = $('#btn-where')[0]; // document.getElementById('btn-where');
+    const btnWhere = document.getElementById('btn-where');
     const btnMypage = document.getElementById('mypage-btn');
     const carousel = document.getElementById('mainCarousel');
-    const indicators = $(".indicator-dot") // document.querySelectorAll('.indicator-dot');
+    const indicators = $('.indicator-dot');
     const whenContent = document.getElementById('when-content');
     const whereContent = document.getElementById('where-content');
+    $(".final-reservation").hide()
 
 
     const selectedImg = 'img/btn_selected.png';
     const unselectedImg = 'img/btn_unselected.png';
 
     function updateIndicators(activeIndex) {
-        //   indicators.forEach((dot, idx) => {
-        //     dot.src = (idx === activeIndex) ? selectedImg : unselectedImg;
-        //   });
-
-        indicators.attr("src", unselectedImg)
-        indicators[activeIndex].src = selectedImg
+        indicators.attr('src', unselectedImg);
+        indicators[activeIndex].src = selectedImg;
     }
 
     function activateButton(activeBtn, inactiveBtn) {
@@ -35,20 +32,27 @@ document.addEventListener('DOMContentLoaded', () => {
         if (type === 'when') {
             whenContent.style.display = 'block';
             whereContent.style.display = 'none';
-            if (isScroll)
+            if (isScroll) {
+                $("div#map").appendTo('div#when-mapdiv')
+                $(".calendar-container").appendTo('section#when-calsec')
                 whenContent.scrollIntoView({ behavior: 'smooth' });
+            }
         } else {
             whenContent.style.display = 'none';
             whereContent.style.display = 'block';
-            if (isScroll)
+            // jQuery("#map").detach().append('#where-content.map-section')
+            if (isScroll) {
+                $("div#map").appendTo('div#where-mapdiv')
+                $(".calendar-container").appendTo('section#where-calsec')
                 whereContent.scrollIntoView({ behavior: 'smooth' });
+            }
         }
     }
 
     updateIndicators(0);
-    showContent('when', false)
-    initCalendar()
-    // 슬라이드 변경될 때 인디케이터 갱신
+    showContent('when', false);
+    initCalendar();
+    
     carousel.addEventListener('slide.bs.carousel', function (e) {
         updateIndicators(e.to);
     });
@@ -62,18 +66,13 @@ document.addEventListener('DOMContentLoaded', () => {
     btnWhere.addEventListener('click', () => {
         activateButton(btnWhere, btnWhen);
         showContent('where', true);
-        selectResult.style.display = 'block';
-        window.scrollTo({ top: selectResult.offsetTop, behavior: 'smooth' });
     });
 
     btnMypage.addEventListener('click', () => {
         window.location.href = 'mypage.html';
     });
 
-    // btnNearby.addEventListener('click', () => {
-
-    // });    
-    function selestBtn(selectedBtn, unselectedBtn) {
+    function selectBtn(selectedBtn, unselectedBtn) {
         selectedBtn.classList.add('selected');
         unselectedBtn.classList.remove('selected');
     }
@@ -87,8 +86,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const percent = ((value - min) / (max - min));
 
             valueDisplay.textContent = `₩${Number(value).toLocaleString('ko-KR')}`;
-            $("#budget").text(Number(value).toLocaleString('ko-KR'))
-            nowMaxBudget = Number(value)
+            $('#budget').text(Number(value).toLocaleString('ko-KR'));
+            nowMaxBudget = Number(value);
 
             const sliderWidth = slider.offsetWidth;
             const offset = percent * sliderWidth;
@@ -97,22 +96,21 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         updateSliderUI(slider.value);
-        
 
         slider.addEventListener('input', (e) => {
             updateSliderUI(e.target.value);
         });
 
         slider.addEventListener('mouseup', (e) => {
-            if(isDateReady) {
-                fetchFlightDataNearby(startTripDate, endTripDate, e.target.value)
+            if (isDateReady) {
+                fetchFlightDataNearby(startTripDate, endTripDate, e.target.value);
             }
-        })
+        });
     }
 
-    setupSlider("budget-slider-when", "slider-value-when");
-    setupSlider("budget-slider-where", "slider-value-where");
-    hideLoading()
+    setupSlider('budget-slider-when', 'slider-value-when');
+    setupSlider('budget-slider-where', 'slider-value-where');
+    hideLoading();
 });
 
 
@@ -237,28 +235,27 @@ function selectDate(date) {
 }
 
 function updateSelectedRangeDisplay() {
-    const startDateElement = document.getElementById('startDate');
-    const endDateElement = document.getElementById('endDate');
+    const startDateElement = $('span#startDate');
+    const endDateElement = $('span#endDate');
 
     if (selectedStartDate) {
-        startDateElement.textContent = formatDate(selectedStartDate);
-        startTripDate = formatDateWithYear(selectedStartDate)
+        startDateElement.text(formatDate(selectedStartDate));
+        startTripDate = formatDateWithYear(selectedStartDate);
     } else {
         startDateElement.textContent = '선택되지 않음';
     }
 
     if (selectedEndDate) {
-        endDateElement.textContent = formatDate(selectedEndDate);
-        endTripDate = formatDateWithYear(selectedEndDate)
+        endDateElement.text(formatDate(selectedEndDate));
+        endTripDate = formatDateWithYear(selectedEndDate);
     } else {
         endDateElement.textContent = '선택되지 않음';
     }
 
-    if(selectedStartDate && selectedEndDate) {
-        isDateReady = true
+    if (selectedStartDate && selectedEndDate) {
+        isDateReady = true;
     } else {
-        isDateReady = false
-
+        isDateReady = false;
     }
 }
 
@@ -271,39 +268,88 @@ function formatDateWithYear(date) {
 }
 
 async function fetchFlightDataNearby(startDate, endDate, maxBudget) {
-    if(!isFetchingFlightNearby) {
-        showLoading()
-        isFetchingFlightNearby = true
+    if (!isFetchingFlightNearby) {
+        showLoading();
+        isFetchingFlightNearby = true;
         const result = await firebase.functions().httpsCallable('fetchFlightNearby')({
-            startDate: startDate ,endDate: endDate,maxBudget: maxBudget
+            startDate: startDate,
+            endDate: endDate,
+            maxBudget: maxBudget
+        });
+
+        refreshFlightCard(result);
+        isFetchingFlightNearby = false;
+        hideLoading();
+        $(".whereFetchDone")[0].scrollIntoView();
+    }
+}
+function refreshFlightCard(result) {
+    console.log(result);
+    $('#nearbyFlightList').empty();
+
+    for(let item of result.data) {
+        try {
+            let price = item.data[0].price.total
+            let arrivalIata = item.data[0].itineraries[0].segments[0].arrival.iataCode
+            let time = item.data[0].itineraries[0].duration
+            time = time.replaceAll("PT", "").replaceAll("H", "시간 ").replaceAll("M","분")
+            let loc = item.dictionaries.locations[arrivalIata]
+            $('#nearbyFlightList').append(FlightCard(loc.countryCode + " " + loc.cityCode + " (" + arrivalIata + ")", price, time, item))
+        } catch(e) {
+            console.log(e)
+            continue
+        }
+    }
+}
+
+async function appendFlightCard(IATA, korName, airportKor, coord) {
+    if (!isFetchingFlightNearby && startTripDate && endTripDate) {
+        showLoading();
+        isFetchingFlightNearby = true;
+        console.log(startTripDate)
+        console.log(endTripDate)
+        try {
+            const result = await firebase.functions().httpsCallable('fetchFlight')({
+                startDate: startTripDate,
+                endDate: endTripDate,
+                maxBudget: nowMaxBudget,
+                iata: IATA
+            });
+            console.log(result)
+            let price = result.data.data[0].price.total
+            let arrivalIata = result.data.data[0].itineraries[0].segments[0].arrival.iataCode
+            let time = result.data.data[0].itineraries[0].duration
+            time = time.replaceAll("PT", "").replaceAll("H", "시간 ").replaceAll("M","분")
+            $('#nearbyFlightList').append(FlightCard(korName + " " + airportKor + " (" + arrivalIata + ")", price, time, result.data))
+        } catch(e) {
+            alert("조건에 맞는 항공권을 찾지 못했어요.")
+        }
+        hideLoading();
+        isFetchingFlightNearby = false;
+    }
+}
+
+function FlightCard(locName, price, time, data) {
+        let seatClass = data.data[0].travelerPricings[0].fareDetailsBySegment[0].cabin
+        let peopleNum = "성인 " + data.data[0].travelerPricings.length + "명"
+        let card = $(`<div class="rounded-pill bg-white p-1 mt-1">
+                    <span style='text-size=16px'>${locName} <strong>${Number(price).toLocaleString('ko-KR')}원</strong> | ✈️ 약 ${time} 소요 🌡️ 평균기온</span>
+                </div>`);
+                
+
+        card.on("click", function() {
+            $(".final-reservation").show()
+            $(".final-reservation")[0].scrollIntoView();
+            viewTrip(locName, peopleNum, seatClass)
         })
 
-        refreshFlightCard(result)
-        isFetchingFlightNearby = false
-        hideLoading()
-    }
-}
-  //   "price": apiData.data[0].price.total,
-  //   "time": apiData.data[0].itineraries[0].duration 
-function refreshFlightCard(result) {
-    console.log(result)
-    $('#nearbyFlightList').empty()
-    $('#nearbyFlightList').append(FlightCard("일본 도쿄", result.data.tokyo))
-    $('#nearbyFlightList').append(FlightCard("일본 요코하마", result.data.yokohama))
-    $('#nearbyFlightList').append(FlightCard("일본 나고야", result.data.nagoya))
-    $('#nearbyFlightList').append(FlightCard("중국 상하이", result.data.shanghai))
-    $('#nearbyFlightList').append(FlightCard("홍콩", result.data.hongkong))
-
-    
+    return card;
 }
 
-function FlightCard(locName, data) {
-    if(data.data[0]) {
-        return `<div class="rounded-pill bg-white p-2">
-                    ${locName} ${Number(data.data[0].price.total).toLocaleString('ko-KR')}원 (항공권 최저가) | ✈️ 약 ${data.data[0].itineraries[0].duration } 소요 🌡️ 평균기온 기온 
-                    </div><br>`
-    }
-    return ''
+function viewTrip(locName, peopleNum, seatClass) {
+    $("#viewLocationName").text(locName)
+    $("#viewCountPeople").text(peopleNum)
+    $("#viewSeatClass").text(seatClass)
 }
 
 function changeMonth(direction) {
@@ -319,7 +365,6 @@ function resetSelection() {
     renderCalendar();
 }
 
-// 선택된 날짜 범위를 가져오는 함수 (외부에서 사용 가능)
 function getSelectedRange() {
     return {
         startDate: selectedStartDate ? formatDate(selectedStartDate) : null,
@@ -330,8 +375,9 @@ function getSelectedRange() {
 
 
 function showLoading() {
-    $("#loading").show()
+    $('#loading').show();
 }
+
 function hideLoading() {
-    $("#loading").hide()
+    $('#loading').hide();
 }
