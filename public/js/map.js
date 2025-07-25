@@ -141,6 +141,13 @@ $(document).ready(function () {
         const nation_kor = e.features[0].properties.한글국가명;
         const nation_eng = e.features[0].properties.영문도시명;
         const iata = e.features[0].properties['공항코드1.IATA.']
+        $(".calendar-section").show()
+        setIATA({
+            korName: nation_kor,
+            airportKor: airport_kor,
+            iata: iata,
+            coord: coordinates
+        })
         new mapboxgl.Popup()
             .setLngLat(coordinates)
             .setHTML(

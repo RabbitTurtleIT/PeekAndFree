@@ -66,7 +66,7 @@
     </div>
   </header>
   <!-- Main Carousel Section -->
-  <section class="main-section">
+  <!-- <section class="main-section">
     <div class="carousel-wrapper">
       <div id="mainCarousel" class="carousel slide" data-bs-ride="carousel">
         <div class="carousel-inner rounded">
@@ -105,20 +105,42 @@
         <img src="img/btn_unselected.png" class="indicator-dot" data-index="4" alt="인디케이터 5">
       </div>
     </div>
-  </section>
+  </section> -->
   <!-- Travel Planning Section -->
-  <section class="select text-center">
+  <!-- <section class="select text-center">
     <h1 class="fw-bold mb-2">여행을 얼마나 계획하셨나요?</h1>
     <p class="additional-text text-muted mb-4">peak and free가 여행 준비를 도와드릴게요!</p>
     <div class="btn-toggle-wrap">
       <button id="btn-when" class="btn-toggle active">언제 떠날지 정했어요!</button>
       <button id="btn-where" class="btn-toggle">어디로 떠날지 정했어요!</button>
     </div>
-  </section>
+  </section> -->
 
 
   <!-- When Content Section -->
   <section id="when-content" class="select-result" style="display: block;">
+  
+    <section class="map-section">
+      <div class="map-background">
+        <div class="whereFetchDone"></div>
+        <div class="map-search d-flex justify-content-center align-items-center">
+          <input type="text" class="form-control search-input" placeholder="도시, 나라 또는 공항">
+        </div>
+        
+        <div class="container map-container" id="when-mapdiv">
+          <div id="map" style="width: 100%; height: 100vh;">
+            <div class="nearby-btn-group" style="position: absolute; z-index: 1;">
+              <button class="btn-budget">예산에 가까운 지역</button>
+              <button class="btn-nearby">나와 가까운 지역</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="container-sm">
+          <div id="nearbyFlightList" class="mt-3 pb-3 text-center"></div>
+        </div>
+      </div>
+    </section>
     <section class="calendar-section" id="when-calsec">
       <div class="container calendar-container">
         <div class="month-navigation">
@@ -141,75 +163,7 @@
       </div>
       <div id="calendar"></div>
     </section>
-    <section class="recommendation-section">
-      <div class="slider-group">
-        <h4 class="title">예산에 맞는 여행날짜를 추천해드릴게요</h4>
-        <div class="budget-wrapper">
-          <span class="budget-label left">₩50,000 -</span>
-          <input type="range" min="50000" max="2000000" step="50000" value="1000000" class="slider" id="budget-slider-when">
-          <span class="budget-label right">₩2,000,000 +</span>
-        </div>
-        <div class="slider-value" id="slider-value-when">₩1,000,000</div>
-      </div>
-    </section>
-    <section class="map-section">
-      <div class="map-background">
-        <div class="whereFetchDone"></div>
-        <div class="map-search d-flex justify-content-center align-items-center">
-          <input type="text" class="form-control search-input" placeholder="도시, 나라 또는 공항">
-        </div>
-        
-        <div class="container text-center text-white">
-          <h4>🌎 <span id="startDate"></span> ~ <span id="endDate"></span>에 어디가 여유롭고 어디가 활기찰까요?</h4>
-          <h5>예산 ±<span id="budget">₩50,000</span> 범위에서 추천된 여행지예요.</h5>
-        </div>
-        
-        <div class="container map-container" id="when-mapdiv">
-          <div id="map" style="width: 100%; height: 100vh;">
-            <div class="nearby-btn-group" style="position: absolute; z-index: 1;">
-              <button class="btn-budget">예산에 가까운 지역</button>
-              <button class="btn-nearby">나와 가까운 지역</button>
-            </div>
-          </div>
-        </div>
-        
-        <div class="container-sm">
-          <div id="nearbyFlightList" class="mt-3 pb-3 text-center"></div>
-        </div>
-      </div>
-    </section>
 
-  </section>
-
-  <!-- Where Content Section -->
-  <section id="where-content" style="display: block;">
-    <section class="map-section">
-      <div class="map-background">
-        <div class="map-search d-flex justify-content-center align-items-center">
-          <input type="text" class="form-control search-input" placeholder="도시, 나라 또는 공항">
-        </div>
-        
-        <div class="container map-container" id="where-mapdiv">
-        </div>
-      </div>
-    </section>
-    <section class="recommendation-section">
-      <div class="slider-group">
-        <h4 class="title">예산에 맞는 여행날짜를 추천해드릴게요</h4>
-        <div class="budget-wrapper">
-          <span class="budget-label left">₩50,000 -</span>
-          <input type="range" min="50000" max="2000000" step="50000" value="1000000" class="slider" id="budget-slider-where">
-          <span class="budget-label right">₩2,000,000 +</span>
-        </div>
-        <div class="slider-value" id="slider-value-where">₩1,000,000</div>
-      </div>
-    </section>
-    <section class="calendar-section" id="where-calsec">
-      <div class="title-calendar">
-        <h2>도쿄, 활기찬 시기와 여유로운 시기 중 언제가 좋을까요?</h2>
-        <p class="desc">예산 ±₩50,000 범위에서 추천된 여행날짜예요.</p>
-      </div>
-    </section>
   </section>
   <!-- Final Reservation Section -->
   <section class="final-reservation">
