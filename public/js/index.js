@@ -571,8 +571,10 @@ async function fetchIndividualPrices(dates, priceData) {
             
         } catch (e) {
             console.log(`날짜 ${dateStr} 조회 실패:`, e);
-            setPriceForDate(dateStr, '비행편 없음');
-            priceData[dateStr] = '비행편 없음';
+            console.log('API 호출 실패로 인해 추가 조회를 중단합니다.');
+            setPriceForDate(dateStr, '조회 실패');
+            priceData[dateStr] = '조회 실패';
+            break; // 실패 시 즉시 반복문 중단
         }
     }
 }
