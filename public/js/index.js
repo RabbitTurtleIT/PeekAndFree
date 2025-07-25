@@ -562,8 +562,10 @@ async function fetchIndividualPrices(dates, priceData) {
                 priceData[dateStr] = totalPrice;
             } else {
                 console.log(`비행편 없음: ${dateStr}`);
+                console.log('비행편이 없어서 추가 조회를 중단합니다.');
                 setPriceForDate(dateStr, '비행편 없음');
                 priceData[dateStr] = '비행편 없음';
+                break; // 비행편 없음 시 즉시 반복문 중단
             }
             
             // Firestore 캐싱으로 속도가 빨라졌으므로 지연 시간 단축
