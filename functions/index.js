@@ -42,6 +42,7 @@ exports.getGoogleMapAPIKey = onCall({cors: ["https://peekandfree.web.app", "http
 });
 
 exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, async (request) => { 
+});
 
 exports.getGoogleMapAPIKey = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, (context) => {
   return process.env.GOOGLEMAP_API_KEY
@@ -123,7 +124,7 @@ exports.loadWeather = onCall({
 
   cors: ["https://peekandfree.web.app", "https://peakandfree.com"]
 
-  cors: ["https://peakandfree.com", "https://peekandfree.web.app"]
+  ,cors: ["https://peakandfree.com", "https://peekandfree.web.app"]
 
 }, async (data, context) => {
 
@@ -293,7 +294,6 @@ exports.getServiceDestinationInfo = onCall({cors: ["https://peakandfree.com", "h
 
 // // })
 
-exports.fetchFlightForCalendar = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, async (data, request) => { 
 
 exports.fetchFlightForCalendar = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, async (data, request) => { 
 
@@ -413,9 +413,6 @@ exports.fetchFlightForCalendar = onCall({cors: ["https://peakandfree.com", "http
     };
   }
 })
-
-
-exports.fetchFlight = onCall({cors: ["https://peakandfree.web.app", "https://peakandfree.com"]}, async (data, request) => { 
 
 exports.fetchFlight = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, async (data, request) => { 
 
@@ -661,7 +658,7 @@ exports.getExchangeRate = onCall({
 
   cors: ["https://peakandfree.web.app", "https://peakandfree.com"]
 
-  cors: ["https://peakandfree.com", "https://peekandfree.web.app"]
+  ,cors: ["https://peakandfree.com", "https://peekandfree.web.app"]
 
 }, async (data, context) => {
   const db = getFirestore(app, 'peakandfree');
@@ -686,7 +683,7 @@ exports.loadExchangeRate = onCall({
 
   cors: ["https://peekandfree.web.app", "https://peakandfree.com"]
 
-  cors: ["https://peakandfree.com", "https://peekandfree.web.app"]
+,cors: ["https://peakandfree.com", "https://peekandfree.web.app"]
 
 }, async (data, context) => {
   
