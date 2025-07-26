@@ -271,11 +271,13 @@ $(document).ready(function () {
             layout: {
                 'text-field': ['get', '공항코드1.IATA.'],
                 'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-                'text-size': 15
+                'text-size': 15,
+                'text-allow-overlap': true,
+                'text-ignore-placement': true,
             },
             paint: {
                 'text-color': '#ffffff',
-                'text-halo-color': '#6db9ff',
+                'text-halo-color': '#4dda4a',
                 'text-halo-width': 10
             }
         });
