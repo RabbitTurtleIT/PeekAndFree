@@ -2,6 +2,8 @@ let airports = []
 
 $(document).ready(function () {
 
+    const layerIDs = []; // 공항 마커들의 위치를 담고있습니다.
+
     mapboxgl.accessToken = 'pk.eyJ1IjoiY2hsd2hkdG4wMyIsImEiOiJjanM4Y205N3MwMnI2NDRxZG55YnBucWJxIn0.TTN7N6WL69jnephZ7fJAnA';
     const map = new mapboxgl.Map({
         container: 'map', // container ID
@@ -38,7 +40,8 @@ $(document).ready(function () {
             data: 'Airport.geojson',
             cluster: true,
             clusterMaxZoom: 14, // Max zoom to cluster points on
-            clusterRadius: 50 // Radius of each cluster when clustering points (defaults to 50)
+            clusterRadius: 50, // Radius of each cluster when clustering points (defaults to 50)
+            filter: ['in', ['get', '공항코드1.IATA.'], ['literal', serviceAirportInIncheon || []]]
         });
 
         map.addLayer({
@@ -142,6 +145,9 @@ $(document).ready(function () {
         const nation_eng = e.features[0].properties.영문도시명;
         const iata = e.features[0].properties['공항코드1.IATA.']
         $(".calendar-section").show()
+        clearAllPrices()
+        if(selectedIATA == undefined)
+            $(".calendar-section")[0].scrollIntoView()
         setIATA({
             korName: nation_kor,
             airportKor: airport_kor,

@@ -252,6 +252,14 @@
         console.log("ERROR!", error);
       });
 
+      firebase.functions().httpsCallable('getServiceDestinationInfo')().then((result) => {
+        console.log("인청공항 취항지 정보");
+        serviceAirportInIncheon = result.data
+        console.log(serviceAirportInIncheon);
+      }).catch((error) => {
+        console.log("ERROR!", error);
+      });
+
       firebase.analytics();
 
       try {

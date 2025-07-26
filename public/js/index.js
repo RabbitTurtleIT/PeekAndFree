@@ -5,6 +5,8 @@ let isDateReady = false;
 let isFetchingFlightNearby = false;
 let selectedIATA = undefined;
 
+let serviceAirportInIncheon = undefined
+
 function setIATA(selected) {
     selectedIATA = selected
 }
@@ -254,10 +256,6 @@ function selectDate(date) {
         // 기존 캐시 삭제
         priceCache = {};
 
-        // 시작일 선택 시 해당 월의 가격 조회
-        if (selectedIATA) {
-            fetchMonthPrices(selectedStartDate);
-        }
     } else if (selectedStartDate && !selectedEndDate) {
         // 종료일 선택
         if (date.getTime() >= selectedStartDate.getTime()) {
@@ -265,6 +263,11 @@ function selectDate(date) {
         } else {
             selectedEndDate = new Date(selectedStartDate);
             selectedStartDate = new Date(date);
+        }
+
+        // 종요일 선택 시 그 범위의 추정 예산 표시
+        if (selectedIATA) {
+            fetchMonthPrices(selectedStartDate, selectedEndDate);
         }
         isSelectingRange = false;
     }
@@ -366,30 +369,36 @@ async function appendFlightCard(IATA, korName, airportKor, coord) {
         }
         hideLoading();
         isFetchingFlightNearby = false;
+    } else {
+        alert("캘린더에서 여행 날짜를 먼저 선택해주세요! 그런 다음, 여러 공항의 최저가를 확인하실 수 있습니다")
     }
 }
 
 function FlightCard(locName, price, time, data) {
+        let startDate = data.data[0].itineraries[0].segments[0].arrival.at.split("T")[0]
+        let endDate = data.data[0].itineraries[1].segments[0].arrival.at.split("T")[0]
         let seatClass = data.data[0].travelerPricings[0].fareDetailsBySegment[0].cabin
         let peopleNum = "성인 " + data.data[0].travelerPricings.length + "명"
         let card = $(`<div class="rounded-pill bg-white p-1 mt-1">
-                    <span style='text-size=16px'>${locName} <strong>${Number(price).toLocaleString('ko-KR')}원</strong> | ✈️ 약 ${time} 소요 🌡️ 평균기온</span>
+                    <span style='text-size=16px'>${locName} <strong>${Number(price).toLocaleString('ko-KR')}원</strong> | ${startDate}~${endDate} ✈️ 약 ${time} 소요 🌡️ 평균기온</span>
                 </div>`);
                 
 
         card.on("click", function() {
             $(".final-reservation").show()
             $(".final-reservation")[0].scrollIntoView();
-            viewTrip(locName, peopleNum, seatClass)
+            viewTrip(locName, peopleNum, seatClass, startDate, endDate)
         })
 
     return card;
 }
 
-function viewTrip(locName, peopleNum, seatClass) {
+function viewTrip(locName, peopleNum, seatClass, startDate, endDate) {
     $("#viewLocationName").text(locName)
     $("#viewCountPeople").text(peopleNum)
     $("#viewSeatClass").text(seatClass)
+    $("span#startDate").text(startDate)
+    $("span#endDate").text(endDate)
 }
 
 function changeMonth(direction) {
@@ -471,7 +480,7 @@ function restorePriceInfo(dayCell, dateString) {
     }
 }
 
-async function fetchMonthPrices(startDate) {
+async function fetchMonthPrices(startDate, endDate = null) {
     if (isFetchingPrices || !selectedIATA) return;
 
     isFetchingPrices = true;
@@ -488,19 +497,27 @@ async function fetchMonthPrices(startDate) {
     try {
         // 현재 날짜 기준으로 조회 가능한 최대 날짜 계산 (다음달 마지막날까지)
         const today = new Date();
-        const maxAllowedDate = new Date(today.getFullYear(), today.getMonth() + 2, 0); // 다음달 마지막날
+        // const maxAllowedDate = new Date(today.getFullYear(), today.getMonth() + 2, 0); // 다음달 마지막날
+        const maxAllowedDate = new Date(today.getFullYear(), today.getMonth()+1, today.getDate() + 2); // 2일치만
         
         const dates = [];
         const currentDateObj = new Date(startDate);
         
-        // 시작일부터 다음달 마지막날까지 모든 날짜 조회
-        while (currentDateObj <= maxAllowedDate) {
+        // 시작일부터 endDate(또는 maxAllowedDate 중 더 작은 값)까지 모든 날짜 조회
+        let finalDate = maxAllowedDate;
+        if (endDate) {
+            const endDateObj = new Date(endDate);
+            finalDate = endDateObj < maxAllowedDate ? endDateObj : maxAllowedDate;
+        }
+        
+        while (currentDateObj <= finalDate) {
             const dateStr = formatDateWithYear(new Date(currentDateObj));
             dates.push(dateStr);
             currentDateObj.setDate(currentDateObj.getDate() + 1);
         }
         
         console.log(`조회 가능 최대 날짜: ${formatDateWithYear(maxAllowedDate)}`);
+        console.log(`실제 조회 종료 날짜: ${formatDateWithYear(finalDate)}`);
         console.log(`실제 조회할 날짜들:`, dates);
         
         console.log('생성된 dates 배열:', dates);

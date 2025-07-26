@@ -36,11 +36,11 @@ exports.helloWorld = onRequest((request, response) => {
   response.send("Hello from Firebase!");
 });
 
-exports.getGoogleMapAPIKey = onCall({cors: ["https://peekandfree.web.app"]}, (context) => {
+exports.getGoogleMapAPIKey = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, (context) => {
   return process.env.GOOGLEMAP_API_KEY
 });
 
-exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app"]}, async (request) => { 
+exports.getInformationOfCountry = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, async (request) => { 
   const apiData = await new Promise((resolve, reject) => {
     const options = {
       hostname: 'apis.data.go.kr',
@@ -112,7 +112,7 @@ exports.getWeather = onCall({
 
 // 서버(데이터베이스) <- API
 exports.loadWeather = onCall({
-  cors: ["https://peekandfree.web.app"]
+  cors: ["https://peakandfree.com", "https://peekandfree.web.app"]
 }, async (data, context) => {
 
   const apiData = await new Promise((resolve, reject) => {
@@ -205,33 +205,57 @@ for (let i = 0; i < filtered.length; i += chunkSize) {
 });
 
 
+// 취항 정보
+exports.getServiceDestinationInfo = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, async (data, request) => {
+  const apiData = await new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'apis.data.go.kr',
+      port: 443,
+      path: `/B551177/StatusOfSrvDestinations/getServiceDestinationInfo?serviceKey=${process.env.COUNTRYINFO_APIKEY}&type=json`,
+      method: 'GET',
+      agent: agent
+    };
 
-// exports.fetchFlightNearby = onCall({cors: ["https://peekandfree.web.app"]}, async (data, request) => { 
-//   const { startDate, endDate, maxBudget } = data.data;
-//   let accessKey = await requestTestAccessKey()
-//   accessKey = accessKey.access_token
-//   let result = []
-//   await delay(300); // 0.3초 대기
-//   console.log("일본 불러오기")
-//   let tokyo = await requestFlightOffer(accessKey, 'ICN', 'NRT', startDate, endDate, maxBudget)
-//   result.push(tokyo)
-//   await delay(300); 
-//   let yokohama = await requestFlightOffer(accessKey, 'ICN', 'HND', startDate, endDate, maxBudget)
-//   result.push(yokohama)
-//   await delay(300);
-//   let nagoya = await requestFlightOffer(accessKey, 'ICN', 'NGO', startDate, endDate, maxBudget)
-//   result.push(nagoya)
-//   await delay(300); 
-//   let shanghai = await requestFlightOffer(accessKey, 'ICN', 'SHA', startDate, endDate, maxBudget)
-//   result.push(shanghai)
-//   await delay(300); 
-//   let hongkong = await requestFlightOffer(accessKey, 'ICN', 'HKG', startDate, endDate, maxBudget)
-//   result.push(hongkong)
-//   return result
+    const req = https.request(options, (res) => {
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          const result = JSON.parse(data);
+          resolve(result);
+        } catch (error) {
+          reject(new Error('JSON 파싱 실패'));
+        }
+      });
+    });
+    
+    req.on('error', (error) => {
+      console.error("요청 에러:", error);
+      reject(error);
+    });
+    
+    req.setTimeout(30000, () => {
+      req.destroy();
+        reject(new Error('요청 타임아웃'));
+    });
+    
+    req.end();
+  })
 
-// })
+  console.log(apiData)
+  result = []
+  for(let item of apiData.response.body.items) {
+    result.push(item.airportCode)
+  }
 
-exports.fetchFlightForCalendar = onCall({cors: ["https://peekandfree.web.app"]}, async (data, request) => { 
+  return result
+}) 
+
+exports.fetchFlightForCalendar = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, async (data, request) => { 
   const { startDate, endDate, iata } = data.data;
   
   // 날짜 범위 제한: 다음달 마지막날 초과 방지
@@ -349,7 +373,7 @@ exports.fetchFlightForCalendar = onCall({cors: ["https://peekandfree.web.app"]},
   }
 })
 
-exports.fetchFlight = onCall({cors: ["https://peekandfree.web.app"]}, async (data, request) => { 
+exports.fetchFlight = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, async (data, request) => { 
   const { iata, startDate, endDate } = data.data;
   let accessKey = await requestTestAccessKey()
   accessKey = accessKey.access_token
@@ -589,7 +613,7 @@ async function requestFlightCheapestDates(accessKey, startAirport, destAirport, 
 
 // 클라이언트 <- 서버(데이터베이스)
 exports.getExchangeRate = onCall({
-  cors: ["https://peekandfree.web.app"]
+  cors: ["https://peakandfree.com", "https://peekandfree.web.app"]
 }, async (data, context) => {
   const db = getFirestore(app, 'peekandfree');
   const snapshot = await db.collection('exchangerate').get();
@@ -610,7 +634,7 @@ exports.getExchangeRate = onCall({
 
 // 서버(데이터베이스) <- API
 exports.loadExchangeRate = onCall({
-  cors: ["https://peekandfree.web.app"]
+  cors: ["https://peakandfree.com", "https://peekandfree.web.app"]
 }, async (data, context) => {
   
   const apiData = await new Promise((resolve, reject) => {
