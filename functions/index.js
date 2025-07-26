@@ -31,16 +31,24 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-exports.helloWorld = onRequest((request, response) => {
-  logger.info("Hello logs!", {structuredData: true});
-  response.send("Hello from Firebase!");
+// exports.helloWorld = onRequest((request, response) => {
+//   logger.info("Hello logs!", {structuredData: true});
+//   response.send("Hello from Firebase!");
+// });
+
+
+exports.getGoogleMapAPIKey = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, (context) => {
+  return process.env.GOOGLEMAP_API_KEY
 });
+
+exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, async (request) => { 
 
 exports.getGoogleMapAPIKey = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, (context) => {
   return process.env.GOOGLEMAP_API_KEY
 });
 
 exports.getInformationOfCountry = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, async (request) => { 
+
   const apiData = await new Promise((resolve, reject) => {
     const options = {
       hostname: 'apis.data.go.kr',
@@ -85,12 +93,12 @@ exports.getInformationOfCountry = onCall({cors: ["https://peakandfree.com", "htt
   return apiData;
 
 })
-/////////////////////////////////////////////// 아래부터 수정
+// /////////////////////////////////////////////// 아래부터 수정
 
 
-// 클라이언트 <- 서버(데이터베이스) 
+// // 클라이언트 <- 서버(데이터베이스) 
 exports.getWeather = onCall({
-  cors: ["https://peekandfree.web.app", "http://localhost:5002"]
+  cors: ["https://peekandfree.web.app", "http://localhost:5002", "https://peakandfree.com"]
 }, async (data, context) => {
   const db = getFirestore(app, 'peekandfree')
   
@@ -110,9 +118,13 @@ exports.getWeather = onCall({
 
 })
 
-// 서버(데이터베이스) <- API
+// // 서버(데이터베이스) <- API
 exports.loadWeather = onCall({
+
+  cors: ["https://peekandfree.web.app", "https://peakandfree.com"]
+
   cors: ["https://peakandfree.com", "https://peekandfree.web.app"]
+
 }, async (data, context) => {
 
   const apiData = await new Promise((resolve, reject) => {
@@ -255,7 +267,36 @@ exports.getServiceDestinationInfo = onCall({cors: ["https://peakandfree.com", "h
   return result
 }) 
 
+
+// // exports.fetchFlightNearby = onCall({cors: ["https://peekandfree.web.app"]}, async (data, request) => { 
+// //   const { startDate, endDate, maxBudget } = data.data;
+// //   let accessKey = await requestTestAccessKey()
+// //   accessKey = accessKey.access_token
+// //   let result = []
+// //   await delay(300); // 0.3초 대기
+// //   console.log("일본 불러오기")
+// //   let tokyo = await requestFlightOffer(accessKey, 'ICN', 'NRT', startDate, endDate, maxBudget)
+// //   result.push(tokyo)
+// //   await delay(300); 
+// //   let yokohama = await requestFlightOffer(accessKey, 'ICN', 'HND', startDate, endDate, maxBudget)
+// //   result.push(yokohama)
+// //   await delay(300);
+// //   let nagoya = await requestFlightOffer(accessKey, 'ICN', 'NGO', startDate, endDate, maxBudget)
+// //   result.push(nagoya)
+// //   await delay(300); 
+// //   let shanghai = await requestFlightOffer(accessKey, 'ICN', 'SHA', startDate, endDate, maxBudget)
+// //   result.push(shanghai)
+// //   await delay(300); 
+// //   let hongkong = await requestFlightOffer(accessKey, 'ICN', 'HKG', startDate, endDate, maxBudget)
+// //   result.push(hongkong)
+// //   return result
+
+// // })
+
+exports.fetchFlightForCalendar = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, async (data, request) => { 
+
 exports.fetchFlightForCalendar = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, async (data, request) => { 
+
   const { startDate, endDate, iata } = data.data;
   
   // 날짜 범위 제한: 다음달 마지막날 초과 방지
@@ -373,7 +414,11 @@ exports.fetchFlightForCalendar = onCall({cors: ["https://peakandfree.com", "http
   }
 })
 
+
+exports.fetchFlight = onCall({cors: ["https://peakandfree.web.app", "https://peakandfree.com"]}, async (data, request) => { 
+
 exports.fetchFlight = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, async (data, request) => { 
+
   const { iata, startDate, endDate } = data.data;
   let accessKey = await requestTestAccessKey()
   accessKey = accessKey.access_token
@@ -613,9 +658,13 @@ async function requestFlightCheapestDates(accessKey, startAirport, destAirport, 
 
 // 클라이언트 <- 서버(데이터베이스)
 exports.getExchangeRate = onCall({
+
+  cors: ["https://peakandfree.web.app", "https://peakandfree.com"]
+
   cors: ["https://peakandfree.com", "https://peekandfree.web.app"]
+
 }, async (data, context) => {
-  const db = getFirestore(app, 'peekandfree');
+  const db = getFirestore(app, 'peakandfree');
   const snapshot = await db.collection('exchangerate').get();
 
   const exchangeRates = [];
@@ -634,7 +683,11 @@ exports.getExchangeRate = onCall({
 
 // 서버(데이터베이스) <- API
 exports.loadExchangeRate = onCall({
+
+  cors: ["https://peekandfree.web.app", "https://peakandfree.com"]
+
   cors: ["https://peakandfree.com", "https://peekandfree.web.app"]
+
 }, async (data, context) => {
   
   const apiData = await new Promise((resolve, reject) => {
@@ -698,3 +751,59 @@ exports.loadExchangeRate = onCall({
       data: apiData
     }
 });
+
+
+/// 공항 정보 추가
+
+const functions = require("firebase-functions");
+const fs = require("fs");
+const path = require("path");
+const csv = require("csv-parser");
+
+
+exports.getAirportInfo = functions.https.onCall(async (data, context) => {
+  const { iata } = data.data;
+  if (!iata) {
+    return { error: "IATA 코드가 제공되지 않았습니다." };
+  }
+
+
+  const inputIata = iata.trim().toUpperCase();
+
+
+  const csvPath = path.join(__dirname, 'airport.csv');
+
+
+  return new Promise((resolve, reject) => {
+    let found = null;
+    let resolved = false;
+
+
+    const stream = fs.createReadStream(csvPath);
+
+
+    stream
+      .pipe(csv())
+      .on('data', (row) => {
+        const iataCode = row["공항코드1(IATA)"]?.trim().toUpperCase();
+        if (!resolved && iataCode === inputIata) {
+          found = row;
+          resolved = true;
+          stream.destroy();  
+          resolve(found);
+        }
+      })
+      .on('end', () => {
+        if (!resolved) {
+          resolved = true;
+          resolve({ error: `IATA 코드 '${inputIata}'에 해당하는 공항 정보를 찾을 수 없습니다.` });
+        }
+      })
+      .on('error', (error) => {
+        if (!resolved) {
+          resolved = true;
+          reject({ error: error.message });
+        }
+      });
+  });
+}); 
