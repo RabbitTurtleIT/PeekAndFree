@@ -397,6 +397,19 @@ function viewTrip(locName, peopleNum, seatClass, startDate, endDate) {
     $("#viewSeatClass").text(seatClass)
     $("span#startDate").text(startDate)
     $("span#endDate").text(endDate)
+    $("#skyscannerDiv").empty()
+    let skyscanner = $('<div id="skyscanner" data-skyscanner-widget="FlightSearchWidget" data-locale="ko-KR"></div> <script src="https://widgets.skyscanner.net/widget-server/js/loader.js" async></script>')
+    skyscanner.attr("data-market","KR")
+    skyscanner.attr("data-currency","KRW")
+    skyscanner.attr("data-origin-iata-code","ICN")
+    console.log(locName.split("(")[1].split(")")[0])
+    skyscanner.attr("data-destination-iata-code", locName.split("(")[1].split(")")[0])
+    skyscanner.attr("data-flight-outbound-date",startDate)
+    skyscanner.attr("data-flight-inbound-date",endDate)
+    skyscanner.attr("data-flight-type","return")
+
+    $("#skyscannerDiv").append(skyscanner)
+    
 }
 
 function changeMonth(direction) {
