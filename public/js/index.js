@@ -5,8 +5,6 @@ let isDateReady = false;
 let isFetchingFlightNearby = false;
 let selectedIATA = undefined;
 
-let serviceAirportInIncheon = undefined
-
 function setIATA(selected) {
     selectedIATA = selected
 }
