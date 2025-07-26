@@ -2,6 +2,18 @@ let airports = []
 
 $(document).ready(function () {
 
+    const layerIDs = []; // 공항 마커들의 위치를 담고있습니다.
+
+    let serviceAirportInIncheon = undefined
+    firebase.functions().httpsCallable('getServiceDestinationInfo')().then((result) => {
+        console.log("인청공항 취항지 정보");
+        serviceAirportInIncheon = result.data
+        console.log(serviceAirportInIncheon);
+        appendAirportOnMap()
+    }).catch((error) => {
+        console.log("ERROR!", error);
+    });
+
     mapboxgl.accessToken = 'pk.eyJ1IjoiY2hsd2hkdG4wMyIsImEiOiJjanM4Y205N3MwMnI2NDRxZG55YnBucWJxIn0.TTN7N6WL69jnephZ7fJAnA';
     const map = new mapboxgl.Map({
         container: 'map', // container ID
@@ -33,86 +45,65 @@ $(document).ready(function () {
 
     map.on('load', () => {
 
-        map.addSource('airport', {
-            type: 'geojson',
-            data: 'Airport.geojson',
-            cluster: true,
-            clusterMaxZoom: 14, // Max zoom to cluster points on
-            clusterRadius: 50 // Radius of each cluster when clustering points (defaults to 50)
-        });
 
-        map.addLayer({
-            id: 'clusters',
-            type: 'circle',
-            source: 'airport',
-            filter: ['has', 'point_count'],
-            paint: {
-                'circle-color': [
-                    'step',
-                    ['get', 'point_count'],
-                    '#51bbd6',
-                    50,
-                    '#f1f075',
-                    100,
-                    '#f28cb1'
-                ],
-                'circle-radius': [
-                    'step',
-                    ['get', 'point_count'],
-                    20,
-                    100,
-                    30,
-                    750,
-                    40
-                ],
-                'circle-emissive-strength': 1
+        map.addSource('route', {
+            'type': 'geojson',
+            'data': {
+                'type': 'Feature',
+                'properties': {},
+                'geometry': {
+                    'type': 'LineString',
+                    'coordinates': [
+                    ]
+                }
             }
         });
 
-
-
         map.addLayer({
-            id: 'unclustered-point',
-            type: 'circle',
-            source: 'airport',
-            filter: ['!', ['has', 'point_count']],
-            paint: {
-                'circle-color': '#11b4da',
-                'circle-radius': 20,
-                'circle-stroke-width': 1,
-                'circle-stroke-color': '#fff',
-                'circle-emissive-strength': 1
+            'id': 'route',
+            'type': 'line',
+            'source': 'route',
+            'layout': {
+                'line-join': 'round',
+                'line-cap': 'round'
             },
-        });
-
-        map.addLayer({
-            id: 'unclusterd-text',
-            type: 'symbol',
-            source: 'airport',
-            filter: ['!', ['has', 'point_count']],
-            layout: {
-                'text-field': ['get', '공항코드1.IATA.'],
-                'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-                'text-size': 12
+            'paint': {
+                'line-color': '#080',
+                'line-width': 8
             }
         });
-
-
-        map.addLayer({
-            id: 'cluster-count',
-            type: 'symbol',
-            source: 'airport',
-            filter: ['has', 'point_count'],
-            layout: {
-                'text-field': ['get', 'point_count_abbreviated'],
-                'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
-                'text-size': 12
-            }
-        });
+       
 
 
     });
 
+
+    $("#searchbox").on('keyup', (e) => {
+        const searchText = e.target.value.toLowerCase().trim();
+        
+        console.log(searchText)
+
+        if (map.getSource('airport')) {
+            if (searchText === '') {
+                map.setFilter('airport-point', ['in', ['get', '공항코드1.IATA.'], ['literal', serviceAirportInIncheon || []]]);
+            } else {
+                const filterExpression = [
+                    'all',
+                    ['in', ['get', '공항코드1.IATA.'], ['literal', serviceAirportInIncheon || []]],
+                    [
+                        'any',
+                        ['in', searchText, ['downcase', ['get', '한글공항']]],
+                        ['in', searchText, ['downcase', ['get', '영문공항명']]],
+                        ['in', searchText, ['downcase', ['get', '한글국가명']]],
+                        ['in', searchText, ['downcase', ['get', '영문도시명']]],
+                        ['in', searchText, ['downcase', ['get', '공항코드1.IATA.']]]
+                    ]
+                ];
+                map.setFilter('airport-point', filterExpression);
+                
+            }
+        }
+    })
 
 
     // inspect a cluster on click
@@ -134,7 +125,7 @@ $(document).ready(function () {
         );
     });
 
-    map.on('click', 'unclustered-point', (e) => {
+    map.on('click', 'airport-point', (e) => {
         const coordinates = e.features[0].geometry.coordinates.slice();
         const airport_kor = e.features[0].properties.한글공항;
         const airport_eng = e.features[0].properties.영문공항명;
@@ -142,11 +133,30 @@ $(document).ready(function () {
         const nation_eng = e.features[0].properties.영문도시명;
         const iata = e.features[0].properties['공항코드1.IATA.']
         $(".calendar-section").show()
+        clearAllPrices()
+        if(selectedIATA == undefined)
+            $(".calendar-section")[0].scrollIntoView()
         setIATA({
             korName: nation_kor,
             airportKor: airport_kor,
             iata: iata,
             coord: coordinates
+        })
+
+        map.getSource('route').setData({
+
+                'type': 'Feature',
+                'properties': {},
+                // 'geometry': createGeometry(true, [126.4406957,37.4601908], coordinates )
+                'geometry': {
+                    'type': 'LineString',
+                    'coordinates': [
+                        [126.4406957,37.4601908],// ICN
+                        [(126.4406957 + coordinates[0]) / 2, (37.4601908 + coordinates[1]) / 2],// ICN
+                        coordinates
+                    ]
+                }
+            
         })
         new mapboxgl.Popup()
             .setLngLat(coordinates)
@@ -168,6 +178,126 @@ $(document).ready(function () {
         detailModal.addEventListener('show.bs.modal', event => {
 
         })
+    }
+
+    function createGeometry(doesCrossAntimeridian, coord1, coord2) {
+            const geometry = {
+                'type': 'LineString',
+                'coordinates': [
+                    coord1,
+                    coord2
+                ]
+            };
+
+            // To draw a line across the 180th meridian,
+            // if the longitude of the second point minus
+            // the longitude of original (or previous) point is >= 180,
+            // subtract 360 from the longitude of the second point.
+            // If it is less than 180, add 360 to the second point.
+
+            if (doesCrossAntimeridian) {
+                const startLng = geometry.coordinates[0][0];
+                const endLng = geometry.coordinates[1][0];
+
+                if (endLng - startLng >= 180) {
+                    geometry.coordinates[1][0] -= 360;
+                } else if (endLng - startLng < 180) {
+                    geometry.coordinates[1][0] += 360;
+                }
+            }
+
+            return geometry;
+        }
+
+    function appendAirportOnMap() {
+         map.addSource('airport', {
+            type: 'geojson',
+            data: 'Airport.geojson',
+            // cluster: true,
+            // clusterMaxZoom: 14, // Max zoom to cluster points on
+            // clusterRadius: 50, // Radius of each cluster when clustering points (defaults to 50)
+            filter: ['in', ['get', '공항코드1.IATA.'], ['literal', serviceAirportInIncheon || []]]
+        });
+
+        // map.addLayer({
+        //     id: 'clusters',
+        //     type: 'circle',
+        //     source: 'airport',
+        //     filter: ['has', 'point_count'],
+        //     paint: {
+        //         'circle-color': [
+        //             'step',
+        //             ['get', 'point_count'],
+        //             '#51bbd6',
+        //             50,
+        //             '#f1f075',
+        //             100,
+        //             '#f28cb1'
+        //         ],
+        //         'circle-radius': [
+        //             'step',
+        //             ['get', 'point_count'],
+        //             20,
+        //             100,
+        //             30,
+        //             750,
+        //             40
+        //         ],
+        //         'circle-emissive-strength': 1
+        //     }
+        // });
+
+
+
+        // map.addLayer({
+        //     id: 'unclustered-point',
+        //     type: 'circle',
+        //     source: 'airport',
+        //     filter: ['!', ['has', 'point_count']],
+        //     paint: {
+        //         'circle-color': '#11b4da',
+        //         'circle-radius': 20,
+        //         'circle-stroke-width': 1,
+        //         'circle-stroke-color': '#fff',
+        //         'circle-emissive-strength': 1
+        //     },
+        // });
+
+
+        map.addLayer({
+            id: 'airport-point',
+            type: 'symbol',
+            source: 'airport',
+            layout: {
+                'text-field': ['get', '공항코드1.IATA.'],
+                'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                'text-size': 15,
+                'text-allow-overlap': true,
+                'text-ignore-placement': true,
+            },
+            paint: {
+                'text-color': '#ffffff',
+                'text-halo-color': '#4dda4a',
+                'text-halo-width': 10
+            }
+        });
+
+
+
+        // map.addLayer({
+        //     id: 'cluster-count',
+        //     type: 'symbol',
+        //     source: 'airport',
+        //     filter: ['has', 'point_count'],
+        //     layout: {
+        //         'text-field': ['get', 'point_count_abbreviated'],
+        //         'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+        //         'text-size': 12
+        //     }
+        // });
+
+    
+
     }
 
 
@@ -281,3 +411,20 @@ function removeDuplicateCities(data) {
     return uniqueData;
 }
 
+   // Because features come from tiled vector data,
+    // feature geometries may be split
+    // or duplicated across tile boundaries.
+    // As a result, features may appear
+    // multiple times in query results.
+function getUniqueFeatures(features, comparatorProperty) {
+        const uniqueIds = new Set();
+        const uniqueFeatures = [];
+        for (const feature of features) {
+            const id = feature.properties[comparatorProperty];
+            if (!uniqueIds.has(id)) {
+                uniqueIds.add(id);
+                uniqueFeatures.push(feature);
+            }
+        }
+        return uniqueFeatures;
+    }
