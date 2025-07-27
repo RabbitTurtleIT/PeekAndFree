@@ -1,0 +1,15 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 환율 데이터 - 모든 사용자 읽기 가능, 서버에서만 쓰기
+    match /exchangerate/{document} {
+      allow read: if true;
+      allow write: if false;  // Firebase Functions는 관리자 권한으로 쓰기 가능
+    }
+    
+    // 다른 문서들은 인증된 사용자만
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
