@@ -9,6 +9,19 @@ function setIATA(selected) {
     selectedIATA = selected
 }
 
+async function IATAtoCityInformation(IATA) {
+    let cityData = undefined
+          
+      await firebase.functions().httpsCallable('getAirportInfo')({iata : IATA}).then((result) => {
+        cityData = result.data
+      }).catch((error) => {
+        return "ERROR"
+      });
+
+    return cityData
+
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const btnWhen = document.getElementById('btn-when');
     const btnWhere = document.getElementById('btn-where');

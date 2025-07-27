@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="kr">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1,user-scalable=no">
+  <title>피크앤프리 - 장소 상세</title>
+  <!-- Google 애드센스 -->
+   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6014668630461832"
+     crossorigin="anonymous"></script>
+  <!-- update the version number as needed -->
+  <script defer src="/__/firebase/11.7.1/firebase-app-compat.js"></script>
+  <!-- include only the Firebase features as you need -->
+  <script defer src="/__/firebase/11.7.1/firebase-auth-compat.js"></script>
+  <script defer src="/__/firebase/11.7.1/firebase-database-compat.js"></script>
+  <script defer src="/__/firebase/11.7.1/firebase-firestore-compat.js"></script>
+  <script defer src="/__/firebase/11.7.1/firebase-functions-compat.js"></script>
+  <script defer src="/__/firebase/11.7.1/firebase-messaging-compat.js"></script>
+  <script defer src="/__/firebase/11.7.1/firebase-storage-compat.js"></script>
+  <script defer src="/__/firebase/11.7.1/firebase-analytics-compat.js"></script>
+  <script defer src="/__/firebase/11.7.1/firebase-remote-config-compat.js"></script>
+  <script defer src="/__/firebase/11.7.1/firebase-performance-compat.js"></script>
+  <!-- 
+      initialize the SDK after all desired features are loaded, set useEmulator to false
+      to avoid connecting the SDK to running emulators.
+    -->
+<script src="js/index.js"></script>
+<link href="css/index.css" rel="stylesheet">
+  
+  <!-- BOOTSTRAP -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-4Q6Gf2aSP4eDXB8Miphtr37CMZZQ5oXLH2yaXMJ2w8e2ZtHTl7GptT4jmndRuHDT" crossorigin="anonymous">
+  <!-- <link href="css/bootstrap.css" rel="stylesheet"> -->
+   <link href="css/index.css" rel="stylesheet">
+  <script src="js/jquery-3.7.1.min"></script>
+
+  <script defer src="/__/firebase/init.js?useEmulator=true"></script>
+
+</head>
+
+<body>
+  
+<!-- Nav tabs -->
+<ul class="nav nav-tabs" id="myTab" role="tablist">
+  <li class="nav-item" role="presentation">
+    <button class="nav-link active" id="home-tab" data-bs-toggle="tab" data-bs-target="#home" type="button" role="tab" aria-controls="home" aria-selected="true">기본 정보</button>
+  </li>
+  <li class="nav-item" role="presentation">
+    <button class="nav-link" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="false">축제 및 행사</button>
+  </li>
+</ul>
+
+<!-- Tab panes -->
+<div class="tab-content">
+  <div class="tab-pane active" id="home" role="tabpanel" aria-labelledby="home-tab" tabindex="0">
+    <div class="p-5">
+        <div class="modal-title">
+            <h5 id="name">일본 도쿄🇯🇵</h5>
+            <h6>전통 사원과 현대적인 마천루가 공존하며, 골목마다 특색 있는 음식점과 상점들이 자리한, 과거와 현재가 조화롭게 어우러진 도시.</h6>
+        </div>
+        <div class="mt-3 d-flex modal-body" id="imgDiv" style="width: 100%; overflow-y: scroll;">
+        </div>
+        <div class="mt-3 modal-body">
+            <p>💵 <span id="exchangerate">환율 정보를 제공하지 않는 국가</span></p>
+        </div>
+        <div class="mt-3 modal-body bg-secondary-subtle">
+            <p>날씨영역
+        </div>
+        <button class="btn btn-warning">항공권 예매하기</button>
+    </div>
+  </div>
+  <div class="tab-pane" id="profile" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
+    <div class="container calendar-container">
+        <div class="month-navigation">
+          <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
+          <div class="w-100 d-flex justify-content-around">
+            <div class="month-title" id="monthTitle1">2025년 7월</div>
+            <div class="month-title" id="monthTitle2">2025년 8월</div>
+          </div>
+          <button class="nav-btn" onclick="changeMonth(1)">›</button>
+        </div>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <div class="calendar-grid" id="calendar1"></div>
+          </div>
+          <div class="col-md-6">
+            <div class="calendar-grid" id="calendar2"></div>
+          </div>
+        </div>
+      </div>
+  </div>
+</div>
+    
+
+  <script>
+    async function loadImg(coord1 = 35.7758714, coord2 = 140.3933101) {
+        const { Place, SearchNearbyRankPreference } = await google.maps.importLibrary("places");
+        let center = new google.maps.LatLng(coord1, coord2);
+        const request = {
+            // required parameters
+            fields: ["displayName", "photos"],
+            locationRestriction: {
+                center: center,
+                radius: 30000,
+            },
+            // optional parameters https://developers.google.com/maps/documentation/javascript/place-types?hl=ko&_gl=1*1w1np5t*_up*MQ..*_ga*MTM5MTUxNTEyMy4xNzUyNjUyODcy*_ga_NRWSTWS78N*czE3NTI2NTI4NzIkbzEkZzEkdDE3NTI2NTI4NzgkajU0JGwwJGgw#table-a
+            includedPrimaryTypes: ["cultural_landmark","historical_landmark", "beach", "hiking_area"],
+            maxResultCount: 10,
+            rankPreference: SearchNearbyRankPreference.POPULARITY,
+            language: "ko-kr",
+            // region: "us",
+            };
+            
+        //@ts-ignore
+        const { places } = await Place.searchNearby(request);
+        $("#imgDiv").empty()
+        if (places.length) {
+            places.forEach((place) => { 
+                const img = $(`<img class="rounded m-1" style="object-fit:cover; max-height: 200px; max-width: 200px;" src="${place.photos[0].getURI()}"/>`)
+                $("#imgDiv").append(img)
+            })
+        }
+
+    }
+        
+    document.addEventListener('DOMContentLoaded', function () {
+
+        let query = window.location.search;
+        let param = new URLSearchParams(query);
+        let coord2 = param.get('coord1');
+        let coord1 = param.get('coord2');
+        let cityname = param.get('Cityname');
+        let nationname = param.get('Nationname');
+        $("#name").text(nationname + " " + cityname)
+    //구글맵
+      firebase.functions().httpsCallable('getGoogleMapAPIKey')().then((result) => {
+        (g => { var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__", m = document, b = window; b = b[c] || (b[c] = {}); var d = b.maps || (b.maps = {}), r = new Set, e = new URLSearchParams, u = () => h || (h = new Promise(async (f, n) => { await (a = m.createElement("script")); e.set("libraries", [...r] + ""); for (k in g) e.set(k.replace(/[A-Z]/g, t => "_" + t[0].toLowerCase()), g[k]); e.set("callback", c + ".maps." + q); a.src = `https://maps.${c}apis.com/maps/api/js?` + e; d[q] = f; a.onerror = () => h = n(Error(p + " could not load.")); a.nonce = m.querySelector("script[nonce]")?.nonce || ""; m.head.append(a) })); d[l] ? console.warn(p + " only loads once. Ignoring:", g) : d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n)) })({
+          key: result.data,
+          v: "weekly",
+          // Use the 'v' parameter to indicate the version to use (weekly, beta, alpha, etc.).
+          // Add other bootstrap parameters as needed, using camel case.
+        });
+        console.log("Google map ready")
+        loadImg(coord1, coord2)
+      }).catch((error) => {
+        console.log("ERROR!", error);
+      });
+
+
+      // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+      // // The Firebase SDK is initialized and available here!
+      //
+      // firebase.auth().onAuthStateChanged(user => { });
+      // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
+      // firebase.firestore().doc('/foo/bar').get().then(() => { });
+      // firebase.functions().httpsCallable('yourFunction')().then(() => { });
+      // firebase.messaging().requestPermission().then(() => { });
+      // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
+      firebase.analytics(); // call to activate
+    firebase.functions().httpsCallable('loadExchangeRate')().then((result) => {
+        firebase.functions().httpsCallable('getExchangeRate')().then((result) => {
+            console.log(result.data)
+            for(let item of result.data) {
+
+                if(item.id.indexOf("미국달러") != -1 && nationname.match("미국")) {
+                    $("#exchangerate").text(item.id + " " + item.value)
+                    break
+                }
+                if(item.id.indexOf("위안") != -1 && nationname.match("중국")) {
+                    $("#exchangerate").text(item.id + " " + item.value)
+                    break
+                }
+                if(item.id.indexOf(nationname) != -1) {
+                    $("#exchangerate").text(item.id + " " + item.value)
+                    break
+                }
+            }
+        })
+    }).catch((error) => {
+        console.log("환율 ERROR!", error);
+    });
+
+    
+    //   firebase.analytics().logEvent('tutorial_completed');
+      // firebase.performance(); // call to activate
+      //
+      // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+    });
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO"
+    crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
+    integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"
+    crossorigin="anonymous"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.min.js" integrity="sha384-RuyvpeZCxMJCqVUGFI0Do1mQrods/hhxYlcVfGPOfQtPJh0JCw12tUAZ/Mv10S7D" crossorigin="anonymous"></script> -->
+</body>
+
+</html>

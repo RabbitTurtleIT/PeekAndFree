@@ -162,6 +162,9 @@
         </div>
       </div>
       <div id="calendar"></div>
+      <div class="align-items-center">
+        <iframe border="0" src="https://kr.trip.com/partners/ad/DB4609600?Allianceid=6823342&SID=242256162&trip_sub1=" style="width:728px;height:90px" frameborder="0" scrolling="no" style="border:none" id="DB4609600"></iframe>
+      </div>
     </section>
 
   </section>
@@ -169,8 +172,6 @@
   <section class="final-reservation">
     <div class="reservation-background"></div>
     <div class="reservation-content mt-5" style="z-index: 1;">
-      <h3 class="final-title text-center">피크앤프리와 함께 만든 이번 여행이에요 ⬇️</h3>
-      
       <div class="map-background p-3 text-center">
         <div class="container">
           <h4>📅<span id="startDate"></span> ~ <span id="endDate"></span></h4>
@@ -197,25 +198,7 @@
     <div class="modal-dialog modal-dialog-scrollable modal-xl">
       <div class="modal-content">
         <div class="modal-body ">
-          <div class="row">
-            <div class="col-lg-6 col-md-12">
-              <h3 id="countryName">일본</h3>
-              <img id="countryImg" style="max-height: 300px; max-width: 300px;"
-                src="https://cdn.huffingtonpost.kr/news/photo/201712/62011_117968.jpeg">
-              <p id="countryDesc">전통과 첨단이 어우러진 매혹의 나라, 일본.<br>사계절의 아름다움 속에서 섬세한 문화를 경험해보세요!</p>
-              
-              <h3>여행자 리뷰</h3>
-              <div class="reviewdiv">
-
-              </div>
-            </div>
-            <div class="col-lg-6 col-md-12 ">
-              <h3>정보<a style="float: right;" class="btn btn-light">예매하기</a></h3>
-              <div class="preferLocation">
-
-              </div>
-            </div>
-          </div>
+          <iframe class="w-100" height="600px" src="detailmodal.html" id="detailFrame"></iframe>
         </div>
       </div>
     </div>
@@ -235,27 +218,13 @@
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       
-      // 공항정보
-      firebase.functions().httpsCallable('getAirportInfo')({iata : "ICN"}).then((result) => {
-        console.log("인천공항 정보");
-        console.log(result);
+      // 안전정보
+      firebase.functions().httpsCallable('getInformationOfCountry')({iata : "ICN"}).then((result) => {
+        displaySafetyNotices(result.data.response.body);
       }).catch((error) => {
-        console.log("인천공항 정보 에러");
         console.log("ERROR!", error);
       });
 
-      //구글맵
-      firebase.functions().httpsCallable('getGoogleMapAPIKey')().then((result) => {
-        (g => { var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__", m = document, b = window; b = b[c] || (b[c] = {}); var d = b.maps || (b.maps = {}), r = new Set, e = new URLSearchParams, u = () => h || (h = new Promise(async (f, n) => { await (a = m.createElement("script")); e.set("libraries", [...r] + ""); for (k in g) e.set(k.replace(/[A-Z]/g, t => "_" + t[0].toLowerCase()), g[k]); e.set("callback", c + ".maps." + q); a.src = `https://maps.${c}apis.com/maps/api/js?` + e; d[q] = f; a.onerror = () => h = n(Error(p + " could not load.")); a.nonce = m.querySelector("script[nonce]")?.nonce || ""; m.head.append(a) })); d[l] ? console.warn(p + " only loads once. Ignoring:", g) : d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n)) })({
-          key: result.data,
-          v: "weekly",
-          // Use the 'v' parameter to indicate the version to use (weekly, beta, alpha, etc.).
-          // Add other bootstrap parameters as needed, using camel case.
-        });
-        console.log("Google map ready")
-      }).catch((error) => {
-        console.log("ERROR!", error);
-      });
 
       // firebase.functions().httpsCallable('getInformationOfCountry')().then((result) => {
       //   console.log("해외안전정보");

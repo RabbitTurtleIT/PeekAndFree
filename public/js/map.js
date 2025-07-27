@@ -125,7 +125,7 @@ $(document).ready(function () {
         );
     });
 
-    map.on('click', 'airport-point', (e) => {
+    map.on('click', 'airport-point', async (e) => {
         const coordinates = e.features[0].geometry.coordinates.slice();
         const airport_kor = e.features[0].properties.한글공항;
         const airport_eng = e.features[0].properties.영문공항명;
@@ -134,8 +134,8 @@ $(document).ready(function () {
         const iata = e.features[0].properties['공항코드1.IATA.']
         $(".calendar-section").show()
         clearAllPrices()
-        if(selectedIATA == undefined)
-            $(".calendar-section")[0].scrollIntoView()
+        // if(selectedIATA == undefined)
+        //     $(".calendar-section")[0].scrollIntoView()
         setIATA({
             korName: nation_kor,
             airportKor: airport_kor,
@@ -158,14 +158,15 @@ $(document).ready(function () {
                 }
             
         })
+        let citydata = await IATAtoCityInformation(iata)
+        console.log(citydata)
+        $("#detailFrame").attr("src", "detailmodal.html?coord1="+citydata.longitude+"&coord2="+citydata.Latitude+"&Cityname="+citydata.한글도시명+"&Nationname="+citydata.한글국가명)
         new mapboxgl.Popup()
             .setLngLat(coordinates)
             .setHTML(
                 `
-                    <p><span style="font-size:16px">${airport_kor}</span><br>
-                    ${airport_eng}<br>${nation_kor} ${iata}</p>
-                    <a style="width:100%" class='btn btn-info d-block' onclick="appendFlightCard('${iata}', '${nation_kor}', '${airport_kor}', '${e.features[0].geometry.coordinates}')">최저가 확인하기</a>
-                    <a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class='btn btn-info d-block mt-1' onclick="browse('${iata}', '${nation_kor}', '${e.features[0].geometry.coordinates}')">주변 리뷰 확인하기</a>
+                    <p class="text-center"><span style="font-size:16px">${airport_kor}</span><br>
+                    <a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${nation_kor} ${citydata.한글도시명}</a>
                     
                     `
             )

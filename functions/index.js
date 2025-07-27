@@ -41,13 +41,6 @@ exports.getGoogleMapAPIKey = onCall({cors: ["https://peekandfree.web.app", "http
   return process.env.GOOGLEMAP_API_KEY
 });
 
-exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, async (request) => { 
-});
-
-exports.getGoogleMapAPIKey = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, (context) => {
-  return process.env.GOOGLEMAP_API_KEY
-});
-
 exports.getInformationOfCountry = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, async (request) => { 
 
   const apiData = await new Promise((resolve, reject) => {
@@ -658,10 +651,8 @@ exports.getExchangeRate = onCall({
 
   cors: ["https://peakandfree.web.app", "https://peakandfree.com"]
 
-  ,cors: ["https://peakandfree.com", "https://peekandfree.web.app"]
-
 }, async (data, context) => {
-  const db = getFirestore(app, 'peakandfree');
+  const db = getFirestore(app, 'peekandfree');
   const snapshot = await db.collection('exchangerate').get();
 
   const exchangeRates = [];
@@ -683,59 +674,100 @@ exports.loadExchangeRate = onCall({
 
   cors: ["https://peekandfree.web.app", "https://peakandfree.com"]
 
-,cors: ["https://peakandfree.com", "https://peekandfree.web.app"]
-
 }, async (data, context) => {
   
   const apiData = await new Promise((resolve, reject) => {
-    const today = new Date(); 
-    const year = today.getFullYear(); 
-    const month = (today.getMonth() + 1).toString().padStart(2, '0'); 
-    const day = today.getDate().toString().padStart(2, '0');
-    const yyyymmdd = `${year}${month}${day}`;
+    let currentDate = new Date();
+    let yyyymmdd;
+    let maxRetries = 10;
+    let retryCount = 0;
 
-    const options = {
-      hostname: 'ecos.bok.or.kr',
-      port: 443,
-      path: `/api/StatisticSearch/${process.env.KOREABANK_APIKEY}/json/kr/1/53/731Y001/D/${yyyymmdd}/${yyyymmdd}`,
-      method: 'GET',
-      agent: agent
+    const tryGetData = async (dateStr) => {
+      const options = {
+        hostname: 'ecos.bok.or.kr',
+        port: 443,
+        path: `/api/StatisticSearch/${process.env.KOREABANK_APIKEY}/json/kr/1/53/731Y001/D/${dateStr}/${dateStr}`,
+        method: 'GET',
+        agent: agent
+      };
+
+      return new Promise((resolveInner, rejectInner) => {
+        const req = https.request(options, (res) => {
+          let data = '';
+          
+          res.on('data', (chunk) => {
+            data += chunk;
+          });
+          
+          res.on('end', () => {
+            try {
+              const result = JSON.parse(data);
+              resolveInner(result);
+            } catch (error) {
+              rejectInner(new Error('JSON 파싱 실패'));
+            }
+          });
+        });
+        
+        req.on('error', (error) => {
+          console.error("요청 에러:", error);
+          rejectInner(error);
+        });
+        
+        req.setTimeout(30000, () => {
+          req.destroy();
+          rejectInner(new Error('요청 타임아웃'));
+        });
+        
+        req.end();
+      });
     };
 
-    const req = https.request(options, (res) => {
-      let data = '';
+    const getDateString = (date) => {
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      return `${year}${month}${day}`;
+    };
+
+    const attemptApiCall = async () => {
+      yyyymmdd = getDateString(currentDate);
+      console.log(`환율 데이터 조회 시도: ${yyyymmdd}`);
       
-      res.on('data', (chunk) => {
-        data += chunk;
-      });
-      
-      res.on('end', () => {
-        try {
-          const result = JSON.parse(data);
+      try {
+        const result = await tryGetData(yyyymmdd);
+        
+        if (result.StatisticSearch && result.StatisticSearch.row && result.StatisticSearch.row.length > 0) {
+          console.log(`환율 데이터 성공적으로 조회: ${yyyymmdd}`);
           resolve(result);
-        } catch (error) {
-          reject(new Error('JSON 파싱 실패'));
+        } else {
+          console.log(`${yyyymmdd}에 대한 환율 데이터 없음, 이전 날로 재시도`);
+          retryCount++;
+          if (retryCount < maxRetries) {
+            currentDate.setDate(currentDate.getDate() - 1);
+            attemptApiCall();
+          } else {
+            reject(new Error('최대 재시도 횟수 초과: 환율 데이터를 찾을 수 없습니다'));
+          }
         }
-      });
-    });
-    
-    req.on('error', (error) => {
-      console.error("요청 에러:", error);
-      reject(error);
-    });
-    
-    req.setTimeout(30000, () => {
-      req.destroy();
-        reject(new Error('요청 타임아웃'));
-    });
-    
-    req.end();
+      } catch (error) {
+        console.error(`${yyyymmdd} 환율 데이터 조회 실패:`, error);
+        retryCount++;
+        if (retryCount < maxRetries) {
+          currentDate.setDate(currentDate.getDate() - 1);
+          attemptApiCall();
+        } else {
+          reject(error);
+        }
+      }
+    };
 
-
+    attemptApiCall();
   });
   
   const db = getFirestore(app, 'peekandfree');
   const batch = db.batch();
+  console.log(apiData)
 
     for(const item of apiData.StatisticSearch.row) {
         const docRef = db.collection("exchangerate").doc(item.ITEM_NAME1.split("/")[1].split('(')[0]);
