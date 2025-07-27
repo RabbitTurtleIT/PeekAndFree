@@ -21,6 +21,10 @@ const { getFirestore } = require("firebase-admin/firestore");
 
 const app = initializeApp();
 
+const fs = require("fs");
+const path = require("path");
+const csv = require("csv-parser");
+
 let ROOTaccessKey = undefined
 let ROOTaccessKeyExpiry = null
 
@@ -784,55 +788,49 @@ exports.loadExchangeRate = onCall({
 
 /// 공항 정보 추가
 
-const functions = require("firebase-functions");
-const fs = require("fs");
-const path = require("path");
-const csv = require("csv-parser");
-
-
-exports.getAirportInfo = functions.https.onCall(async (data, context) => {
-  const { iata } = data.data;
+exports.getAirportInfo = onCall(async (data, context) => {
+  const { iata } = data.data;
   if (!iata) {
-    return { error: "IATA 코드가 제공되지 않았습니다." };
-  }
+    return { error: "IATA 코드가 제공되지 않았습니다." };
+  }
 
 
-  const inputIata = iata.trim().toUpperCase();
+  const inputIata = iata.trim().toUpperCase();
 
 
-  const csvPath = path.join(__dirname, 'airport.csv');
+  const csvPath = path.join(__dirname, 'airport.csv');
 
 
-  return new Promise((resolve, reject) => {
-    let found = null;
-    let resolved = false;
+  return new Promise((resolve, reject) => {
+    let found = null;
+    let resolved = false;
 
 
-    const stream = fs.createReadStream(csvPath);
+    const stream = fs.createReadStream(csvPath);
 
 
-    stream
-      .pipe(csv())
-      .on('data', (row) => {
-        const iataCode = row["공항코드1(IATA)"]?.trim().toUpperCase();
-        if (!resolved && iataCode === inputIata) {
-          found = row;
-          resolved = true;
-          stream.destroy();  
-          resolve(found);
-        }
-      })
-      .on('end', () => {
-        if (!resolved) {
-          resolved = true;
-          resolve({ error: `IATA 코드 '${inputIata}'에 해당하는 공항 정보를 찾을 수 없습니다.` });
-        }
-      })
-      .on('error', (error) => {
-        if (!resolved) {
-          resolved = true;
-          reject({ error: error.message });
-        }
-      });
-  });
+    stream
+      .pipe(csv())
+      .on('data', (row) => {
+        const iataCode = row["공항코드1(IATA)"].trim().toUpperCase();
+        if (!resolved && iataCode === inputIata) {
+          found = row;
+          resolved = true; 
+          stream.destroy();  
+          resolve(found);
+        }
+      })
+      .on('end', () => {
+        if (!resolved) {
+          resolved = true;
+          resolve({ error: `IATA 코드 '${inputIata}'에 해당하는 공항 정보를 찾을 수 없습니다.` });
+        }
+      })
+      .on('error', (error) => {
+        if (!resolved) {
+          resolved = true;
+          reject({ error: error.message });
+        }
+      });
+  });
 }); 
