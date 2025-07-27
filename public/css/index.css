@@ -2,7 +2,7 @@
   /* Color Palette */
   --black: #303030;
   --white: #FFFFFF;
-  --gray-white: #FAFAFA;
+  --gray-white: #F9F9F9;
 
   --orange-primary: #FF9000;
   --orange-light: #FFBA61;
@@ -15,21 +15,12 @@
   --font-main: 'Wanted Sans Variable', sans-serif;
   --font-logo: 'Bookk Myungjo',sans-serif;
 }
-.body{
-  max-width: 100%;
-  overflow-x: hidden;
-}
-
 .top {
-  height: 10vh;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 .logo{
-  max-height: 100%;
-  width: auto;
-  height: auto;
   object-fit: contain;
 }
 .search-bar {
@@ -68,6 +59,7 @@
 }
 
 .main-section {
+  margin-top: 60px;
   font-family: var(--font-main);
   display: flex;
   flex-direction: column;
@@ -96,6 +88,7 @@
   max-width: 100%;
   max-height: 100%;
   object-fit: cover;
+  border-radius: 20px;
 }
 
 
@@ -106,7 +99,12 @@
   gap: 8px;
 }
 
-
+.indicator-dot{
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  cursor: pointer;
+}
 
 
 
