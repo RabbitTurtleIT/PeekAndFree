@@ -55,15 +55,7 @@
     <div class="logo">
       <img src="img/logo.png" style="height: 50px;" alt="피크앤프리 로고">
     </div>
-    <div class="search-bar d-flex align-items-center gap-2">
-      <input type="text" placeholder="장어 덮밥이 맛있는 일본 나고야" class="form-control rounded-pill border-2" style="width: 260px;">
-      <button class="search-btn btn p-1">
-        <img src="img/search.png" alt="검색">
-      </button>
-      <button id="mypage-btn" class="mypage-btn btn p-1" type="button">
-        <img src="img/account_circle.png" alt="마이페이지">
-      </button>
-    </div>
+  
   </header>
   <!-- Main Carousel Section -->
   <!-- <section class="main-section">
@@ -117,28 +109,52 @@
   </section> -->
 
 
-  <!-- When Content Section -->
+  <!-- when section -->
   <section id="when-content" class="select-result" style="display: block;">
   
     <section class="map-section">
+      <div class="banner-area">
+      </div>
       <div class="map-background">
         <div class="whereFetchDone"></div>
-        <div class="map-search d-flex justify-content-center align-items-center">
-          <input type="text" class="form-control search-input" id="searchbox" placeholder="도시, 나라 또는 공항">
-        </div>
         
         <div class="container map-container" id="when-mapdiv">
-          <div id="map" style="width: 100%; height: 100vh;">
-            <div class="nearby-btn-group" style="position: absolute; z-index: 1;">
-              <button class="btn-budget">예산에 가까운 지역</button>
-              <button class="btn-nearby">나와 가까운 지역</button>
+          <div id="map" style="width: 100%;"></div>
+        <div class="map-filters">
+            <div class="dropdown">
+            <button class="btn btn-light dropdown-toggle" type="button" id="monthDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              ☀️ 7월
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="monthDropdown">
+              <li><a class="dropdown-item" href="#" data-month="1">1월</a></li>
+              <li><a class="dropdown-item" href="#" data-month="2">2월</a></li>
+              <li><a class="dropdown-item" href="#" data-month="3">3월</a></li>
+              <li><a class="dropdown-item" href="#" data-month="4">4월</a></li>
+              <li><a class="dropdown-item" href="#" data-month="5">5월</a></li>
+              <li><a class="dropdown-item" href="#" data-month="6">6월</a></li>
+              <li><a class="dropdown-item" href="#" data-month="7">7월</a></li>
+              <li><a class="dropdown-item" href="#" data-month="8">8월</a></li>
+              <li><a class="dropdown-item" href="#" data-month="9">9월</a></li>
+              <li><a class="dropdown-item" href="#" data-month="10">10월</a></li>
+              <li><a class="dropdown-item" href="#" data-month="11">11월</a></li>
+              <li><a class="dropdown-item" href="#" data-month="12">12월</a></li>
+            </ul>
             </div>
+           <div class="dropdown">
+            <button class="btn btn-light dropdown-toggle" type="button" id="seasonDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              전체
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="seasonDropdown">
+              <li><a class="dropdown-item" href="#" data-filter="전체">전체</a></li>
+              <li><a class="dropdown-item" href="#" data-filter="성수기">성수기</a></li>
+              <li><a class="dropdown-item" href="#" data-filter="비성수기">비성수기</a></li>
+            </ul>
           </div>
         </div>
-        
         <div class="container-sm">
           <div id="nearbyFlightList" class="mt-3 pb-3 text-center"></div>
         </div>
+      </div>
       </div>
     </section>
     <section class="calendar-section" id="when-calsec">
@@ -264,5 +280,12 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
 </body>
-
+<footer>
+  <address>
+        peak and free 소개 | 이용약관 | 
+        <!--
+        <a href="인스타 계정 링크 넣기">@peakandfree</a>.
+        -->
+    </address>
+</footer>
 </html>

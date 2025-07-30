@@ -21,13 +21,32 @@ async function IATAtoCityInformation(IATA) {
     return cityData
 
 }
+//map section
+// 월 dropdown
+document.querySelectorAll("#monthMenu .dropdown-item").forEach(item => {
+  item.addEventListener("click", (e) => {
+    e.preventDefault();
+    const selectedMonth = item.dataset.month;
+    document.getElementById("monthDropdown").textContent = `☀️ ${selectedMonth}월`;
+    // TODO: 선택된 month 값으로 지도 필터링
+  });
+});
+
+// 성수기 dropdown
+document.querySelectorAll("#seasonDropdown + .dropdown-menu .dropdown-item").forEach(item => {
+  item.addEventListener("click", (e) => {
+    e.preventDefault();
+    const selectedFilter = item.dataset.filter;
+    document.getElementById("seasonDropdown").textContent = selectedFilter;
+    // TODO: 선택된 필터로 지도 조건 바꾸기
+  });
+});
+const now = new Date();
+const currentMonth = now.getMonth() + 1;
+document.getElementById("monthDropdown").textContent = `☀️ ${currentMonth}월`;
 
 document.addEventListener('DOMContentLoaded', () => {
-    const btnWhen = document.getElementById('btn-when');
-    const btnWhere = document.getElementById('btn-where');
-    const btnMypage = document.getElementById('mypage-btn');
     const carousel = document.getElementById('mainCarousel');
-    const indicators = $('.indicator-dot');
     const whenContent = document.getElementById('when-content');
     // const whereContent = document.getElementById('where-content');
     $(".final-reservation").hide()
@@ -41,10 +60,10 @@ document.addEventListener('DOMContentLoaded', () => {
         indicators[activeIndex].src = selectedImg;
     }
 
-    function activateButton(activeBtn, inactiveBtn) {
-        activeBtn.classList.add('active');
-        inactiveBtn.classList.remove('active');
-    }
+    //function activateButton(activeBtn, inactiveBtn) {
+    //    activeBtn.classList.add('active');
+    //    inactiveBtn.classList.remove('active');
+    //}
 
     // function showContent(type, isScroll) {
     //     if (type === 'when') {
@@ -86,9 +105,9 @@ document.addEventListener('DOMContentLoaded', () => {
     //     showContent('where', true);
     // });
 
-    btnMypage.addEventListener('click', () => {
-        window.location.href = 'mypage.html';
-    });
+    //btnMypage.addEventListener('click', () => {
+    //    window.location.href = 'mypage.html';
+    //});
 
     function selectBtn(selectedBtn, unselectedBtn) {
         selectedBtn.classList.add('selected');
