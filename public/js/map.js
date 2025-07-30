@@ -42,9 +42,9 @@ $(document).ready(function () {
     //         }
     //     });
     // });
-    document.getElementById('when-content').addEventListener('transitionend', () => {
-    map.resize();
-    });
+   // document.getElementById('when-content').addEventListener('transitionend', () => {
+    //map.resize();
+   // });
     map.on('load', () => {
 
 
@@ -79,7 +79,7 @@ $(document).ready(function () {
 
     });
 
-    setTimeout(() => map.resize(), 300);
+    //setTimeout(() => map.resize(), 300);
     $("#searchbox").on('keyup', (e) => {
         const searchText = e.target.value.toLowerCase().trim();
         
