@@ -66,7 +66,7 @@
     </div>
   </header>
   <!-- Main Carousel Section -->
-  <section class="main-section">
+  <!-- <section class="main-section">
     <div class="carousel-wrapper">
       <div id="mainCarousel" class="carousel slide" data-bs-ride="carousel">
         <div class="carousel-inner rounded">
@@ -105,20 +105,42 @@
         <img src="img/btn_unselected.png" class="indicator-dot" data-index="4" alt="인디케이터 5">
       </div>
     </div>
-  </section>
+  </section> -->
   <!-- Travel Planning Section -->
-  <section class="select text-center">
+  <!-- <section class="select text-center">
     <h1 class="fw-bold mb-2">여행을 얼마나 계획하셨나요?</h1>
     <p class="additional-text text-muted mb-4">peak and free가 여행 준비를 도와드릴게요!</p>
     <div class="btn-toggle-wrap">
       <button id="btn-when" class="btn-toggle active">언제 떠날지 정했어요!</button>
       <button id="btn-where" class="btn-toggle">어디로 떠날지 정했어요!</button>
     </div>
-  </section>
+  </section> -->
 
 
   <!-- When Content Section -->
   <section id="when-content" class="select-result" style="display: block;">
+  
+    <section class="map-section">
+      <div class="map-background">
+        <div class="whereFetchDone"></div>
+        <div class="map-search d-flex justify-content-center align-items-center">
+          <input type="text" class="form-control search-input" id="searchbox" placeholder="도시, 나라 또는 공항">
+        </div>
+        
+        <div class="container map-container" id="when-mapdiv">
+          <div id="map" style="width: 100%; height: 100vh;">
+            <div class="nearby-btn-group" style="position: absolute; z-index: 1;">
+              <button class="btn-budget">예산에 가까운 지역</button>
+              <button class="btn-nearby">나와 가까운 지역</button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="container-sm">
+          <div id="nearbyFlightList" class="mt-3 pb-3 text-center"></div>
+        </div>
+      </div>
+    </section>
     <section class="calendar-section" id="when-calsec">
       <div class="container calendar-container">
         <div class="month-navigation">
@@ -140,90 +162,24 @@
         </div>
       </div>
       <div id="calendar"></div>
-    </section>
-    <section class="recommendation-section">
-      <div class="slider-group">
-        <h4 class="title">예산에 맞는 여행날짜를 추천해드릴게요</h4>
-        <div class="budget-wrapper">
-          <span class="budget-label left">₩50,000 -</span>
-          <input type="range" min="50000" max="2000000" step="50000" value="1000000" class="slider" id="budget-slider-when">
-          <span class="budget-label right">₩2,000,000 +</span>
-        </div>
-        <div class="slider-value" id="slider-value-when">₩1,000,000</div>
-      </div>
-    </section>
-    <section class="map-section">
-      <div class="map-background">
-        <div class="whereFetchDone"></div>
-        <div class="map-search d-flex justify-content-center align-items-center">
-          <input type="text" class="form-control search-input" placeholder="도시, 나라 또는 공항">
-        </div>
-        
-        <div class="container text-center text-white">
-          <h4>🌎 <span id="startDate"></span> ~ <span id="endDate"></span>에 어디가 여유롭고 어디가 활기찰까요?</h4>
-          <h5>예산 ±<span id="budget">₩50,000</span> 범위에서 추천된 여행지예요.</h5>
-        </div>
-        
-        <div class="container map-container" id="when-mapdiv">
-          <div id="map" style="width: 100%; height: 100vh;">
-            <div class="nearby-btn-group" style="position: absolute; z-index: 1;">
-              <button class="btn-budget">예산에 가까운 지역</button>
-              <button class="btn-nearby">나와 가까운 지역</button>
-            </div>
-          </div>
-        </div>
-        
-        <div class="container-sm">
-          <div id="nearbyFlightList" class="mt-3 pb-3 text-center"></div>
-        </div>
+      <div class="align-items-center">
+        <iframe border="0" src="https://kr.trip.com/partners/ad/DB4609600?Allianceid=6823342&SID=242256162&trip_sub1=" style="width:728px;height:90px" frameborder="0" scrolling="no" style="border:none" id="DB4609600"></iframe>
       </div>
     </section>
 
-  </section>
-
-  <!-- Where Content Section -->
-  <section id="where-content" style="display: block;">
-    <section class="map-section">
-      <div class="map-background">
-        <div class="map-search d-flex justify-content-center align-items-center">
-          <input type="text" class="form-control search-input" placeholder="도시, 나라 또는 공항">
-        </div>
-        
-        <div class="container map-container" id="where-mapdiv">
-        </div>
-      </div>
-    </section>
-    <section class="recommendation-section">
-      <div class="slider-group">
-        <h4 class="title">예산에 맞는 여행날짜를 추천해드릴게요</h4>
-        <div class="budget-wrapper">
-          <span class="budget-label left">₩50,000 -</span>
-          <input type="range" min="50000" max="2000000" step="50000" value="1000000" class="slider" id="budget-slider-where">
-          <span class="budget-label right">₩2,000,000 +</span>
-        </div>
-        <div class="slider-value" id="slider-value-where">₩1,000,000</div>
-      </div>
-    </section>
-    <section class="calendar-section" id="where-calsec">
-      <div class="title-calendar">
-        <h2>도쿄, 활기찬 시기와 여유로운 시기 중 언제가 좋을까요?</h2>
-        <p class="desc">예산 ±₩50,000 범위에서 추천된 여행날짜예요.</p>
-      </div>
-    </section>
   </section>
   <!-- Final Reservation Section -->
   <section class="final-reservation">
     <div class="reservation-background"></div>
     <div class="reservation-content mt-5" style="z-index: 1;">
-      <h3 class="final-title text-center">피크앤프리와 함께 만든 이번 여행이에요 ⬇️</h3>
-      
       <div class="map-background p-3 text-center">
         <div class="container">
           <h4>📅<span id="startDate"></span> ~ <span id="endDate"></span></h4>
           <h4>🌎 <span id="viewLocationName"></span> • 👤<span id="viewCountPeople"></span> • 💺<span id="viewSeatClass"></span></h4>
           <br>
-          <h5 class="d-inline bg-white rounded-pill p-3" style="color: #FFBA61;">내 여행 생성하기</h5>
-          <h5 class="d-inline rounded-pill text-white p-3" style="background-color: #FF9000;">SkyScanner에서 항공권 예매하기</h5>
+          <div id="skyscannerDiv">
+
+          </div>
         </div>
       </div>
   </section>
@@ -242,25 +198,7 @@
     <div class="modal-dialog modal-dialog-scrollable modal-xl">
       <div class="modal-content">
         <div class="modal-body ">
-          <div class="row">
-            <div class="col-lg-6 col-md-12">
-              <h3 id="countryName">일본</h3>
-              <img id="countryImg" style="max-height: 300px; max-width: 300px;"
-                src="https://cdn.huffingtonpost.kr/news/photo/201712/62011_117968.jpeg">
-              <p id="countryDesc">전통과 첨단이 어우러진 매혹의 나라, 일본.<br>사계절의 아름다움 속에서 섬세한 문화를 경험해보세요!</p>
-              
-              <h3>여행자 리뷰</h3>
-              <div class="reviewdiv">
-
-              </div>
-            </div>
-            <div class="col-lg-6 col-md-12 ">
-              <h3>정보<a style="float: right;" class="btn btn-light">예매하기</a></h3>
-              <div class="preferLocation">
-
-              </div>
-            </div>
-          </div>
+          <iframe class="w-100" height="600px" src="detailmodal.html" id="detailFrame"></iframe>
         </div>
       </div>
     </div>
@@ -275,21 +213,42 @@
     gtag('config', 'G-9CJ1EX0RKW');
   </script>
 
+
   <!-- Firebase Initialization -->
   <script>
     document.addEventListener('DOMContentLoaded', function () {
+      
+      // 안전정보
+      // firebase.functions().httpsCallable('getInformationOfCountry')({iata : "ICN"}).then((result) => {
+      //   displaySafetyNotices(result.data.response.body);
+      // }).catch((error) => {
+      //   console.log("ERROR!", error);
+      // });
 
-      firebase.functions().httpsCallable('getGoogleMapAPIKey')().then((result) => {
-        (g => { var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__", m = document, b = window; b = b[c] || (b[c] = {}); var d = b.maps || (b.maps = {}), r = new Set, e = new URLSearchParams, u = () => h || (h = new Promise(async (f, n) => { await (a = m.createElement("script")); e.set("libraries", [...r] + ""); for (k in g) e.set(k.replace(/[A-Z]/g, t => "_" + t[0].toLowerCase()), g[k]); e.set("callback", c + ".maps." + q); a.src = `https://maps.${c}apis.com/maps/api/js?` + e; d[q] = f; a.onerror = () => h = n(Error(p + " could not load.")); a.nonce = m.querySelector("script[nonce]")?.nonce || ""; m.head.append(a) })); d[l] ? console.warn(p + " only loads once. Ignoring:", g) : d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n)) })({
-          key: result.data,
-          v: "weekly",
-          // Use the 'v' parameter to indicate the version to use (weekly, beta, alpha, etc.).
-          // Add other bootstrap parameters as needed, using camel case.
-        });
-        console.log("Google map ready")
-      }).catch((error) => {
-        console.log("ERROR!", error);
-      });
+      firebase.functions().httpsCallable('getFestivalInfo')({ country: "대한민국" })
+  .then((result) => {
+    if (result.data.festivals) {
+      console.log(result.data.festivals);
+    } else if (result.data.error) {
+      console.log("Error:", result.data.error);
+    }
+  })
+  .catch((error) => {
+    console.log("ERROR!", error);
+  });
+
+
+
+      // firebase.functions().httpsCallable('getInformationOfCountry')().then((result) => {
+      //   console.log("해외안전정보");
+      //   displaySafetyNotices(result.data.response.body);
+      // }).catch((error) => {
+      //   console.log("ERROR!", error);
+      // });
+
+
+      // firebase.analytics();
+
 
       firebase.functions().httpsCallable('loadDailyForecast')().then(r => console.log(r.data));
 
@@ -302,6 +261,7 @@
       }).then(r => console.log(r.data))
 
       firebase.analytics();
+
 
       try {
         let app = firebase.app();
@@ -321,6 +281,7 @@
       }
     });
   </script>
+
   <!-- Bootstrap JS -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
