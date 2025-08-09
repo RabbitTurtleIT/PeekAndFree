@@ -875,3 +875,4 @@ exports.getFestivalInfo = onCall(async (data, context) => {
       });
   });
 });
+

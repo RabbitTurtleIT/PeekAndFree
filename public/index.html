@@ -120,6 +120,7 @@
   <!-- When Content Section -->
   <section id="when-content" class="select-result" style="display: block;">
   
+    <div id="festivalTable"></div>
     <section class="map-section">
       <div class="map-background">
         <div class="whereFetchDone"></div>
@@ -204,6 +205,8 @@
     </div>
   </div>
 
+
+
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-9CJ1EX0RKW"></script>
   <script>
@@ -225,7 +228,7 @@
       //   console.log("ERROR!", error);
       // });
 
-      firebase.functions().httpsCallable('getFestivalInfo')({ country: "대한민국" })
+      firebase.functions().httpsCallable('getFestivalInfo')({ country: "인도" })
   .then((result) => {
     if (result.data.festivals) {
       console.log(result.data.festivals);
@@ -237,6 +240,8 @@
     console.log("ERROR!", error);
   });
 
+
+  
 
 
       // firebase.functions().httpsCallable('getInformationOfCountry')().then((result) => {
