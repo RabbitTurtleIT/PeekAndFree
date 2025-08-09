@@ -81,7 +81,7 @@
             }
             .weather-day-card {
                 flex: 0 0 auto;
-                width: 75px;
+                width: 50px;
                 padding: 10px;
                 border-radius: 20px;
                 background-color: #FEF7E0;
@@ -97,7 +97,7 @@
                 font-weight: 600;
             }
             .weather-day-icon {
-                font-size: 2.5rem; /* 이모지 크기 */
+                font-size: 2rem; /* 이모지 크기 */
                 line-height: 1.2;
                 margin: 4px 0;
             }
@@ -198,7 +198,7 @@
         let cityname = param.get('Cityname');
         let nationname = param.get('Nationname');
         $("#name").text(nationname + " " + cityname)
-    //구글맵
+      //구글맵
       firebase.functions().httpsCallable('getGoogleMapAPIKey')().then((result) => {
         (g => { var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__", m = document, b = window; b = b[c] || (b[c] = {}); var d = b.maps || (b.maps = {}), r = new Set, e = new URLSearchParams, u = () => h || (h = new Promise(async (f, n) => { await (a = m.createElement("script")); e.set("libraries", [...r] + ""); for (k in g) e.set(k.replace(/[A-Z]/g, t => "_" + t[0].toLowerCase()), g[k]); e.set("callback", c + ".maps." + q); a.src = `https://maps.${c}apis.com/maps/api/js?` + e; d[q] = f; a.onerror = () => h = n(Error(p + " could not load.")); a.nonce = m.querySelector("script[nonce]")?.nonce || ""; m.head.append(a) })); d[l] ? console.warn(p + " only loads once. Ignoring:", g) : d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n)) })({
           key: result.data,
@@ -261,11 +261,13 @@
         return mapping[type] || '❓';
       }
 
+      console.log("날씨를 불러옵니다.")
       firebase.functions().httpsCallable('getWeatherForecast')({
         lat: Number(coord1),
         lon: Number(coord2),
         days: 8,
       }).then(result => {
+        console.log(result.data)
         const forecasts = result.data;
         if (forecasts && forecasts.length > 0) {
             $("#weather-forecast-container").empty(); // 기존 카드 비우기
