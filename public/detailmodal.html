@@ -63,9 +63,49 @@
         <div class="mt-3 modal-body">
             <p>💵 <span id="exchangerate">환율 정보를 제공하지 않는 국가</span></p>
         </div>
-        <div class="mt-3 modal-body bg-secondary-subtle">
-            <p>날씨영역
+        <div class="mt-3 modal-body" id="weather-forecast-section">
+            <div id="weather-forecast-container">
+                <!-- 날씨 정보가 동적으로 여기에 추가됩니다. -->
+            </div>
         </div>
+        <style>
+            #weather-forecast-container {
+                display: flex;
+                overflow-x: auto;
+                padding: 10px 5px;
+                gap: 10px;
+                scrollbar-width: none; /* Firefox */
+            }
+            #weather-forecast-container::-webkit-scrollbar {
+                display: none; /* Safari and Chrome */
+            }
+            .weather-day-card {
+                flex: 0 0 auto;
+                width: 75px;
+                padding: 10px;
+                border-radius: 20px;
+                background-color: #FEF7E0;
+                text-align: center;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                color: #333;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-around;
+            }
+            .weather-day-date {
+                font-size: 1rem;
+                font-weight: 600;
+            }
+            .weather-day-icon {
+                font-size: 2.5rem; /* 이모지 크기 */
+                line-height: 1.2;
+                margin: 4px 0;
+            }
+            .weather-day-temp {
+                font-size: 1.1rem;
+                font-weight: 600;
+            }
+        </style>
         <button class="btn btn-warning">항공권 예매하기</button>
     </div>
   </div>
@@ -94,34 +134,59 @@
     
 
   <script>
-    async function loadImg(coord1 = 35.7758714, coord2 = 140.3933101) {
-        const { Place, SearchNearbyRankPreference } = await google.maps.importLibrary("places");
-        let center = new google.maps.LatLng(coord1, coord2);
-        const request = {
-            // required parameters
-            fields: ["displayName", "photos"],
-            locationRestriction: {
-                center: center,
-                radius: 30000,
-            },
-            // optional parameters https://developers.google.com/maps/documentation/javascript/place-types?hl=ko&_gl=1*1w1np5t*_up*MQ..*_ga*MTM5MTUxNTEyMy4xNzUyNjUyODcy*_ga_NRWSTWS78N*czE3NTI2NTI4NzIkbzEkZzEkdDE3NTI2NTI4NzgkajU0JGwwJGgw#table-a
-            includedPrimaryTypes: ["cultural_landmark","historical_landmark", "beach", "hiking_area"],
-            maxResultCount: 10,
-            rankPreference: SearchNearbyRankPreference.POPULARITY,
-            language: "ko-kr",
-            // region: "us",
-            };
-            
-        //@ts-ignore
-        const { places } = await Place.searchNearby(request);
-        $("#imgDiv").empty()
-        if (places.length) {
-            places.forEach((place) => { 
-                const img = $(`<img class="rounded m-1" style="object-fit:cover; max-height: 200px; max-width: 200px;" src="${place.photos[0].getURI()}"/>`)
-                $("#imgDiv").append(img)
-            })
-        }
+    async function loadImg(coord1, coord2) {
+        const getImagesFn = firebase.functions().httpsCallable('getPlaceImages');
+        try {
+            const cachedResult = await getImagesFn({ lat: coord1, lon: coord2 });
 
+            if (cachedResult.data && cachedResult.data.length > 0) {
+                console.log("이미지 캐시 발견! DB에서 로드합니다.");
+                $("#imgDiv").empty();
+                cachedResult.data.forEach(url => {
+                    const img = $(`<img class="rounded m-1" style="object-fit:cover; max-height: 200px; max-width: 200px;" src="${url}"/>`);
+                    $("#imgDiv").append(img);
+                });
+            } else {
+                console.log("이미지 캐시 없음. Google Places API를 호출합니다.");
+                const { Place, SearchNearbyRankPreference } = await google.maps.importLibrary("places");
+                let center = new google.maps.LatLng(coord1, coord2);
+                const request = {
+                    fields: ["displayName", "photos"],
+                    locationRestriction: {
+                        center: center,
+                        radius: 30000,
+                    },
+                    includedPrimaryTypes: ["cultural_landmark", "historical_landmark", "beach", "hiking_area"],
+                    maxResultCount: 10,
+                    rankPreference: SearchNearbyRankPreference.POPULARITY,
+                    language: "ko-kr",
+                };
+
+                const { places } = await Place.searchNearby(request);
+
+                if (places.length) {
+                    const imageUrls = places.map(place => place.photos[0].getURI());
+
+                    // Display images
+                    $("#imgDiv").empty();
+                    imageUrls.forEach(url => {
+                        const img = $(`<img class="rounded m-1" style="object-fit:cover; max-height: 200px; max-width: 200px;" src="${url}"/>`);
+                        $("#imgDiv").append(img);
+                    });
+
+                    // Store images in cache for next time
+                    const storeImagesFn = firebase.functions().httpsCallable('storePlaceImages');
+                    await storeImagesFn({ lat: coord1, lon: coord2, urls: imageUrls });
+                    console.log("새로운 이미지를 캐시에 저장했습니다.");
+
+                } else {
+                    $("#imgDiv").text("주변의 추천 장소 이미지를 찾지 못했습니다.");
+                }
+            }
+        } catch (error) {
+            console.error("이미지 로딩 중 에러 발생:", error);
+            $("#imgDiv").text("이미지를 불러오는 데 실패했습니다.");
+        }
     }
         
     document.addEventListener('DOMContentLoaded', function () {
@@ -142,11 +207,91 @@
           // Add other bootstrap parameters as needed, using camel case.
         });
         console.log("Google map ready")
-        loadImg(coord1, coord2)
+        loadImg(Number(coord1), Number(coord2))
       }).catch((error) => {
         console.log("ERROR!", error);
       });
 
+      function weatherTypeToEmoji(type) {
+        const mapping = {
+            'CLEAR': '☀️',
+            'MOSTLY_CLEAR': '🌤️',
+            'PARTLY_CLOUDY': '⛅️',
+            'MOSTLY_CLOUDY': '🌥️',
+            'CLOUDY': '☁️',
+            'WINDY': '🌬️',
+            'WIND_AND_RAIN': '🌧️',
+            'LIGHT_RAIN_SHOWERS': '🌦️',
+            'CHANCE_OF_SHOWERS': '🌦️',
+            'SCATTERED_SHOWERS': '🌦️',
+            'RAIN_SHOWERS': '🌦️',
+            'HEAVY_RAIN_SHOWERS': '🌧️',
+            'LIGHT_TO_MODERATE_RAIN': '🌧️',
+            'MODERATE_TO_HEAVY_RAIN': '🌧️',
+            'RAIN': '🌧️',
+            'LIGHT_RAIN': '🌦️',
+            'HEAVY_RAIN': '🌧️',
+            'RAIN_PERIODICALLY_HEAVY': '🌧️',
+            'LIGHT_SNOW_SHOWERS': '🌨️',
+            'CHANCE_OF_SNOW_SHOWERS': '🌨️',
+            'SCATTERED_SNOW_SHOWERS': '🌨️',
+            'SNOW_SHOWERS': '🌨️',
+            'HEAVY_SNOW_SHOWERS': '❄️',
+            'LIGHT_TO_MODERATE_SNOW': '🌨️',
+            'MODERATE_TO_HEAVY_SNOW': '❄️',
+            'SNOW': '❄️',
+            'LIGHT_SNOW': '🌨️',
+            'HEAVY_SNOW': '❄️',
+            'SNOWSTORM': '❄️',
+            'SNOW_PERIODICALLY_HEAVY': '❄️',
+            'HEAVY_SNOW_STORM': '❄️',
+            'BLOWING_SNOW': '🌬️❄️',
+            'RAIN_AND_SNOW': '🌨️',
+            'HAIL': '🌨️',
+            'HAIL_SHOWERS': '🌨️',
+            'THUNDERSTORM': '⛈️',
+            'THUNDERSHOWER': '⛈️',
+            'LIGHT_THUNDERSTORM_RAIN': '⛈️',
+            'SCATTERED_THUNDERSTORMS': '⛈️',
+            'HEAVY_THUNDERSTORM': '⛈️',
+            'FOG': '🌫️',
+            'HAZE': '🌫️',
+            'DUST': '💨'
+        };
+        return mapping[type] || '❓';
+      }
+
+      firebase.functions().httpsCallable('getWeatherForecast')({
+        lat: Number(coord1),
+        lon: Number(coord2),
+        days: 8,
+      }).then(result => {
+        const forecasts = result.data;
+        if (forecasts && forecasts.length > 0) {
+            $("#weather-forecast-container").empty(); // 기존 카드 비우기
+            forecasts.forEach((day, index) => {
+                const dateParts = day.date.split('-');
+                const month = parseInt(dateParts[1], 10);
+                const dayOfMonth = parseInt(dateParts[2], 10);
+                const displayDate = `${month}/${dayOfMonth}`;
+
+                const temp = Math.round(day.maxTemp);
+                const emoji = weatherTypeToEmoji(day.daytime.type);
+
+                const cardHtml = `
+                    <div class="weather-day-card" id="weather-day-${index}">
+                        <div class="weather-day-date">${displayDate}</div>
+                        <div class="weather-day-icon">${emoji}</div>
+                        <div class="weather-day-temp">${temp}°</div>
+                    </div>
+                `;
+                $("#weather-forecast-container").append(cardHtml);
+            });
+        }
+      }).catch(error => {
+        console.error("날씨 정보 로딩 에러!", error);
+        $('#weather-forecast-section').hide();
+      });
 
       // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
       // // The Firebase SDK is initialized and available here!
@@ -157,30 +302,27 @@
       // firebase.functions().httpsCallable('yourFunction')().then(() => { });
       // firebase.messaging().requestPermission().then(() => { });
       // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-      firebase.analytics(); // call to activate
-    firebase.functions().httpsCallable('loadExchangeRate')().then((result) => {
-        firebase.functions().httpsCallable('getExchangeRate')().then((result) => {
-            console.log(result.data)
-            for(let item of result.data) {
 
-                if(item.id.indexOf("미국달러") != -1 && nationname.match("미국")) {
-                    $("#exchangerate").text(item.id + " " + item.value)
-                    break
-                }
-                if(item.id.indexOf("위안") != -1 && nationname.match("중국")) {
-                    $("#exchangerate").text(item.id + " " + item.value)
-                    break
-                }
-                if(item.id.indexOf(nationname) != -1) {
-                    $("#exchangerate").text(item.id + " " + item.value)
-                    break
-                }
+      firebase.functions().httpsCallable('getLatestExchangeRate')().then((result) => {
+        console.log(result.data)
+        for(let item of result.data) {
+
+            if(item.id.indexOf("미국달러") != -1 && nationname.match("미국")) {
+                $("#exchangerate").text(item.id + " " + item.value)
+                break
             }
-        })
-    }).catch((error) => {
-        console.log("환율 ERROR!", error);
-    });
-
+            if(item.id.indexOf("위안") != -1 && nationname.match("중국")) {
+                $("#exchangerate").text(item.id + " " + item.value)
+                break
+            }
+            if(item.id.indexOf(nationname) != -1) {
+                $("#exchangerate").text(item.id + " " + item.value)
+                break
+            }
+        }
+      }).catch((error) => {
+          console.log("환율 ERROR!", error);
+      });
     
     //   firebase.analytics().logEvent('tutorial_completed');
       // firebase.performance(); // call to activate

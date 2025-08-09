@@ -249,17 +249,6 @@
 
       // firebase.analytics();
 
-
-      firebase.functions().httpsCallable('loadDailyForecast')().then(r => console.log(r.data));
-
-      firebase.functions().httpsCallable('getDailyForecast')({
-        lat: 37.4220,
-        lon: -122.0841,
-        fromDate: '2025-08-01',
-        toDate: '2025-08-10',
-        limit: 10
-      }).then(r => console.log(r.data))
-
       firebase.analytics();
 
 
