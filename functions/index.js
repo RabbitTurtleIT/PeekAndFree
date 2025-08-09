@@ -17,9 +17,16 @@ require("dotenv").config();
 const logger = require("firebase-functions/logger");
 
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, FieldPath } = require("firebase-admin/firestore");
 
 const app = initializeApp();
+
+const fs = require("fs");
+const path = require("path");
+const csv = require("csv-parser");
+
+let ROOTaccessKey = undefined
+let ROOTaccessKeyExpiry = null
 
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
@@ -28,16 +35,18 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-exports.helloWorld = onRequest((request, response) => {
-  logger.info("Hello logs!", {structuredData: true});
-  response.send("Hello from Firebase!");
-});
+// exports.helloWorld = onRequest((request, response) => {
+//   logger.info("Hello logs!", {structuredData: true});
+//   response.send("Hello from Firebase!");
+// });
 
-exports.getGoogleMapAPIKey = onCall({cors: ["https://peekandfree.web.app"]}, (context) => {
+
+exports.getGoogleMapAPIKey = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, (context) => {
   return process.env.GOOGLEMAP_API_KEY
 });
 
-exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app"]}, async (request) => { 
+exports.getInformationOfCountry = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, async (request) => { 
+
   const apiData = await new Promise((resolve, reject) => {
     const options = {
       hostname: 'apis.data.go.kr',
@@ -82,12 +91,275 @@ exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app"]}
   return apiData;
 
 })
-/////////////////////////////////////////////// 아래부터 수정
+// /////////////////////////////////////////////// 아래부터 수정
 
+// === Daily Forecast (Google Maps Weather API) ===
 
-// 클라이언트 <- 서버(데이터베이스) 
-exports.getWeather = onCall({
+// 요청 URL 빌더
+function buildDailyForecastPath({ lat, lon, days = 5, pageSize = 5, pageToken = "", units = "METRIC" }) {
+  const params = new URLSearchParams({
+    key: process.env.GOOGLEMAP_API_KEY,          // 필수
+    "location.latitude": String(lat),
+    "location.longitude": String(lon),
+    days: String(days),                           // 최대 10
+    pageSize: String(pageSize),                   // 기본 5
+    units_system: units                           // METRIC | IMPERIAL
+  });
+  if (pageToken) params.set("pageToken", pageToken);
+  // Google Weather Daily Forecast
+  return `/v1/forecast/days:lookup?${params.toString()}`;
+}
+
+// 한 페이지 호출
+async function fetchDailyForecastPage({ lat, lon, days, pageSize, pageToken, units }) {
+  const options = {
+    hostname: 'weather.googleapis.com',
+    port: 443,
+    path: buildDailyForecastPath({ lat, lon, days, pageSize, pageToken, units }),
+    method: 'GET',
+    agent
+  };
+
+  return await new Promise((resolve, reject) => {
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => data += chunk);
+      res.on('end', () => {
+        // 상태/본문 로그
+        console.log('[WeatherAPI] status =', res.statusCode);
+        console.log('[WeatherAPI] body =', data);
+
+        try {
+          const json = JSON.parse(data);
+          // Google 에러 포맷 처리
+          if (res.statusCode >= 400 || json.error) {
+            const msg = json.error?.message || `HTTP ${res.statusCode}`;
+            return reject(new Error(`Weather API error: ${msg}`));
+          }
+          resolve(json);
+        } catch (e) {
+          reject(new Error('JSON 파싱 실패'));
+        }
+      });
+    });
+    req.on('error', reject);
+    req.setTimeout(30000, () => { req.destroy(); reject(new Error('요청 타임아웃')); });
+    req.end();
+  });
+}
+
+// 전체 페이지 수집
+async function fetchAllDailyForecast({ lat, lon, days = 5, units = 'METRIC' }) {
+  let all = [];
+  let remaining = Math.min(Math.max(Number(days) || 5, 1), 10); // 1~10
+  let pageToken = '';
+
+  do {
+    const pageSize = Math.min(remaining, 5); // 기본 5개씩
+    const page = await fetchDailyForecastPage({ lat, lon, days, pageSize, pageToken, units });
+    const items = Array.isArray(page.forecastDays) ? page.forecastDays : [];
+    all = all.concat(items);
+    remaining -= items.length;
+    pageToken = page.nextPageToken || '';
+    // API 보호를 위해 살짝 텀
+    if (pageToken) await delay(200);
+  } while (pageToken && remaining > 0);
+
+  return all;
+}
+
+// 좌표 정규화: 소수점 2자리(필요하면 3~4로 조절)
+const DEC = 3; // 좌표 고정 소수점 자릿수(필요시 2~4로 조정)
+function normCoord(n, precision = 2) {
+  return Number(Number(n).toFixed(precision));
+}
+
+function makeGeoKey(lon, lat) {
+  const lonKey = normCoord(lon);
+  const latKey = normCoord(lat);
+  return { lonKey, latKey, geoKey: `${lonKey}_${latKey}` };
+}
+
+// 기존 mapDayToDoc을 교체/업데이트
+function mapDayToDoc(day, idx, lat, lon, units, country) {
+  const display = day?.displayDate;
+  const y = display?.year, m = display?.month, d = display?.day;
+
+  const baseDateId = (y && m && d)
+    ? `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    : (day?.interval?.startTime ? String(day.interval.startTime).slice(0, 10) : `day-${idx}`);
+
+  const { lonKey, latKey, geoKey } = makeGeoKey(lon, lat);  
+
+  const id = `${geoKey}_${baseDateId}`;
+
+  const maxTemp = day?.maxTemperature?.degrees ?? day?.temperatureMax?.value ?? null;
+
+  const minTemp = day?.minTemperature?.degrees ?? day?.temperatureMin?.value ?? null;
+
+  const daytime = day?.daytimeForecast || {};
+  const nighttime = day?.nighttimeForecast || {};
+
+  return {
+    id,
+    date: baseDateId,
+    startTime: day?.interval?.startTime || null,
+    endTime: day?.interval?.endTime || null,
+    maxTemp,
+    minTemp,
+    daytime: {
+      desc: daytime?.weatherCondition?.description?.text ?? null,
+      type: daytime?.weatherCondition?.type ?? null,
+      icon: daytime?.weatherCondition?.iconBaseUri ?? null,
+      humidity: daytime?.relativeHumidity ?? null,
+      uvIndex: daytime?.uvIndex ?? null,
+      precipProbPercent: daytime?.precipitation?.probability?.percent ?? null,
+      qpfMm: daytime?.precipitation?.qpf?.quantity ?? null,
+      windKmh: daytime?.wind?.speed?.value ?? null,
+      windGustKmh: daytime?.wind?.gust?.value ?? null,
+      windDirDeg: daytime?.wind?.direction?.degrees ?? null
+    },
+    nighttime: {
+      desc: nighttime?.weatherCondition?.description?.text ?? null,
+      type: nighttime?.weatherCondition?.type ?? null,
+      icon: nighttime?.weatherCondition?.iconBaseUri ?? null,
+      humidity: nighttime?.relativeHumidity ?? null,
+      uvIndex: nighttime?.uvIndex ?? null,
+      precipProbPercent: nighttime?.precipitation?.probability?.percent ?? null,
+      qpfMm: nighttime?.precipitation?.qpf?.quantity ?? null,
+      windKmh: nighttime?.wind?.speed?.value ?? null,
+      windGustKmh: nighttime?.wind?.gust?.value ?? null,
+      windDirDeg: nighttime?.wind?.direction?.degrees ?? null
+    },
+    location: {
+      lat, lon,
+      latKey, lonKey,          // 쿼리 최적화용
+      geoKey,                  // "경도_위도"
+      countryCode: country?.countryCode || null
+    },
+  };
+}
+
+// 클라이언트 <- 서버(DB) : 조회
+exports.getDailyForecast = onCall({
   cors: ["https://peekandfree.web.app", "http://localhost:5002"]
+}, async (data, context) => {
+  const payload = data?.data || data || {};
+  const { lat, lon, fromDate, toDate, limit = 10 } = payload;
+
+  if (typeof lat !== 'number' || typeof lon !== 'number') {
+    throw new Error('lat, lon 숫자값을 전달하세요.');
+  }
+
+  const { geoKey } = makeGeoKey(lon, lat); // 경도, 위도 순으로 주의!
+
+  const db = getFirestore(app, 'peekandfree');
+  let q = db.collection('weatherForecastDaily')
+            .where('location.geoKey', '==', geoKey);
+
+  if (fromDate) q = q.where('date', '>=', fromDate);
+  if (toDate)   q = q.where('date', '<=', toDate);
+
+  q = q.orderBy('date').limit(limit);
+
+  const snap = await q.get();
+  // 복합 인덱스가 필요할 수 있음(콘솔에 링크 뜨면 한 번 생성)
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+});
+
+// 서버(DB) <- Google Weather API : 저장
+exports.loadDailyForecast = onCall({
+  cors: ["https://peekandfree.web.app"]
+}, async (data, context) => {
+  const payload = data?.data || data || {};
+  const { lat = 37.4220, lon = -122.0841, days = 10, units = 'METRIC' } = payload;
+
+  if (!process.env.GOOGLEMAP_API_KEY) {
+    throw new Error('GOOGLEMAP_API_KEY 가 설정되지 않았습니다.');
+  }
+
+  // 1) 외부 API 호출 (페이지네이션 포함)
+  const forecastDays = await fetchAllDailyForecast({ lat, lon, days, units });
+  if (!forecastDays.length) {
+    throw new Error('Weather API에서 예보를 받지 못했습니다.');
+  }
+
+  // 2) (선택) 역지오코딩 - 실패해도 진행
+  let country = null;
+  try {
+    country = await reverseGeocodeCountry(lat, lon, 'ko'); // 옵션
+  } catch (e) {
+    console.log('reverseGeocodeCountry 실패:', e.message);
+  }
+
+  // 3) 문서 변환 (경도_위도_날짜 ID)
+  const docs = forecastDays.map((day, idx) => mapDayToDoc(day, idx, lat, lon, units, country));
+
+  // 4) Firestore 저장
+  const db = getFirestore(app, 'peekandfree');
+  const batch = db.batch();
+  const col = db.collection('weatherForecastDaily');
+
+  docs.forEach(doc => batch.set(col.doc(doc.id), doc, { merge: true }));
+  await batch.commit();
+
+  return { success: true, count: docs.length, ids: docs.map(d => d.id) };
+});
+
+// === helpers: reverse geocoding (lat/lon -> country) ===
+function sanitizeId(s) {
+  // 한글/영문/숫자/밑줄/하이픈만 남김
+  return String(s || '')
+    .trim()
+    .replace(/\s+/g, '-')                // 공백 -> 하이픈
+    .replace(/[^\w\-가-힣]/g, '');       // 안전 문자만 유지
+}
+
+async function reverseGeocodeCountry(lat, lon, lang = 'ko') {
+  const params = new URLSearchParams({
+    latlng: `${lat},${lon}`,
+    key: process.env.GOOGLEMAP_API_KEY,
+    language: lang
+  });
+  const options = {
+    hostname: 'maps.googleapis.com',
+    port: 443,
+    path: `/maps/api/geocode/json?${params.toString()}`,
+    method: 'GET',
+    agent
+  };
+
+  const json = await new Promise((resolve, reject) => {
+    const req = https.request(options, (res) => {
+      let buf = '';
+      res.on('data', c => buf += c);
+      res.on('end', () => {
+        try { resolve(JSON.parse(buf)); }
+        catch { reject(new Error('Geocoding JSON 파싱 실패')); }
+      });
+    });
+    req.on('error', reject);
+    req.setTimeout(30000, () => { req.destroy(); reject(new Error('Geocoding 요청 타임아웃')); });
+    req.end();
+  });
+
+  // 결과에서 country 컴포넌트만 추출
+  for (const r of (json.results || [])) {
+    const comp = (r.address_components || []).find(c => (c.types || []).includes('country'));
+    if (comp) {
+      return {
+        countryName: comp.long_name,                     // 예: 대한민국
+        countryCode: comp.short_name                     // 예: KR
+      };
+    }
+  }
+  return { countryName: null, countryCode: null };
+}
+
+
+// // 클라이언트 <- 서버(데이터베이스) 
+exports.getWeather = onCall({
+  cors: ["https://peekandfree.web.app", "http://localhost:5002", "https://peakandfree.com"]
 }, async (data, context) => {
   const db = getFirestore(app, 'peekandfree')
   
@@ -107,9 +379,13 @@ exports.getWeather = onCall({
 
 })
 
-// 서버(데이터베이스) <- API
+// // 서버(데이터베이스) <- API
 exports.loadWeather = onCall({
-  cors: ["https://peekandfree.web.app"]
+
+  cors: ["https://peekandfree.web.app", "https://peakandfree.com"]
+
+  ,cors: ["https://peakandfree.com", "https://peekandfree.web.app"]
+
 }, async (data, context) => {
 
   const apiData = await new Promise((resolve, reject) => {
@@ -202,47 +478,218 @@ for (let i = 0; i < filtered.length; i += chunkSize) {
 });
 
 
+// 취항 정보
+exports.getServiceDestinationInfo = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, async (data, request) => {
+  const apiData = await new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'apis.data.go.kr',
+      port: 443,
+      path: `/B551177/StatusOfSrvDestinations/getServiceDestinationInfo?serviceKey=${process.env.COUNTRYINFO_APIKEY}&type=json`,
+      method: 'GET',
+      agent: agent
+    };
 
-exports.fetchFlightNearby = onCall({cors: ["https://peekandfree.web.app"]}, async (data, request) => { 
-  const { startDate, endDate, maxBudget } = data.data;
-  let accessKey = await requestTestAccessKey()
-  accessKey = accessKey.access_token
-  let result = []
-  await delay(300); // 0.3초 대기
-  console.log("일본 불러오기")
-  let tokyo = await requestFlightOffer(accessKey, 'ICN', 'NRT', startDate, endDate, maxBudget)
-  result.push(tokyo)
-  await delay(300); 
-  let yokohama = await requestFlightOffer(accessKey, 'ICN', 'HND', startDate, endDate, maxBudget)
-  result.push(yokohama)
-  await delay(300);
-  let nagoya = await requestFlightOffer(accessKey, 'ICN', 'NGO', startDate, endDate, maxBudget)
-  result.push(nagoya)
-  await delay(300); 
-  let shanghai = await requestFlightOffer(accessKey, 'ICN', 'SHA', startDate, endDate, maxBudget)
-  result.push(shanghai)
-  await delay(300); 
-  let hongkong = await requestFlightOffer(accessKey, 'ICN', 'HKG', startDate, endDate, maxBudget)
-  result.push(hongkong)
+    const req = https.request(options, (res) => {
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          const result = JSON.parse(data);
+          resolve(result);
+        } catch (error) {
+          reject(new Error('JSON 파싱 실패'));
+        }
+      });
+    });
+    
+    req.on('error', (error) => {
+      console.error("요청 에러:", error);
+      reject(error);
+    });
+    
+    req.setTimeout(30000, () => {
+      req.destroy();
+        reject(new Error('요청 타임아웃'));
+    });
+    
+    req.end();
+  })
+
+  console.log(apiData)
+  result = []
+  for(let item of apiData.response.body.items) {
+    result.push(item.airportCode)
+  }
+
   return result
+}) 
 
+
+// // exports.fetchFlightNearby = onCall({cors: ["https://peekandfree.web.app"]}, async (data, request) => { 
+// //   const { startDate, endDate, maxBudget } = data.data;
+// //   let accessKey = await requestTestAccessKey()
+// //   accessKey = accessKey.access_token
+// //   let result = []
+// //   await delay(300); // 0.3초 대기
+// //   console.log("일본 불러오기")
+// //   let tokyo = await requestFlightOffer(accessKey, 'ICN', 'NRT', startDate, endDate, maxBudget)
+// //   result.push(tokyo)
+// //   await delay(300); 
+// //   let yokohama = await requestFlightOffer(accessKey, 'ICN', 'HND', startDate, endDate, maxBudget)
+// //   result.push(yokohama)
+// //   await delay(300);
+// //   let nagoya = await requestFlightOffer(accessKey, 'ICN', 'NGO', startDate, endDate, maxBudget)
+// //   result.push(nagoya)
+// //   await delay(300); 
+// //   let shanghai = await requestFlightOffer(accessKey, 'ICN', 'SHA', startDate, endDate, maxBudget)
+// //   result.push(shanghai)
+// //   await delay(300); 
+// //   let hongkong = await requestFlightOffer(accessKey, 'ICN', 'HKG', startDate, endDate, maxBudget)
+// //   result.push(hongkong)
+// //   return result
+
+// // })
+
+
+exports.fetchFlightForCalendar = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, async (data, request) => { 
+
+  const { startDate, endDate, iata } = data.data;
+  
+  // 날짜 범위 제한: 다음달 마지막날 초과 방지
+  const today = new Date();
+  const nextMonthEnd = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+  const startRequestDate = new Date(startDate);
+  const endRequestDate = new Date(endDate);
+  
+  // 시작일과 종료일 모두 검증
+  if (startRequestDate > nextMonthEnd || endRequestDate > nextMonthEnd) {
+    console.log(`날짜 범위 초과 차단: ${startDate} ~ ${endDate}, 최대 허용: ${nextMonthEnd.toISOString().split('T')[0]}`);
+    return { 
+      error: '조회 가능한 날짜 범위를 초과했습니다.',
+      data: null 
+    };
+  }
+  
+  // 과거 날짜도 차단
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  if (startRequestDate < yesterday || endRequestDate < yesterday) {
+    console.log(`과거 날짜 차단: ${startDate} ~ ${endDate}`);
+    return { 
+      error: '과거 날짜는 조회할 수 없습니다.',
+      data: null 
+    };
+  }
+  
+  // Firestore에서 캐시된 데이터 확인
+  const db = getFirestore(app, 'peekandfree');
+  const flightRef = db.collection('ICN').doc(iata);
+  
+  try {
+    const flightDoc = await flightRef.get();
+    
+    if (flightDoc.exists) {
+      const flightData = flightDoc.data();
+      console.log(startDate + " <-> " + endDate)
+      const outboundKey = `outbound_${startDate}`;
+      const returnKey = `return_${endDate}`;
+      
+      // 가는편과 오는편 둘 다 캐시에 있는지 확인
+      if (flightData[outboundKey] && flightData[returnKey]) {
+        const outboundPrice = flightData[outboundKey];
+        const returnPrice = flightData[returnKey] || 0;
+        const totalPrice = outboundPrice + returnPrice;
+        
+        console.log(`Firestore에서 캐시된 데이터 반환: ${startDate} - ${totalPrice}`);
+        return {
+          data: {
+            data: [{
+              price: {
+                total: totalPrice
+              }
+            }]
+          }
+        };
+      }
+    }
+    
+    // 캐시에 없으면 API 호출
+    console.log(`API 호출: ${startDate}`);
+    let accessKey = await requestTestAccessKey();
+    accessKey = accessKey.access_token;
+    const apiResult = await requestFlightOffer(accessKey, 'ICN', iata, endDate, endDate); // 각각 날짜에 대한 편도 가격을 알아야함
+    
+    // API 결과를 Firestore에 저장 (왕복 정보 분리 저장)
+    if (apiResult.data && apiResult.data.length > 0) {
+      const flightOffer = apiResult.data[0];
+      const totalPrice = flightOffer.price.total;
+      const itineraries = flightOffer.itineraries;
+      
+      const updateData = {};
+      
+      if (itineraries && itineraries.length > 0) {
+        if (itineraries.length === 1) {
+          // 편도인 경우
+          updateData[`outbound_${endDate}`] = totalPrice;
+        } else if (itineraries.length === 2) {
+          // 왕복인 경우 - 첫 번째는 가는편, 두 번째는 오는편
+          const outboundPrice = Math.round(totalPrice / 2);
+          const returnPrice = totalPrice - outboundPrice;
+          
+          updateData[`outbound_${endDate}`] = outboundPrice;
+          updateData[`return_${endDate}`] = returnPrice;
+        }
+        
+        await flightRef.set(updateData, { merge: true });
+        console.log(`Firestore에 저장:`, updateData);
+      } else {
+        console.log('itineraries 데이터 없음');
+      }
+    }
+    
+    // 프론트엔드와 일관된 형태로 반환 (Firestore 구조와 동일하게)
+    return {
+      data: {
+        data: apiResult.data || []
+      }
+    };
+    
+  } catch (error) {
+    console.error('Firestore 처리 오류:', error);
+    // Firestore 오류 시 API 직접 호출
+    let accessKey = await requestTestAccessKey();
+    accessKey = accessKey.access_token;
+    const fallbackResult = await requestFlightOffer(accessKey, 'ICN', iata, startDate, endDate);
+    
+    // 프론트엔드와 일관된 형태로 반환 (Firestore 구조와 동일하게)
+    return {
+      data: {
+        data: fallbackResult.data || []
+      }
+    };
+  }
 })
 
-exports.fetchFlight = onCall({cors: ["https://peekandfree.web.app"]}, async (data, request) => { 
-  const { startDate, endDate, maxBudget, iata } = data.data;
+exports.fetchFlight = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, async (data, request) => { 
+
+  const { iata, startDate, endDate } = data.data;
   let accessKey = await requestTestAccessKey()
   accessKey = accessKey.access_token
-  return await requestFlightOffer(accessKey, 'ICN', iata, startDate, endDate, maxBudget)
-
+  
+  return await requestFlightOffer(accessKey, 'ICN', iata, startDate, endDate);
 })
 
-async function requestFlightOffer(accessKey, startAirport, destAirport, startDate, endDate, maxBudget) {
-  console.log(startDate, endDate, maxBudget)
+async function requestFlightOffer(accessKey, startAirport, destAirport, startDate, endDate) {
+  console.log(startDate, endDate)
   const apiData = await new Promise((resolve, reject) => {
     const options = {
       hostname: 'test.api.amadeus.com',
       port: 443,
-      path: `/v2/shopping/flight-offers?originLocationCode=${startAirport}&destinationLocationCode=${destAirport}&departureDate=${startDate}&returnDate=${endDate}&adults=1&nonStop=true&currencyCode=KRW&maxPrice=${Number(maxBudget)}&max=1`,
+      path: `/v2/shopping/flight-offers?originLocationCode=${startAirport}&destinationLocationCode=${destAirport}&departureDate=${startDate}&returnDate=${endDate}&adults=1&nonStop=true&currencyCode=KRW&max=1`,
       method: 'GET',
       headers: { 
         'Authorization': `Bearer ${accessKey}`
@@ -287,7 +734,19 @@ async function requestFlightOffer(accessKey, startAirport, destAirport, startDat
   // };
 }
 
+
+
 async function requestTestAccessKey() {
+  // 현재 시간 확인
+  const now = Date.now();
+  
+  // 토큰이 있고 만료되지 않았으면 기존 토큰 반환
+  if(ROOTaccessKey != undefined && ROOTaccessKeyExpiry && now < ROOTaccessKeyExpiry) {
+    console.log("기존 토큰 사용 중, 만료까지 남은 시간:", Math.floor((ROOTaccessKeyExpiry - now) / 1000), "초");
+    return { 'access_token' : ROOTaccessKey }
+  }
+
+  console.log("새로운 토큰 요청 중...");
   const postData = querystring.stringify({
     'grant_type': 'client_credentials',
     'client_id': process.env.AMADEUS_KEY,
@@ -337,49 +796,87 @@ async function requestTestAccessKey() {
     req.write(postData);
     req.end();
   })
-  console.log("ACCESS")
+  
+  console.log("TEST_ACCESS")
+  console.log(apiData);
+  
+  // 토큰 및 만료 시간 저장 (expires_in은 초 단위, 안전을 위해 30초 일찍 만료 처리)
+  ROOTaccessKey = apiData.access_token;
+  const expiresInSeconds = apiData.expires_in || 1799; // 기본값 1799초
+  ROOTaccessKeyExpiry = Date.now() + (expiresInSeconds - 30) * 1000; // 30초 일찍 만료
+  
+  console.log(`토큰 만료 시간 설정: ${expiresInSeconds}초 후 (안전 마진 30초 적용)`);
+  
+  return apiData
+}
+
+
+async function requestRealAccessKey() {
+  const postData = querystring.stringify({
+    'grant_type': 'client_credentials',
+    'client_id': process.env.AMADEUS_REAL_KEY,
+    'client_secret': process.env.AMADEUS_REAL_SECRET
+  });
+
+  const apiData = await new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.amadeus.com',  
+      port: 443,
+      path: `/v1/security/oauth2/token`,
+      method: 'POST',
+      headers: { 
+        'Content-Type': `application/x-www-form-urlencoded`,
+        'Content-Length': Buffer.byteLength(postData)
+      },
+      agent: agent
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      res.on('end', () => {
+        try {
+          const result = JSON.parse(data);
+          resolve(result);
+        } catch (error) {
+          reject(new Error('JSON 파싱 실패'));
+        }
+      });
+    });
+    
+    req.on('error', (error) => {
+      console.error("요청 에러:", error);
+      reject(error);
+    });
+    
+    req.setTimeout(30000, () => {
+      req.destroy();
+        reject(new Error('요청 타임아웃'));
+    });
+    
+    req.write(postData);
+    req.end();
+  })
+  console.log("Real_ACCESS")
   console.log(apiData);
   return apiData
 }
 
-// 클라이언트 <- 서버(데이터베이스)
-exports.getExchangeRate = onCall({
-  cors: ["https://peekandfree.web.app"]
-}, async (data, context) => {
-  const db = getFirestore(app, 'peekandfree');
-  const snapshot = await db.collection('exchangerate').get();
-
-  const exchangeRates = [];
-    snapshot.forEach(doc => {
-      exchangeRates.push({
-        id: doc.id,
-        ...doc.data() // 스프레드 연산자.
-        // id: doc.data().id // 마지막에 온 프로퍼티가 반영됨.
-        // value: doc.data().value 
-      });
-  });
-
-  return exchangeRates;
-
-})
-
-// 서버(데이터베이스) <- API
-exports.loadExchangeRate = onCall({
-  cors: ["https://peekandfree.web.app"]
-}, async (data, context) => {
-  
+async function requestFlightCheapestDates(accessKey, startAirport, destAirport, departureDate, returnDate) {
+  console.log(startAirport, destAirport, departureDate, )
   const apiData = await new Promise((resolve, reject) => {
-    const today = new Date(); 
-    const year = today.getFullYear(); 
-    const month = (today.getMonth() + 1).toString().padStart(2, '0'); 
-    const day = today.getDate().toString().padStart(2, '0');
-    const yyyymmdd = `${year}${month}${day}`;
-
     const options = {
-      hostname: 'ecos.bok.or.kr',
+      hostname: 'test.api.amadeus.com',
       port: 443,
-      path: `/api/StatisticSearch/${process.env.KOREABANK_APIKEY}/json/kr/1/53/731Y001/D/${yyyymmdd}/${yyyymmdd}`,
+      path: `/v1/shopping/flight-dates?origin=${startAirport}&destination=${destAirport}&departureDate=${departureDate}&oneWay=true`,
       method: 'GET',
+      headers: { 
+        'Authorization': `Bearer ${accessKey}`
+      },
       agent: agent
     };
 
@@ -411,21 +908,332 @@ exports.loadExchangeRate = onCall({
     });
     
     req.end();
+  })
+  console.log(apiData)
+  return apiData
+}
 
-
-  });
-  
+// [NEW] 통합 환율 조회 함수
+exports.getLatestExchangeRate = onCall({
+  cors: ["https://peekandfree.web.app", "https://peakandfree.com"]
+}, async (data, context) => {
   const db = getFirestore(app, 'peekandfree');
-  const batch = db.batch();
+  const exchangeRateRef = db.collection('exchangeRatesByDate');
 
-    for(const item of apiData.StatisticSearch.row) {
-        const docRef = db.collection("exchangerate").doc(item.ITEM_NAME1.split("/")[1].split('(')[0]);
-        batch.set(docRef, {id:item.ITEM_NAME1, value: item.DATA_VALUE})
-    }
-    await batch.commit()
+  // 1. 오늘 날짜로 문서가 있는지 확인 (YYYY-MM-DD 형식)
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+  const docRef = exchangeRateRef.doc(todayStr);
+  const docSnap = await docRef.get();
 
-    return {
-      success: true,
-      data: apiData
-    }
+  if (docSnap.exists) {
+    console.log(`[ExchangeRate] Cache hit for ${todayStr}. Returning from DB.`);
+    return docSnap.data().rates;
+  }
+
+  // 2. 캐시가 없으면 API 호출
+  console.log(`[ExchangeRate] Cache miss for ${todayStr}. Fetching from API.`);
+  
+  const apiData = await new Promise((resolve, reject) => {
+    let currentDate = new Date();
+    let maxRetries = 10; // 최대 10일 전까지 조회
+    let retryCount = 0;
+
+    const getDateString = (date) => {
+      const year = date.getFullYear();
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const day = date.getDate().toString().padStart(2, '0');
+      return `${year}${month}${day}`;
+    };
+
+    const tryGetData = (dateStr) => {
+      const options = {
+        hostname: 'ecos.bok.or.kr',
+        port: 443,
+        path: `/api/StatisticSearch/${process.env.KOREABANK_APIKEY}/json/kr/1/53/731Y001/D/${dateStr}/${dateStr}`,
+        method: 'GET',
+        agent: agent
+      };
+      return new Promise((resolveInner, rejectInner) => {
+        const req = https.request(options, (res) => {
+          let data = '';
+          res.on('data', (chunk) => data += chunk);
+          res.on('end', () => {
+            try {
+              resolveInner(JSON.parse(data));
+            } catch (e) {
+              rejectInner(new Error('JSON 파싱 실패'));
+            }
+          });
+        });
+        req.on('error', rejectInner);
+        req.setTimeout(30000, () => {
+          req.destroy();
+          rejectInner(new Error('요청 타임아웃'));
+        });
+        req.end();
+      });
+    };
+
+    const attemptApiCall = async () => {
+      const yyyymmdd = getDateString(currentDate);
+      console.log(`[ExchangeRate] API call attempt for ${yyyymmdd}`);
+      try {
+        const result = await tryGetData(yyyymmdd);
+        if (result.StatisticSearch && result.StatisticSearch.row && result.StatisticSearch.row.length > 0) {
+          console.log(`[ExchangeRate] API call successful for ${yyyymmdd}`);
+          resolve(result);
+        } else {
+          throw new Error('No data found');
+        }
+      } catch (error) {
+        console.log(`[ExchangeRate] No data for ${yyyymmdd}, trying previous day.`);
+        retryCount++;
+        if (retryCount < maxRetries) {
+          currentDate.setDate(currentDate.getDate() - 1);
+          attemptApiCall();
+        } else {
+          reject(new Error('최대 재시도 횟수 초과'));
+        }
+      }
+    };
+    attemptApiCall();
+  }).catch(async (err) => {
+      console.error("[ExchangeRate] API fetch failed after retries:", err.message);
+      // API 호출 실패 시 DB의 가장 최신 데이터 조회
+      const latestQuery = exchangeRateRef.orderBy(FieldPath.documentId(), 'desc').limit(1);
+      const latestSnapshot = await latestQuery.get();
+      if (!latestSnapshot.empty) {
+          console.log("[ExchangeRate] Falling back to latest data in DB.");
+          return latestSnapshot.docs[0].data().rates;
+      }
+      return null; // DB에도 데이터가 없으면 null 반환
+  });
+
+  if (!apiData || !apiData.StatisticSearch || !apiData.StatisticSearch.row) {
+      console.log("[ExchangeRate] No data from API and no fallback data in DB.");
+      return []; // 최종적으로 데이터가 없으면 빈 배열 반환
+  }
+
+  // 3. API 결과를 가공하여 DB에 저장
+  const rates = [];
+  apiData.StatisticSearch.row.forEach(item => {
+    rates.push({
+      id: item.ITEM_NAME1,
+      value: item.DATA_VALUE,
+      name: item.ITEM_NAME1.split("/")[1].split('(')[0]
+    });
+  });
+
+  const newDocPayload = {
+    updatedAt: new Date().toISOString(),
+    rates: rates
+  };
+
+  await exchangeRateRef.doc(todayStr).set(newDocPayload);
+  console.log(`[ExchangeRate] New rates for ${todayStr} stored in DB.`);
+
+  // 4. 새로 저장한 데이터 반환
+  return rates;
 });
+
+
+/// 공항 정보 추가
+
+exports.getAirportInfo = onCall(async (data, context) => {
+  const { iata } = data.data;
+  if (!iata) {
+    return { error: "IATA 코드가 제공되지 않았습니다." };
+  }
+
+
+  const inputIata = iata.trim().toUpperCase();
+
+
+  const csvPath = path.join(__dirname, 'airport.csv');
+
+
+  return new Promise((resolve, reject) => {
+    let found = null;
+    let resolved = false;
+
+
+    const stream = fs.createReadStream(csvPath);
+
+
+    stream
+      .pipe(csv())
+      .on('data', (row) => {
+        const iataCode = row["공항코드1(IATA)"].trim().toUpperCase();
+        if (!resolved && iataCode === inputIata) {
+          found = row;
+          resolved = true; 
+          stream.destroy();  
+          resolve(found);
+        }
+      })
+      .on('end', () => {
+        if (!resolved) {
+          resolved = true;
+          resolve({ error: `IATA 코드 '${inputIata}'에 해당하는 공항 정보를 찾을 수 없습니다.` });
+        }
+      })
+      .on('error', (error) => {
+        if (!resolved) {
+          resolved = true;
+          reject({ error: error.message });
+        }
+      });
+  });
+}); 
+
+
+// 축제 정보 추가
+exports.getFestivalInfo = onCall(async (data, context) => {
+  const { country } = data.data;
+  if (!country) {
+    return { error: "국가명이 제공되지 않았습니다." };
+  }
+
+  const inputCountry = country.trim().toUpperCase();
+  const csvPath = path.join(__dirname, 'festival.csv');
+
+  return new Promise((resolve, reject) => {
+    let results = [];
+
+    const stream = fs.createReadStream(csvPath);
+
+    stream
+      .pipe(csv())
+      .on('data', (row) => {
+        console.log("국가 ====")
+        console.log(typeof row["국가"])
+        if(!row["국가"])
+          return
+        const countryName = row["국가"].trim().toUpperCase();
+        if (countryName === inputCountry) {
+          results.push(row);
+        }
+      })
+      .on('end', () => {
+        if (results.length > 0) {
+          resolve({ festivals: results }); 
+        } else {
+          resolve({ error: `국가명 '${inputCountry}'에 해당하는 축제를 찾을 수 없습니다.` });
+        }
+      })
+      .on('error', (error) => {
+        reject({ error: error.message });
+      });
+  });
+});
+
+// getWeatherForecast: 데이터 조회 후, 부족하면 API 호출 및 저장
+exports.getWeatherForecast = onCall({
+  cors: ["https://peekandfree.web.app", "http://localhost:5002", "https://peakandfree.com"]
+}, async (data, context) => {
+  const payload = data?.data || data || {};
+  // lat, lon은 필수, days는 1~10일 사이 값으로 기본 10일
+  const { lat, lon, days = 10 } = payload;
+  const normalizedDays = Math.min(Math.max(Number(days) || 10, 1), 10);
+
+  if (typeof lat !== 'number' || typeof lon !== 'number') {
+    throw new functions.https.HttpsError('invalid-argument', 'lat, lon 숫자값을 전달하세요.');
+  }
+
+  const db = getFirestore(app, 'peekandfree');
+  const col = db.collection('weatherForecastDaily');
+  const { geoKey } = makeGeoKey(lon, lat);
+
+  // 1. 오늘부터 필요한 날짜까지의 범위 설정
+  const today = new Date();
+  const fromDate = today.toISOString().slice(0, 10);
+  const toDateObj = new Date(today);
+  toDateObj.setDate(today.getDate() + normalizedDays - 1);
+  const toDate = toDateObj.toISOString().slice(0, 10);
+
+  // 2. Firestore에서 해당 범위의 데이터 조회
+  let q = col.where('location.geoKey', '==', geoKey)
+             .where('date', '>=', fromDate)
+             .where('date', '<=', toDate)
+             .orderBy('date')
+             .limit(normalizedDays);
+
+  let snap = await q.get();
+
+  // 3. 데이터가 부족한지 확인
+  if (snap.docs.length >= normalizedDays) {
+    // 데이터가 충분하면 바로 반환
+    console.log(`[Weather] Found ${snap.docs.length} cached forecasts for ${geoKey}. Returning from DB.`);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  }
+
+  // 4. 데이터가 부족하면 API를 통해 새로 가져와서 저장
+  console.log(`[Weather] Cached data for ${geoKey} is insufficient. Fetching from API...`);
+  
+  if (!process.env.GOOGLEMAP_API_KEY) {
+    throw new functions.https.HttpsError('internal', 'GOOGLEMAP_API_KEY 가 설정되지 않았습니다.');
+  }
+
+  // 4-1. 외부 API 호출
+  const forecastDays = await fetchAllDailyForecast({ lat, lon, days: normalizedDays, units: 'METRIC' });
+  if (!forecastDays.length) {
+    throw new functions.https.HttpsError('not-found', 'Weather API에서 예보를 받지 못했습니다.');
+  }
+
+  // 4-2. (선택) 역지오코딩
+  let country = null;
+  try {
+    country = await reverseGeocodeCountry(lat, lon, 'ko');
+  } catch (e) {
+    console.log('reverseGeocodeCountry 실패:', e.message);
+  }
+
+  // 4-3. 문서 변환
+  const docs = forecastDays.map((day, idx) => mapDayToDoc(day, idx, lat, lon, 'METRIC', country));
+
+  // 4-4. Firestore 저장
+  const batch = db.batch();
+  docs.forEach(doc => batch.set(col.doc(doc.id), doc, { merge: true }));
+  await batch.commit();
+  console.log(`[Weather] Stored ${docs.length} new forecasts for ${geoKey}.`);
+
+  // 5. 저장 후 다시 DB에서 조회하여 반환
+  snap = await q.get();
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+});
+
+exports.getPlaceImages = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, async (data, context) => {
+    const { lat, lon } = data.data || data;
+    if (typeof lat !== 'number' || typeof lon !== 'number') {
+        throw new functions.https.HttpsError('invalid-argument', 'lat, lon 숫자값을 전달하세요.');
+    }
+    const { geoKey } = makeGeoKey(lon, lat);
+    const db = getFirestore(app, 'peekandfree');
+    const docRef = db.collection('placeImageCache').doc(geoKey);
+    const docSnap = await docRef.get();
+
+    if (docSnap.exists) {
+        console.log(`[ImageCache] Cache hit for ${geoKey}.`);
+        return docSnap.data().imageUrls;
+    }
+    console.log(`[ImageCache] Cache miss for ${geoKey}.`);
+    return null;
+});
+
+exports.storePlaceImages = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, async (data, context) => {
+    const { lat, lon, urls } = data.data || data;
+    if (typeof lat !== 'number' || typeof lon !== 'number' || !Array.isArray(urls)) {
+        throw new functions.https.HttpsError('invalid-argument', 'lat, lon, urls 배열을 전달하세요.');
+    }
+    const { geoKey } = makeGeoKey(lon, lat);
+    const db = getFirestore(app, 'peekandfree');
+    const docRef = db.collection('placeImageCache').doc(geoKey);
+    await docRef.set({
+        imageUrls: urls,
+        updatedAt: new Date().toISOString(),
+    });
+    console.log(`[ImageCache] Stored ${urls.length} images for ${geoKey}.`);
+    return { success: true };
+});
+
