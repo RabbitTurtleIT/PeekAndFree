@@ -218,6 +218,40 @@
 
 
   <!-- Firebase Initialization -->
+   <!-- <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiY2hsd2hkdG4wMyIsImEiOiJjanM4Y205N3MwMnI2NDRxZG55YnBucWJxIn0.TTN7N6WL69jnephZ7fJAnA';
+    const map = new mapboxgl.Map({
+        container: 'map', // container ID
+        style: 'mapbox://styles/chlwhdtn03/cmags3pq200s601rf85pfep41',
+        center: [127, 37.5], // starting position [lng, lat]. Note that lat must be set between -90 and 90
+        zoom: 3 // starting zoom
+    });
+
+    map.on('load', () => {
+  map.on('click', 'airport-point', async (e) => {
+    const airport_kor = e.features[0].properties.한글공항; 
+    const nation_kor = e.features[0].properties.한글국가명;
+    console.log(nation_kor); // ← 국가명
+
+    // 클릭이 발생할 때 바로 호출
+    firebase.functions().httpsCallable('getFestivalInfo')({ 
+      country: nation_kor.trim(),  // 불필요한 공백 제거
+      month: "6월"
+    })
+    .then((result) => {
+      if (result.data.festivals) {
+        console.log(result.data.festivals);
+      } else if (result.data.error) {
+        console.log("Error:", result.data.error);
+      }
+    })
+    .catch((error) => {
+      console.log("ERROR!", error);
+    });
+  });
+});
+  </script> -->
+
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       
@@ -227,18 +261,10 @@
       // }).catch((error) => {
       //   console.log("ERROR!", error);
       // });
+      
+    
 
-      firebase.functions().httpsCallable('getFestivalInfo')({ country: "인도" })
-  .then((result) => {
-    if (result.data.festivals) {
-      console.log(result.data.festivals);
-    } else if (result.data.error) {
-      console.log("Error:", result.data.error);
-    }
-  })
-  .catch((error) => {
-    console.log("ERROR!", error);
-  });
+    
 
 
   

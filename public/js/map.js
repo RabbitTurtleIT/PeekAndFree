@@ -143,6 +143,25 @@ $(document).ready(function () {
             coord: coordinates
         })
 
+    // 축제 정보 추가
+    // 전역 변수
+let currentSelectedCountry = null; // 마지막 클릭한 국가 저장
+
+// 지도에서 공항 클릭 시
+    map.on('click', 'airport-point', (e) => {
+    const nation_kor = e.features[0].properties.한글국가명;
+
+    console.log("선택한 국가:", nation_kor);
+
+    
+
+
+    
+  });
+
+
+
+
         map.getSource('route').setData({
 
                 'type': 'Feature',
@@ -160,6 +179,8 @@ $(document).ready(function () {
         })
         let citydata = await IATAtoCityInformation(iata)
         console.log(citydata)
+
+
         $("#detailFrame").attr("src", "detailmodal.html?coord1="+citydata.longitude+"&coord2="+citydata.Latitude+"&Cityname="+citydata.한글도시명+"&Nationname="+citydata.한글국가명)
         new mapboxgl.Popup()
             .setLngLat(coordinates)
@@ -172,6 +193,8 @@ $(document).ready(function () {
             )
             .setMaxWidth("500px")
             .addTo(map);
+
+            
     });
 
     const detailModal = document.getElementById('detailModal')
