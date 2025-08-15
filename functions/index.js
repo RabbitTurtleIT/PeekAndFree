@@ -1089,44 +1089,44 @@ exports.getAirportInfo = onCall(async (data, context) => {
 
 
 // 축제 정보 추가
-exports.getFestivalInfo = onCall(async (data, context) => {
-  const { country } = data.data;
-  if (!country) {
-    return { error: "국가명이 제공되지 않았습니다." };
-  }
+// exports.getFestivalInfo = onCall(async (data, context) => {
+//   const { country } = data.data;
+//   if (!country) {
+//     return { error: "국가명이 제공되지 않았습니다." };
+//   }
 
-  const inputCountry = country.trim().toUpperCase();
-  const csvPath = path.join(__dirname, 'festival.csv');
+//   const inputCountry = country.trim().toUpperCase();
+//   const csvPath = path.join(__dirname, 'festival.csv');
 
-  return new Promise((resolve, reject) => {
-    let results = [];
+//   return new Promise((resolve, reject) => {
+//     let results = [];
 
-    const stream = fs.createReadStream(csvPath);
+//     const stream = fs.createReadStream(csvPath);
 
-    stream
-      .pipe(csv())
-      .on('data', (row) => {
-        console.log("국가 ====")
-        console.log(typeof row["국가"])
-        if(!row["국가"])
-          return
-        const countryName = row["국가"].trim().toUpperCase();
-        if (countryName === inputCountry) {
-          results.push(row);
-        }
-      })
-      .on('end', () => {
-        if (results.length > 0) {
-          resolve({ festivals: results }); 
-        } else {
-          resolve({ error: `국가명 '${inputCountry}'에 해당하는 축제를 찾을 수 없습니다.` });
-        }
-      })
-      .on('error', (error) => {
-        reject({ error: error.message });
-      });
-  });
-});
+//     stream
+//       .pipe(csv())
+//       .on('data', (row) => {
+//         console.log("국가 ====")
+//         console.log(typeof row["국가"])
+//         if(!row["국가"])
+//           return
+//         const countryName = row["국가"].trim().toUpperCase();
+//         if (countryName === inputCountry) {
+//           results.push(row);
+//         }
+//       })
+//       .on('end', () => {
+//         if (results.length > 0) {
+//           resolve({ festivals: results }); 
+//         } else {
+//           resolve({ error: `국가명 '${inputCountry}'에 해당하는 축제를 찾을 수 없습니다.` });
+//         }
+//       })
+//       .on('error', (error) => {
+//         reject({ error: error.message });
+//       });
+//   });
+// });
 
 // getWeatherForecast: 데이터 조회 후, 부족하면 API 호출 및 저장
 exports.getWeatherForecast = onCall({
@@ -1237,3 +1237,47 @@ exports.storePlaceImages = onCall({cors: ["https://peekandfree.web.app", "https:
     return { success: true };
 });
 
+// 축제정보 캘린더에 추가
+exports.getFestivalInfo = onCall(async (data, context) => {
+  const { country } = data.data;
+  const { month } = data.data;
+  if (!country | !month) {
+    return { error: "국가명, 월이 제공되지 않았습니다." };
+  }
+
+const inputCountry = country.trim().toUpperCase();
+const inputMonth = month.trim().toUpperCase();
+  const csvPath = path.join(__dirname, 'festival.csv');
+
+  return new Promise((resolve, reject) => {
+    let results = [];
+
+    const stream = fs.createReadStream(csvPath);
+
+    stream
+      .pipe(csv())
+      .on('data', (row) => {
+        console.log("국가 ====")
+        console.log(typeof row["국가"])
+	 console.log("시기 ====")
+        console.log(typeof row["시기"])
+        if(!row["국가"] | !row["시기"])
+          return
+        const countryName = row["국가"].trim().toUpperCase();
+	const monthName = row["시기"].trim().toUpperCase();
+        if (inputCountry.includes(countryName) && monthName.includes(inputMonth)) {
+          results.push(row);
+        }
+      })
+      .on('end', () => {
+        if (results.length > 0) {
+          resolve({ festivals: results }); 
+        } else {
+          resolve({ error: `국가명 '${inputCountry}'에 해당하는 축제를 찾을 수 없습니다.` });
+        }
+      })
+      .on('error', (error) => {
+        reject({ error: error.message });
+      });
+  });
+});

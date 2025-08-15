@@ -110,30 +110,87 @@
     </div>
   </div>
   <div class="tab-pane" id="profile" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
-    <div class="container calendar-container">
-        <div class="month-navigation">
-          <button class="nav-btn" onclick="changeMonth(-1)">‹</button>
-          <div class="w-100 d-flex justify-content-around">
-            <div class="month-title" id="monthTitle1">2025년 7월</div>
-            <div class="month-title" id="monthTitle2">2025년 8월</div>
-          </div>
-          <button class="nav-btn" onclick="changeMonth(1)">›</button>
-        </div>
-        
-        <div class="row">
-          <div class="col-md-6">
-            <div class="calendar-grid" id="calendar1"></div>
-          </div>
-          <div class="col-md-6">
-            <div class="calendar-grid" id="calendar2"></div>
-          </div>
-        </div>
+  <div class="container calendar-container">
+    
+    <!-- 월 네비게이션 -->
+    <div class="month-navigation">
+      <button class="nav-btn" onclick="changeMonthForDetail(-1)">‹</button>
+      <div class="w-100 d-flex justify-content-around">
+        <div class="month-title" id="monthTitle1">2025년 7월</div>
+        <div class="month-title" id="monthTitle2">2025년 8월</div>
       </div>
+      <button class="nav-btn" onclick="changeMonthForDetail(1)">›</button>
+    </div>
+    
+    <!-- 캘린더 2개 -->
+    <div class="row">
+      <div class="col-md-6">
+        <div class="calendar-grid" id="calendar1"></div>
+      </div>
+      <div class="col-md-6">
+        <div class="calendar-grid" id="calendar2"></div>
+      </div>
+    </div>
+
+    <!-- ✅ 여기 축제 정보 블록 추가 -->
+    <div id="festivalInfo" style="margin-top:20px; padding:10px; border-top:1px solid #ccc;">
+      📅 여기에 축제 정보가 표시됩니다
+    </div>
+
   </div>
 </div>
+
     
 
   <script>
+    let current_nationname = ""
+    function updateFestival(arr) {
+      const div = document.getElementById("festivalInfo")
+      var html = "<ul>"
+
+    for (let item of arr) {
+    const date = item["개최일"] || ""
+    const name = item["축제명"] || "(이름 없음)"
+    const feature = item["특징"] || ""
+    const site = item["공식/정보 사이트"] || ""
+
+
+    const siteLink = site
+      ? `<a href="${site}" target="_blank" rel="noopener noreferrer">관련링크</a>`
+      : ""
+
+    html += `<li>${date} <strong>${name}</strong> - ${feature} ${siteLink}</li>`
+  }
+
+  html += "</ul>"
+  div.innerHTML = html
+}
+
+    function changeMonthForDetail(delta) {
+      
+    changeMonth(delta)
+    const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+    const currentMonthName = monthNames[currentDate.getMonth()];
+    // Firebase 함수 호출
+    firebase
+      .functions()
+      .httpsCallable('getFestivalInfo')({
+        country: current_nationname.trim(),
+        month: currentMonthName
+      })
+      .then((result) => {
+        console.log(result)
+        if (result.data.festivals) {
+          updateFestival(result.data.festivals)
+        } else if (result.data.error) {
+          
+        }
+      })
+      .catch((error) => {
+        console.log("ERROR!", error);
+      });
+
+    }
     async function loadImg(coord1, coord2) {
         const getImagesFn = firebase.functions().httpsCallable('getPlaceImages');
         try {
@@ -197,6 +254,7 @@
         let coord1 = param.get('coord2');
         let cityname = param.get('Cityname');
         let nationname = param.get('Nationname');
+        current_nationname = nationname
         $("#name").text(nationname + " " + cityname)
       //구글맵
       firebase.functions().httpsCallable('getGoogleMapAPIKey')().then((result) => {
@@ -209,6 +267,27 @@
         console.log("Google map ready")
         loadImg(Number(coord1), Number(coord2))
       }).catch((error) => {
+        console.log("ERROR!", error);
+      });
+
+    const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+    const currentMonthName = monthNames[currentDate.getMonth()];
+    // Firebase 함수 호출
+    firebase
+      .functions()
+      .httpsCallable('getFestivalInfo')({
+        country: nationname.trim(),
+        month: currentMonthName
+      })
+      .then((result) => {
+        console.log(result)
+        if (result.data.festivals) {
+          updateFestival(result.data.festivals)
+        } else if (result.data.error) {
+          
+        }
+      })
+      .catch((error) => {
         console.log("ERROR!", error);
       });
 
