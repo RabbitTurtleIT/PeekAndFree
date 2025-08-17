@@ -33,7 +33,7 @@
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.js"></script>
   <!-- <link href="css/bootstrap.css" rel="stylesheet"> -->
-  <script src="js/jquery-3.7.1.min"></script>
+  <script src="js/jquery-3.7.1.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
   <script src="js/map.js"></script>
   <script src="js/auth.js"></script>
@@ -45,6 +45,31 @@
       position: absolute;
       width: 100%;
       height: 100%;
+    }
+    
+    /* 예매하기 버튼 스타일 개선 */
+    .booking-btn {
+      background: linear-gradient(135deg, #FF9000, #FFBA61);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(255, 144, 0, 0.3);
+    }
+    
+    .booking-btn:hover {
+      background: linear-gradient(135deg, #e68900, #FF9000);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(255, 144, 0, 0.4);
+      color: white;
+      text-decoration: none;
+    }
+    
+    .booking-btn:active {
+      transform: translateY(0);
     }
   </style>
 </head>
@@ -71,7 +96,12 @@
               </div>
             </div>
             <div class="col-lg-6 col-md-12 ">
-              <h3>정보<a style="float: right;" class="btn btn-light">예매하기</a></h3>
+              <h3>정보<!-- 🎯 수정된 예매하기 버튼 -->
+                <a id="modal-booking-btn"
+                  class="btn btn-light"
+                   style="float: right;">
+                   ✈️ 예매하기
+                </a></h3>
               <div class="preferLocation">
 
               </div>
@@ -116,6 +146,30 @@
       } catch (e) {
         console.error(e);
       }
+      //모달 내 예매하기 버튼 이벤트
+  const detailModal = document.getElementById('detailModal');
+  if (detailModal) {
+    detailModal.addEventListener('show.bs.modal', event => {
+      // 모달이 열릴 때 예매하기 버튼 이벤트 추가
+      setTimeout(() => {
+        const modalBookingBtn = document.getElementById('modal-booking-btn');
+        if (modalBookingBtn) {
+          modalBookingBtn.addEventListener('click', () => {
+            // 모달 닫기
+            const modal = bootstrap.Modal.getInstance(detailModal);
+            if (modal) {
+              modal.hide();
+            }
+            
+            // 달력 섹션으로 이동 (부모 창에서 실행)
+            if (window.parent && window.parent.unlockCalendarSectionFromMap) {
+              window.parent.unlockCalendarSectionFromMap();
+            }
+          });
+        }
+      }, 100);
+    });
+  }
     });
   </script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js"
