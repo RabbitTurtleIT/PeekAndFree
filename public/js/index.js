@@ -41,6 +41,7 @@ document.querySelectorAll('[data-month]').forEach(item => {
         
         // 여기에 실제 지도 필터링 로직 추가
     });
+    
 });
 
 // 시즌 선택 드롭다운
@@ -55,7 +56,7 @@ document.querySelectorAll('[data-filter]').forEach(item => {
         });
     });
     console.log('드롭다운 이벤트 핸들러가 등록되었습니다.');
-    document.getElementById("monthDropdown").textContent = `☀️ ${currentMonth}월`;
+    
     const carousel = document.getElementById('mainCarousel');
     const whenContent = document.getElementById('when-content');
     // const whereContent = document.getElementById('where-content');
@@ -201,7 +202,7 @@ window.unlockCalendarSectionFromMap = function() {
     }, 100);
 }
 
-checkBookingFromMap();
+//checkBookingFromMap();
 
 function checkBookingFromMap() {
     // sessionStorage에서 예매 정보 확인
@@ -733,4 +734,3 @@ function showLoading() {
 function hideLoading() {
     $('#loading').hide();
 }
-setTimeout(checkDropdownPosition, 1000);
