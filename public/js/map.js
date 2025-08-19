@@ -4,9 +4,6 @@ let serviceAirportInIncheon = undefined;
 
 // map.js 시작 부분
 $(document).ready(function () {
-        const layerIDs = []; // 공항 마커들의 위치를 담고있습니다.
-
-    let serviceAirportInIncheon = undefined
     console.log('map.js 로딩 시작');
     
     // Firebase가 로드될 때까지 대기
@@ -39,7 +36,6 @@ function loadFirebaseData() {
             console.error("Firebase 데이터 로딩 실패:", error);
         });
 }
-
 function initializeMap() {
     mapboxgl.accessToken = 'pk.eyJ1IjoiY2hsd2hkdG4wMyIsImEiOiJjanM4Y205N3MwMnI2NDRxZG55YnBucWJxIn0.TTN7N6WL69jnephZ7fJAnA';
     
@@ -109,7 +105,6 @@ function initializeMap() {
                     }
                 }
             });
-        });
 
             map.addLayer({
                 'id': 'route',
@@ -125,127 +120,54 @@ function initializeMap() {
                 }
             });
 
+            // 클러스터 클릭 이벤트 리스너 추가
+            map.on('click', 'clusters', (e) => {
+                // clusters 레이어가 존재하는지 먼저 확인
+                if (!map.getLayer('clusters')) {
+                    console.warn('clusters 레이어가 존재하지 않습니다');
+                    return;
+                }
+                
+                const features = map.queryRenderedFeatures(e.point, {
+                    layers: ['clusters']
+                });
+                
+                if (features.length === 0) return;
+                
+                const clusterId = features[0].properties.cluster_id;
+                map.getSource('airport').getClusterExpansionZoom(
+                    clusterId,
+                    (err, zoom) => {
+                        if (err) return;
+
+                        map.easeTo({
+                            center: features[0].geometry.coordinates,
+                            zoom: zoom
+                        });
+                    }
+                );
+            });
+
             // Firebase 데이터가 이미 로드되었고 아직 공항이 추가되지 않았다면 공항 추가
             if (serviceAirportInIncheon && serviceAirportInIncheon.length > 0 && !isAirportAdded) {
                 console.log('맵 로드 완료, Firebase 데이터 있음 - 공항 추가');
                 appendAirportOnMap();
-            } else {
-                const filterExpression = [
-                    'all',
-                    ['in', ['get', '공항코드1.IATA.'], ['literal', serviceAirportInIncheon || []]],
-                    [
-                        'any',
-                        ['in', searchText, ['downcase', ['get', '한글공항']]],
-                        ['in', searchText, ['downcase', ['get', '영문공항명']]],
-                        ['in', searchText, ['downcase', ['get', '한글국가명']]],
-                        ['in', searchText, ['downcase', ['get', '영문도시명']]],
-                        ['in', searchText, ['downcase', ['get', '공항코드1.IATA.']]]
-                    ]
-                ];
-                map.setFilter('airport-point', filterExpression);
-                
             }
-        }
-    
-    
-
-    // inspect a cluster on click
-    map.on('click', 'clusters', (e) => {
-        const features = map.queryRenderedFeatures(e.point, {
-            layers: ['clusters']
         });
-        const clusterId = features[0].properties.cluster_id;
-        map.getSource('airport').getClusterExpansionZoom(
-            clusterId,
-            (err, zoom) => {
-                if (err) return;
 
-                map.easeTo({
-                    center: features[0].geometry.coordinates,
-                    zoom: zoom
-                });
-            }
-        );
-    });
+        // 모달 이벤트 리스너
+        const detailModal = document.getElementById('detailModal');
+        if (detailModal) {
+            detailModal.addEventListener('show.bs.modal', event => {
+                // 모달 표시 시 실행할 코드
+            });
+        }
 
-    map.on('click', 'airport-point', async (e) => {
-        const coordinates = e.features[0].geometry.coordinates.slice();
-        const airport_kor = e.features[0].properties.한글공항;
-        const airport_eng = e.features[0].properties.영문공항명;
-        const nation_kor = e.features[0].properties.한글국가명;
-        const nation_eng = e.features[0].properties.영문도시명;
-        const iata = e.features[0].properties['공항코드1.IATA.']
-        $(".calendar-section").show()
-        clearAllPrices()
-        // if(selectedIATA == undefined)
-        //     $(".calendar-section")[0].scrollIntoView()
-        setIATA({
-            korName: nation_kor,
-            airportKor: airport_kor,
-            iata: iata,
-            coord: coordinates
-        })
-
-    // 축제 정보 추가
-    // 전역 변수
-let currentSelectedCountry = null; // 마지막 클릭한 국가 저장
-
-// 지도에서 공항 클릭 시
-    map.on('click', 'airport-point', (e) => {
-    const nation_kor = e.features[0].properties.한글국가명;
-
-    console.log("선택한 국가:", nation_kor);
-
-    
-
-
-    
-  });
-
-
-
-
-        map.getSource('route').setData({
-
-                'type': 'Feature',
-                'properties': {},
-                // 'geometry': createGeometry(true, [126.4406957,37.4601908], coordinates )
-                'geometry': {
-                    'type': 'LineString',
-                    'coordinates': [
-                        [126.4406957,37.4601908],// ICN
-                        [(126.4406957 + coordinates[0]) / 2, (37.4601908 + coordinates[1]) / 2],// ICN
-                        coordinates
-                    ]
-                }
-            
-        })
-        let citydata = await IATAtoCityInformation(iata)
-        console.log(citydata)
-
-
-        $("#detailFrame").attr("src", "detailmodal.html?coord1="+citydata.longitude+"&coord2="+citydata.Latitude+"&Cityname="+citydata.한글도시명+"&Nationname="+citydata.한글국가명)
-        new mapboxgl.Popup()
-            .setLngLat(coordinates)
-            .setHTML(
-                `
-                    <p class="text-center"><span style="font-size:16px">${airport_kor}</span><br>
-                    <a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${nation_kor} ${citydata.한글도시명}</a>
-                    
-                    `
-            )
-            .setMaxWidth("500px")
-            .addTo(map);
-
-            
-    });
-
-    const detailModal = document.getElementById('detailModal')
-    if (detailModal) {
-        detailModal.addEventListener('show.bs.modal', event => {
-
-        })
+    } catch (error) {
+        console.error('맵 초기화 실패:', error);
+        showMapError();
     }
+}
 
     function createGeometry(doesCrossAntimeridian, coord1, coord2) {
             const geometry = {
@@ -304,61 +226,63 @@ let currentSelectedCountry = null; // 마지막 클릭한 국가 저장
         });
 
         console.log('airport-point 레이어 추가 완료');
+        // appendAirportOnMap 함수 내부의 공항 클릭 이벤트 핸들러
+try {
+    // 공항 클릭 이벤트 리스너 추가
+    map.on('click', 'airport-point', async (e) => {
+        console.log('공항 클릭됨:', e.features[0].properties);
         
-        // 공항 클릭 이벤트 리스너 추가
-        map.on('click', 'airport-point', async (e) => {
-            console.log('공항 클릭됨:', e.features[0].properties);
-            
-            const coordinates = e.features[0].geometry.coordinates.slice();
-            const airport_kor = e.features[0].properties.한글공항;
-            const nation_kor = e.features[0].properties.한글국가명;
-            const iata = e.features[0].properties['공항코드1.IATA.'];
-            
+        const coordinates = e.features[0].geometry.coordinates.slice();
+        const airport_kor = e.features[0].properties.한글공항;
+        const nation_kor = e.features[0].properties.한글국가명;
+        const iata = e.features[0].properties['공항코드1.IATA.'];
+        
+        $(".calendar-section").show();
+
+        // 달력 섹션 잠금 해제
+        if (typeof window.unlockCalendarSectionFromMap === 'function') {
+            window.unlockCalendarSectionFromMap();
+        } else {
+            $("#initialAction").hide();
             $(".calendar-section").show();
+            $(".calendar-section")[0].scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }
+        
+        // 가격 정보 초기화
+        if (typeof clearAllPrices === 'function') {
+            clearAllPrices();
+        }
 
-            // 달력 섹션 잠금 해제
-            if (typeof window.unlockCalendarSectionFromMap === 'function') {
-                window.unlockCalendarSectionFromMap();
-            } else {
-                $("#initialAction").hide();
-                $(".calendar-section").show();
-                $(".calendar-section")[0].scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'start' 
-                });
-            }
-            
-            // 가격 정보 초기화
-            if (typeof clearAllPrices === 'function') {
-                clearAllPrices();
-            }
+        // IATA 설정
+        if (typeof setIATA === 'function') {
+            setIATA({
+                korName: nation_kor,
+                airportKor: airport_kor,
+                iata: iata,
+                coord: coordinates
+            });
+        }
 
-            // IATA 설정
-            if (typeof setIATA === 'function') {
-                setIATA({
-                    korName: nation_kor,
-                    airportKor: airport_kor,
-                    iata: iata,
-                    coord: coordinates
-                });
-            }
-
-            // 루트 라인 업데이트
-            if (map.getSource('route')) {
-                map.getSource('route').setData({
-                    'type': 'Feature',
-                    'properties': {},
-                    'geometry': {
-                        'type': 'LineString',
-                        'coordinates': [
-                            [126.4406957, 37.4601908], // ICN
-                            [(126.4406957 + coordinates[0]) / 2, (37.4601908 + coordinates[1]) / 2],
-                            coordinates
-                        ]
-                    }
-                });
-            }
-            
+        // 루트 라인 업데이트
+        if (map.getSource('route')) {
+            map.getSource('route').setData({
+                'type': 'Feature',
+                'properties': {},
+                'geometry': {
+                    'type': 'LineString',
+                    'coordinates': [
+                        [126.4406957, 37.4601908], // ICN
+                        [(126.4406957 + coordinates[0]) / 2, (37.4601908 + coordinates[1]) / 2],
+                        coordinates
+                    ]
+                }
+            });
+        }
+        
+        try {
             // 도시 정보 가져오기
             let citydata = await IATAtoCityInformation(iata);
             console.log(citydata);
@@ -392,20 +316,39 @@ let currentSelectedCountry = null; // 마지막 클릭한 국가 저장
                             modal.hide();
                         }
                         
-                        unlockCalendarSectionFromMap();
+                        if (typeof unlockCalendarSectionFromMap === 'function') {
+                            unlockCalendarSectionFromMap();
+                        }
                     });
                 }
             }, 100);
-        });
-        
-        // 공항 추가 완료 플래그 설정
-        isAirportAdded = true;
-        console.log('=== 공항 데이터 추가 완료 ===');
-        
-    } catch (error) {
-        console.error('공항 데이터 추가 실패:', error);
-    }
+            
+        } catch (cityError) {
+            console.error('도시 정보 조회 실패:', cityError);
+            
+            // 도시 정보 없이도 기본 팝업은 표시
+            const popup = new mapboxgl.Popup()
+                .setLngLat(coordinates)
+                .setHTML(`
+                    <p class="text-center">
+                        <span style="font-size:16px">${airport_kor}</span><br>
+                        <a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${nation_kor}</a>
+                        <button id="booking-btn-${iata}" class="booking-btn mt-2" style="width:100%">✈️ 예매하기</button>
+                    </p>
+                `)
+                .setMaxWidth("500px")
+                .addTo(map);
+        }
+    });
+    
+    // 공항 추가 완료 플래그 설정
+    isAirportAdded = true;
+    console.log('=== 공항 데이터 추가 완료 ===');
+    
+} catch (error) {
+    console.error('공항 데이터 추가 실패:', error);
 }
+
 
 // 검색 기능
 $(document).ready(function() {
@@ -434,7 +377,7 @@ $(document).ready(function() {
         }
     });
 });
-
+    }
 // IATAtoCityInformation 함수
 async function IATAtoCityInformation(IATA) {
     try {
