@@ -200,6 +200,34 @@ body {
 .map-filters .dropdown-item:hover {
   background-color: #f8f9fa;
 }
+.seoul-ctrl {
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 0 0 2px rgba(0,0,0,.1);
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+}
+
+.seoul-ctrl-btn {
+    background: none;
+    border: none;
+    padding: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.seoul-ctrl-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.seoul-ctrl-btn:hover {
+    background: #f0f0f0;
+}
 .whereFetchDone {
   position: relative;
   height: 1px;
@@ -237,6 +265,8 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  max-width: 100vw;
+  max-height: 100vh;
 }
 
 .initial-action::before {

@@ -106,7 +106,7 @@
                 font-weight: 600;
             }
         </style>
-        <button class="btn btn-warning">항공권 예매하기</button>
+        <button class="btn btn-warning" id="bookingBtn" onclick="handleBookingClick()">항공권 예매하기</button>
     </div>
   </div>
   <div class="tab-pane" id="profile" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
@@ -144,6 +144,60 @@
 
   <script>
     let current_nationname = ""
+    // 예매하기 버튼 클릭 핸들러
+    function handleBookingClick() {
+        console.log('예매하기 버튼 클릭됨');
+        
+        // 모달 닫기
+        if (window.parent) {
+            try {
+                const modal = window.parent.bootstrap.Modal.getInstance(window.parent.document.getElementById('detailModal'));
+                if (modal) {
+                    modal.hide();
+                }
+            } catch (e) {
+                console.log('모달 닫기 실패:', e);
+            }
+        }
+        
+        // 부모 창의 달력 잠금 해제 함수 호출
+        if (window.parent && window.parent.unlockCalendarSectionFromMap) {
+            window.parent.unlockCalendarSectionFromMap();
+        } else if (window.parent && window.parent.parent && window.parent.parent.unlockCalendarSectionFromMap) {
+            window.parent.parent.unlockCalendarSectionFromMap();
+        } else {
+            // 직접 처리
+            try {
+                if (window.parent) {
+                    const parentDoc = window.parent.document;
+                    const initialAction = parentDoc.getElementById('initialAction');
+                    const calendarSection = parentDoc.querySelector('.calendar-section');
+                    
+                    if (initialAction) {
+                        initialAction.style.display = 'none';
+                    }
+                    if (calendarSection) {
+                        calendarSection.style.display = 'block';
+                        calendarSection.scrollIntoView({ 
+                            behavior: 'smooth', 
+                            block: 'start' 
+                        });
+                    }
+                }
+            } catch (e) {
+                console.log('직접 처리 실패:', e);
+            }
+        }
+        
+        // sessionStorage에 예매 정보 저장
+        if (current_cityname && current_nationname) {
+            sessionStorage.setItem('selectedDestination', `${current_nationname} ${current_cityname}`);
+            sessionStorage.setItem('bookingAction', 'true');
+            if (current_iata) {
+                sessionStorage.setItem('selectedAirportCode', current_iata);
+            }
+        }
+    }
     function updateFestival(arr) {
       const div = document.getElementById("festivalInfo")
       var html = "<ul>"
@@ -250,8 +304,8 @@
 
         let query = window.location.search;
         let param = new URLSearchParams(query);
-        let coord2 = param.get('coord1');
         let coord1 = param.get('coord2');
+        let coord2 = param.get('coord1');
         let cityname = param.get('Cityname');
         let nationname = param.get('Nationname');
         current_nationname = nationname
@@ -383,28 +437,96 @@
       // firebase.functions().httpsCallable('yourFunction')().then(() => { });
       // firebase.messaging().requestPermission().then(() => { });
       // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-
-      firebase.functions().httpsCallable('getLatestExchangeRate')().then((result) => {
-        console.log(result.data)
+firebase.functions().httpsCallable('getLatestExchangeRate')().then((result) => {
+    console.log('환율 데이터:', result.data);
+    console.log('현재 nationname:', nationname);
+    
+    if (!result.data || !Array.isArray(result.data)) {
+        console.log('환율 데이터가 배열이 아니거나 없습니다.');
+        $("#exchangerate").text("환율 정보를 가져올 수 없습니다.");
+        return;
+    }
+    
+    if (!nationname) {
+        console.log('nationname이 없습니다.');
+        $("#exchangerate").text("국가 정보가 없습니다.");
+        return;
+    }
+    
+    let found = false;
+    
+    const countryMapping = {
+        '미국': '미국달러',
+        '중국': '위안',
+        '일본': '일본엔', 
+        '영국': '영국파운드',
+        '캐나다': '캐나다달러',
+        '스위스': '스위스프랑',
+        '홍콩': '홍콩달러',
+        '스웨덴': '스웨덴크로나',
+        '오스트레일리아': '호주달러',
+        '덴마크': '덴마크크로나',
+        '노르웨이': '노르웨이크로나',
+        '사우디아라비아': '사우디아라비아리얄',
+        '쿠웨이트': '쿠웨이트디나르',
+        '바레인': '바레인디나르',
+        '아랍에미리트': '아랍에미리트디르함',
+        '싱가포르': '싱가포르달러',
+        '말레이시아': '말레이지아링깃',
+        '뉴질랜드': '뉴질랜드달러',
+        '태국': '태국바트',
+        '인도네시아': '인도네시아루피아',
+        '대만': '대만달러',
+        '몽골': '몽골투그릭',
+        '카자흐스탄': '카자흐스탄텡게',
+        '필리핀': '필리핀페소',
+        '베트남': '베트남동',
+        '브루나이': '브루나이달러',
+        '인도': '인도루피',
+        '파키스탄': '파키스탄루피',
+        '방글라데시': '방글라데시타카',
+        '멕시코': '멕시코 페소',
+        '브라질': '브라질 헤알',
+        '아르헨티나': '아르헨티나페소',
+        '러시아': '러시아루블',
+        '헝가리': '헝가리포린트',
+        '폴란드': '폴란트즈워티',
+        '체코': '체코코루나',
+        '카타르': '카타르리얄',
+        '이스라엘': '이스라엘셰켈',
+        '요르단': '요르단디나르',
+        '튀르키예': '튀르키예리라',
+        '터키': '튀르키예리라', // 터키 별칭
+        '남아프리카공화국': '남아프리카공화국랜드',
+        '남아공': '남아프리카공화국랜드', // 남아공 별칭
+        '이집트': '이집트파운드'
+    };
+    
+    // 국가명에서 매칭할 통화 찾기
+    const currencyToFind = countryMapping[nationname];
+    
+    if (currencyToFind) {
         for(let item of result.data) {
-
-            if(item.id.indexOf("미국달러") != -1 && nationname.match("미국")) {
-                $("#exchangerate").text(item.id + " " + item.value)
-                break
-            }
-            if(item.id.indexOf("위안") != -1 && nationname.match("중국")) {
-                $("#exchangerate").text(item.id + " " + item.value)
-                break
-            }
-            if(item.id.indexOf(nationname) != -1) {
-                $("#exchangerate").text(item.id + " " + item.value)
-                break
+            if(item.id && item.id.indexOf(currencyToFind) != -1) {
+                $("#exchangerate").text(item.id + " " + item.value + "원");
+                found = true;
+                console.log('환율 설정:', item.id, item.value);
+                break;
             }
         }
-      }).catch((error) => {
-          console.log("환율 ERROR!", error);
-      });
+    }
     
+    if (!found) {
+        console.log('해당 국가의 환율 정보를 찾지 못했습니다.');
+        console.log('찾으려던 통화:', currencyToFind);
+        $("#exchangerate").text("해당 국가의 환율 정보를 제공하지 않습니다.");
+    }
+    
+}).catch((error) => {
+    console.log("환율 ERROR!", error);
+    $("#exchangerate").text("환율 정보 로딩 실패");
+});
+
     //   firebase.analytics().logEvent('tutorial_completed');
       // firebase.performance(); // call to activate
       //
