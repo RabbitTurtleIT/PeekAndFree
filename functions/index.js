@@ -17,7 +17,7 @@ require("dotenv").config();
 const logger = require("firebase-functions/logger");
 
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, FieldPath } = require("firebase-admin/firestore");
 
 const app = initializeApp();
 
@@ -92,6 +92,269 @@ exports.getInformationOfCountry = onCall({cors: ["https://peakandfree.com", "htt
 
 })
 // /////////////////////////////////////////////// 아래부터 수정
+
+// === Daily Forecast (Google Maps Weather API) ===
+
+// 요청 URL 빌더
+function buildDailyForecastPath({ lat, lon, days = 5, pageSize = 5, pageToken = "", units = "METRIC" }) {
+  const params = new URLSearchParams({
+    key: process.env.GOOGLEMAP_API_KEY,          // 필수
+    "location.latitude": String(lat),
+    "location.longitude": String(lon),
+    days: String(days),                           // 최대 10
+    pageSize: String(pageSize),                   // 기본 5
+    units_system: units                           // METRIC | IMPERIAL
+  });
+  if (pageToken) params.set("pageToken", pageToken);
+  // Google Weather Daily Forecast
+  return `/v1/forecast/days:lookup?${params.toString()}`;
+}
+
+// 한 페이지 호출
+async function fetchDailyForecastPage({ lat, lon, days, pageSize, pageToken, units }) {
+  const options = {
+    hostname: 'weather.googleapis.com',
+    port: 443,
+    path: buildDailyForecastPath({ lat, lon, days, pageSize, pageToken, units }),
+    method: 'GET',
+    agent
+  };
+
+  return await new Promise((resolve, reject) => {
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => data += chunk);
+      res.on('end', () => {
+        // 상태/본문 로그
+        console.log('[WeatherAPI] status =', res.statusCode);
+        console.log('[WeatherAPI] body =', data);
+
+        try {
+          const json = JSON.parse(data);
+          // Google 에러 포맷 처리
+          if (res.statusCode >= 400 || json.error) {
+            const msg = json.error?.message || `HTTP ${res.statusCode}`;
+            return reject(new Error(`Weather API error: ${msg}`));
+          }
+          resolve(json);
+        } catch (e) {
+          reject(new Error('JSON 파싱 실패'));
+        }
+      });
+    });
+    req.on('error', reject);
+    req.setTimeout(30000, () => { req.destroy(); reject(new Error('요청 타임아웃')); });
+    req.end();
+  });
+}
+
+// 전체 페이지 수집
+async function fetchAllDailyForecast({ lat, lon, days = 5, units = 'METRIC' }) {
+  let all = [];
+  let remaining = Math.min(Math.max(Number(days) || 5, 1), 10); // 1~10
+  let pageToken = '';
+
+  do {
+    const pageSize = Math.min(remaining, 5); // 기본 5개씩
+    const page = await fetchDailyForecastPage({ lat, lon, days, pageSize, pageToken, units });
+    const items = Array.isArray(page.forecastDays) ? page.forecastDays : [];
+    all = all.concat(items);
+    remaining -= items.length;
+    pageToken = page.nextPageToken || '';
+    // API 보호를 위해 살짝 텀
+    if (pageToken) await delay(200);
+  } while (pageToken && remaining > 0);
+
+  return all;
+}
+
+// 좌표 정규화: 소수점 2자리(필요하면 3~4로 조절)
+const DEC = 3; // 좌표 고정 소수점 자릿수(필요시 2~4로 조정)
+function normCoord(n, precision = 2) {
+  return Number(Number(n).toFixed(precision));
+}
+
+function makeGeoKey(lon, lat) {
+  const lonKey = normCoord(lon);
+  const latKey = normCoord(lat);
+  return { lonKey, latKey, geoKey: `${lonKey}_${latKey}` };
+}
+
+// 기존 mapDayToDoc을 교체/업데이트
+function mapDayToDoc(day, idx, lat, lon, units, country) {
+  const display = day?.displayDate;
+  const y = display?.year, m = display?.month, d = display?.day;
+
+  const baseDateId = (y && m && d)
+    ? `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    : (day?.interval?.startTime ? String(day.interval.startTime).slice(0, 10) : `day-${idx}`);
+
+  const { lonKey, latKey, geoKey } = makeGeoKey(lon, lat);  
+
+  const id = `${geoKey}_${baseDateId}`;
+
+  const maxTemp = day?.maxTemperature?.degrees ?? day?.temperatureMax?.value ?? null;
+
+  const minTemp = day?.minTemperature?.degrees ?? day?.temperatureMin?.value ?? null;
+
+  const daytime = day?.daytimeForecast || {};
+  const nighttime = day?.nighttimeForecast || {};
+
+  return {
+    id,
+    date: baseDateId,
+    startTime: day?.interval?.startTime || null,
+    endTime: day?.interval?.endTime || null,
+    maxTemp,
+    minTemp,
+    daytime: {
+      desc: daytime?.weatherCondition?.description?.text ?? null,
+      type: daytime?.weatherCondition?.type ?? null,
+      icon: daytime?.weatherCondition?.iconBaseUri ?? null,
+      humidity: daytime?.relativeHumidity ?? null,
+      uvIndex: daytime?.uvIndex ?? null,
+      precipProbPercent: daytime?.precipitation?.probability?.percent ?? null,
+      qpfMm: daytime?.precipitation?.qpf?.quantity ?? null,
+      windKmh: daytime?.wind?.speed?.value ?? null,
+      windGustKmh: daytime?.wind?.gust?.value ?? null,
+      windDirDeg: daytime?.wind?.direction?.degrees ?? null
+    },
+    nighttime: {
+      desc: nighttime?.weatherCondition?.description?.text ?? null,
+      type: nighttime?.weatherCondition?.type ?? null,
+      icon: nighttime?.weatherCondition?.iconBaseUri ?? null,
+      humidity: nighttime?.relativeHumidity ?? null,
+      uvIndex: nighttime?.uvIndex ?? null,
+      precipProbPercent: nighttime?.precipitation?.probability?.percent ?? null,
+      qpfMm: nighttime?.precipitation?.qpf?.quantity ?? null,
+      windKmh: nighttime?.wind?.speed?.value ?? null,
+      windGustKmh: nighttime?.wind?.gust?.value ?? null,
+      windDirDeg: nighttime?.wind?.direction?.degrees ?? null
+    },
+    location: {
+      lat, lon,
+      latKey, lonKey,          // 쿼리 최적화용
+      geoKey,                  // "경도_위도"
+      countryCode: country?.countryCode || null
+    },
+  };
+}
+
+// 클라이언트 <- 서버(DB) : 조회
+exports.getDailyForecast = onCall({
+  cors: ["https://peekandfree.web.app", "http://localhost:5002"]
+}, async (data, context) => {
+  const payload = data?.data || data || {};
+  const { lat, lon, fromDate, toDate, limit = 10 } = payload;
+
+  if (typeof lat !== 'number' || typeof lon !== 'number') {
+    throw new Error('lat, lon 숫자값을 전달하세요.');
+  }
+
+  const { geoKey } = makeGeoKey(lon, lat); // 경도, 위도 순으로 주의!
+
+  const db = getFirestore(app, 'peekandfree');
+  let q = db.collection('weatherForecastDaily')
+            .where('location.geoKey', '==', geoKey);
+
+  if (fromDate) q = q.where('date', '>=', fromDate);
+  if (toDate)   q = q.where('date', '<=', toDate);
+
+  q = q.orderBy('date').limit(limit);
+
+  const snap = await q.get();
+  // 복합 인덱스가 필요할 수 있음(콘솔에 링크 뜨면 한 번 생성)
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+});
+
+// 서버(DB) <- Google Weather API : 저장
+exports.loadDailyForecast = onCall({
+  cors: ["https://peekandfree.web.app"]
+}, async (data, context) => {
+  const payload = data?.data || data || {};
+  const { lat = 37.4220, lon = -122.0841, days = 10, units = 'METRIC' } = payload;
+
+  if (!process.env.GOOGLEMAP_API_KEY) {
+    throw new Error('GOOGLEMAP_API_KEY 가 설정되지 않았습니다.');
+  }
+
+  // 1) 외부 API 호출 (페이지네이션 포함)
+  const forecastDays = await fetchAllDailyForecast({ lat, lon, days, units });
+  if (!forecastDays.length) {
+    throw new Error('Weather API에서 예보를 받지 못했습니다.');
+  }
+
+  // 2) (선택) 역지오코딩 - 실패해도 진행
+  let country = null;
+  try {
+    country = await reverseGeocodeCountry(lat, lon, 'ko'); // 옵션
+  } catch (e) {
+    console.log('reverseGeocodeCountry 실패:', e.message);
+  }
+
+  // 3) 문서 변환 (경도_위도_날짜 ID)
+  const docs = forecastDays.map((day, idx) => mapDayToDoc(day, idx, lat, lon, units, country));
+
+  // 4) Firestore 저장
+  const db = getFirestore(app, 'peekandfree');
+  const batch = db.batch();
+  const col = db.collection('weatherForecastDaily');
+
+  docs.forEach(doc => batch.set(col.doc(doc.id), doc, { merge: true }));
+  await batch.commit();
+
+  return { success: true, count: docs.length, ids: docs.map(d => d.id) };
+});
+
+// === helpers: reverse geocoding (lat/lon -> country) ===
+function sanitizeId(s) {
+  // 한글/영문/숫자/밑줄/하이픈만 남김
+  return String(s || '')
+    .trim()
+    .replace(/\s+/g, '-')                // 공백 -> 하이픈
+    .replace(/[^\w\-가-힣]/g, '');       // 안전 문자만 유지
+}
+
+async function reverseGeocodeCountry(lat, lon, lang = 'ko') {
+  const params = new URLSearchParams({
+    latlng: `${lat},${lon}`,
+    key: process.env.GOOGLEMAP_API_KEY,
+    language: lang
+  });
+  const options = {
+    hostname: 'maps.googleapis.com',
+    port: 443,
+    path: `/maps/api/geocode/json?${params.toString()}`,
+    method: 'GET',
+    agent
+  };
+
+  const json = await new Promise((resolve, reject) => {
+    const req = https.request(options, (res) => {
+      let buf = '';
+      res.on('data', c => buf += c);
+      res.on('end', () => {
+        try { resolve(JSON.parse(buf)); }
+        catch { reject(new Error('Geocoding JSON 파싱 실패')); }
+      });
+    });
+    req.on('error', reject);
+    req.setTimeout(30000, () => { req.destroy(); reject(new Error('Geocoding 요청 타임아웃')); });
+    req.end();
+  });
+
+  // 결과에서 country 컴포넌트만 추출
+  for (const r of (json.results || [])) {
+    const comp = (r.address_components || []).find(c => (c.types || []).includes('country'));
+    if (comp) {
+      return {
+        countryName: comp.long_name,                     // 예: 대한민국
+        countryCode: comp.short_name                     // 예: KR
+      };
+    }
+  }
+  return { countryName: null, countryCode: null };
+}
 
 
 // // 클라이언트 <- 서버(데이터베이스) 
@@ -650,82 +913,31 @@ async function requestFlightCheapestDates(accessKey, startAirport, destAirport, 
   return apiData
 }
 
-// 클라이언트 <- 서버(데이터베이스)
-exports.getExchangeRate = onCall({
-
-  cors: ["https://peakandfree.web.app", "https://peakandfree.com"]
-
+// [NEW] 통합 환율 조회 함수
+exports.getLatestExchangeRate = onCall({
+  cors: ["https://peekandfree.web.app", "https://peakandfree.com"]
 }, async (data, context) => {
   const db = getFirestore(app, 'peekandfree');
-  const snapshot = await db.collection('exchangerate').get();
+  const exchangeRateRef = db.collection('exchangeRatesByDate');
 
-  const exchangeRates = [];
-    snapshot.forEach(doc => {
-      exchangeRates.push({
-        id: doc.id,
-        ...doc.data() // 스프레드 연산자.
-        // id: doc.data().id // 마지막에 온 프로퍼티가 반영됨.
-        // value: doc.data().value 
-      });
-  });
+  // 1. 오늘 날짜로 문서가 있는지 확인 (YYYY-MM-DD 형식)
+  const today = new Date();
+  const todayStr = today.toISOString().slice(0, 10);
+  const docRef = exchangeRateRef.doc(todayStr);
+  const docSnap = await docRef.get();
 
-  return exchangeRates;
+  if (docSnap.exists) {
+    console.log(`[ExchangeRate] Cache hit for ${todayStr}. Returning from DB.`);
+    return docSnap.data().rates;
+  }
 
-})
-
-// 서버(데이터베이스) <- API
-exports.loadExchangeRate = onCall({
-
-  cors: ["https://peekandfree.web.app", "https://peakandfree.com"]
-
-}, async (data, context) => {
+  // 2. 캐시가 없으면 API 호출
+  console.log(`[ExchangeRate] Cache miss for ${todayStr}. Fetching from API.`);
   
   const apiData = await new Promise((resolve, reject) => {
     let currentDate = new Date();
-    let yyyymmdd;
-    let maxRetries = 10;
+    let maxRetries = 10; // 최대 10일 전까지 조회
     let retryCount = 0;
-
-    const tryGetData = async (dateStr) => {
-      const options = {
-        hostname: 'ecos.bok.or.kr',
-        port: 443,
-        path: `/api/StatisticSearch/${process.env.KOREABANK_APIKEY}/json/kr/1/53/731Y001/D/${dateStr}/${dateStr}`,
-        method: 'GET',
-        agent: agent
-      };
-
-      return new Promise((resolveInner, rejectInner) => {
-        const req = https.request(options, (res) => {
-          let data = '';
-          
-          res.on('data', (chunk) => {
-            data += chunk;
-          });
-          
-          res.on('end', () => {
-            try {
-              const result = JSON.parse(data);
-              resolveInner(result);
-            } catch (error) {
-              rejectInner(new Error('JSON 파싱 실패'));
-            }
-          });
-        });
-        
-        req.on('error', (error) => {
-          console.error("요청 에러:", error);
-          rejectInner(error);
-        });
-        
-        req.setTimeout(30000, () => {
-          req.destroy();
-          rejectInner(new Error('요청 타임아웃'));
-        });
-        
-        req.end();
-      });
-    };
 
     const getDateString = (date) => {
       const year = date.getFullYear();
@@ -734,55 +946,95 @@ exports.loadExchangeRate = onCall({
       return `${year}${month}${day}`;
     };
 
+    const tryGetData = (dateStr) => {
+      const options = {
+        hostname: 'ecos.bok.or.kr',
+        port: 443,
+        path: `/api/StatisticSearch/${process.env.KOREABANK_APIKEY}/json/kr/1/53/731Y001/D/${dateStr}/${dateStr}`,
+        method: 'GET',
+        agent: agent
+      };
+      return new Promise((resolveInner, rejectInner) => {
+        const req = https.request(options, (res) => {
+          let data = '';
+          res.on('data', (chunk) => data += chunk);
+          res.on('end', () => {
+            try {
+              resolveInner(JSON.parse(data));
+            } catch (e) {
+              rejectInner(new Error('JSON 파싱 실패'));
+            }
+          });
+        });
+        req.on('error', rejectInner);
+        req.setTimeout(30000, () => {
+          req.destroy();
+          rejectInner(new Error('요청 타임아웃'));
+        });
+        req.end();
+      });
+    };
+
     const attemptApiCall = async () => {
-      yyyymmdd = getDateString(currentDate);
-      console.log(`환율 데이터 조회 시도: ${yyyymmdd}`);
-      
+      const yyyymmdd = getDateString(currentDate);
+      console.log(`[ExchangeRate] API call attempt for ${yyyymmdd}`);
       try {
         const result = await tryGetData(yyyymmdd);
-        
         if (result.StatisticSearch && result.StatisticSearch.row && result.StatisticSearch.row.length > 0) {
-          console.log(`환율 데이터 성공적으로 조회: ${yyyymmdd}`);
+          console.log(`[ExchangeRate] API call successful for ${yyyymmdd}`);
           resolve(result);
         } else {
-          console.log(`${yyyymmdd}에 대한 환율 데이터 없음, 이전 날로 재시도`);
-          retryCount++;
-          if (retryCount < maxRetries) {
-            currentDate.setDate(currentDate.getDate() - 1);
-            attemptApiCall();
-          } else {
-            reject(new Error('최대 재시도 횟수 초과: 환율 데이터를 찾을 수 없습니다'));
-          }
+          throw new Error('No data found');
         }
       } catch (error) {
-        console.error(`${yyyymmdd} 환율 데이터 조회 실패:`, error);
+        console.log(`[ExchangeRate] No data for ${yyyymmdd}, trying previous day.`);
         retryCount++;
         if (retryCount < maxRetries) {
           currentDate.setDate(currentDate.getDate() - 1);
           attemptApiCall();
         } else {
-          reject(error);
+          reject(new Error('최대 재시도 횟수 초과'));
         }
       }
     };
-
     attemptApiCall();
+  }).catch(async (err) => {
+      console.error("[ExchangeRate] API fetch failed after retries:", err.message);
+      // API 호출 실패 시 DB의 가장 최신 데이터 조회
+      const latestQuery = exchangeRateRef.orderBy(FieldPath.documentId(), 'desc').limit(1);
+      const latestSnapshot = await latestQuery.get();
+      if (!latestSnapshot.empty) {
+          console.log("[ExchangeRate] Falling back to latest data in DB.");
+          return latestSnapshot.docs[0].data().rates;
+      }
+      return null; // DB에도 데이터가 없으면 null 반환
   });
-  
-  const db = getFirestore(app, 'peekandfree');
-  const batch = db.batch();
-  console.log(apiData)
 
-    for(const item of apiData.StatisticSearch.row) {
-        const docRef = db.collection("exchangerate").doc(item.ITEM_NAME1.split("/")[1].split('(')[0]);
-        batch.set(docRef, {id:item.ITEM_NAME1, value: item.DATA_VALUE})
-    }
-    await batch.commit()
+  if (!apiData || !apiData.StatisticSearch || !apiData.StatisticSearch.row) {
+      console.log("[ExchangeRate] No data from API and no fallback data in DB.");
+      return []; // 최종적으로 데이터가 없으면 빈 배열 반환
+  }
 
-    return {
-      success: true,
-      data: apiData
-    }
+  // 3. API 결과를 가공하여 DB에 저장
+  const rates = [];
+  apiData.StatisticSearch.row.forEach(item => {
+    rates.push({
+      id: item.ITEM_NAME1,
+      value: item.DATA_VALUE,
+      name: item.ITEM_NAME1.split("/")[1].split('(')[0]
+    });
+  });
+
+  const newDocPayload = {
+    updatedAt: new Date().toISOString(),
+    rates: rates
+  };
+
+  await exchangeRateRef.doc(todayStr).set(newDocPayload);
+  console.log(`[ExchangeRate] New rates for ${todayStr} stored in DB.`);
+
+  // 4. 새로 저장한 데이터 반환
+  return rates;
 });
 
 
@@ -834,3 +1086,198 @@ exports.getAirportInfo = onCall(async (data, context) => {
       });
   });
 }); 
+
+
+// 축제 정보 추가
+// exports.getFestivalInfo = onCall(async (data, context) => {
+//   const { country } = data.data;
+//   if (!country) {
+//     return { error: "국가명이 제공되지 않았습니다." };
+//   }
+
+//   const inputCountry = country.trim().toUpperCase();
+//   const csvPath = path.join(__dirname, 'festival.csv');
+
+//   return new Promise((resolve, reject) => {
+//     let results = [];
+
+//     const stream = fs.createReadStream(csvPath);
+
+//     stream
+//       .pipe(csv())
+//       .on('data', (row) => {
+//         console.log("국가 ====")
+//         console.log(typeof row["국가"])
+//         if(!row["국가"])
+//           return
+//         const countryName = row["국가"].trim().toUpperCase();
+//         if (countryName === inputCountry) {
+//           results.push(row);
+//         }
+//       })
+//       .on('end', () => {
+//         if (results.length > 0) {
+//           resolve({ festivals: results }); 
+//         } else {
+//           resolve({ error: `국가명 '${inputCountry}'에 해당하는 축제를 찾을 수 없습니다.` });
+//         }
+//       })
+//       .on('error', (error) => {
+//         reject({ error: error.message });
+//       });
+//   });
+// });
+
+// getWeatherForecast: 데이터 조회 후, 부족하면 API 호출 및 저장
+exports.getWeatherForecast = onCall({
+  cors: ["https://peekandfree.web.app", "http://localhost:5002", "https://peakandfree.com"]
+}, async (data, context) => {
+  const payload = data?.data || data || {};
+  // lat, lon은 필수, days는 1~10일 사이 값으로 기본 10일
+  const { lat, lon, days = 10 } = payload;
+  const normalizedDays = Math.min(Math.max(Number(days) || 10, 1), 10);
+
+  if (typeof lat !== 'number' || typeof lon !== 'number') {
+    throw new functions.https.HttpsError('invalid-argument', 'lat, lon 숫자값을 전달하세요.');
+  }
+
+  const db = getFirestore(app, 'peekandfree');
+  const col = db.collection('weatherForecastDaily');
+  const { geoKey } = makeGeoKey(lon, lat);
+
+  // 1. 오늘부터 필요한 날짜까지의 범위 설정
+  const today = new Date();
+  const fromDate = today.toISOString().slice(0, 10);
+  const toDateObj = new Date(today);
+  toDateObj.setDate(today.getDate() + normalizedDays - 1);
+  const toDate = toDateObj.toISOString().slice(0, 10);
+
+  // 2. Firestore에서 해당 범위의 데이터 조회
+  let q = col.where('location.geoKey', '==', geoKey)
+             .where('date', '>=', fromDate)
+             .where('date', '<=', toDate)
+             .orderBy('date')
+             .limit(normalizedDays);
+
+  let snap = await q.get();
+
+  // 3. 데이터가 부족한지 확인
+  if (snap.docs.length >= normalizedDays) {
+    // 데이터가 충분하면 바로 반환
+    console.log(`[Weather] Found ${snap.docs.length} cached forecasts for ${geoKey}. Returning from DB.`);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  }
+
+  // 4. 데이터가 부족하면 API를 통해 새로 가져와서 저장
+  console.log(`[Weather] Cached data for ${geoKey} is insufficient. Fetching from API...`);
+  
+  if (!process.env.GOOGLEMAP_API_KEY) {
+    throw new functions.https.HttpsError('internal', 'GOOGLEMAP_API_KEY 가 설정되지 않았습니다.');
+  }
+
+  // 4-1. 외부 API 호출
+  const forecastDays = await fetchAllDailyForecast({ lat, lon, days: normalizedDays, units: 'METRIC' });
+  if (!forecastDays.length) {
+    throw new functions.https.HttpsError('not-found', 'Weather API에서 예보를 받지 못했습니다.');
+  }
+
+  // 4-2. (선택) 역지오코딩
+  let country = null;
+  try {
+    country = await reverseGeocodeCountry(lat, lon, 'ko');
+  } catch (e) {
+    console.log('reverseGeocodeCountry 실패:', e.message);
+  }
+
+  // 4-3. 문서 변환
+  const docs = forecastDays.map((day, idx) => mapDayToDoc(day, idx, lat, lon, 'METRIC', country));
+
+  // 4-4. Firestore 저장
+  const batch = db.batch();
+  docs.forEach(doc => batch.set(col.doc(doc.id), doc, { merge: true }));
+  await batch.commit();
+  console.log(`[Weather] Stored ${docs.length} new forecasts for ${geoKey}.`);
+
+  // 5. 저장 후 다시 DB에서 조회하여 반환
+  snap = await q.get();
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+});
+
+exports.getPlaceImages = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, async (data, context) => {
+    const { lat, lon } = data.data || data;
+    if (typeof lat !== 'number' || typeof lon !== 'number') {
+        throw new functions.https.HttpsError('invalid-argument', 'lat, lon 숫자값을 전달하세요.');
+    }
+    const { geoKey } = makeGeoKey(lon, lat);
+    const db = getFirestore(app, 'peekandfree');
+    const docRef = db.collection('placeImageCache').doc(geoKey);
+    const docSnap = await docRef.get();
+
+    if (docSnap.exists) {
+        console.log(`[ImageCache] Cache hit for ${geoKey}.`);
+        return docSnap.data().imageUrls;
+    }
+    console.log(`[ImageCache] Cache miss for ${geoKey}.`);
+    return null;
+});
+
+exports.storePlaceImages = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, async (data, context) => {
+    const { lat, lon, urls } = data.data || data;
+    if (typeof lat !== 'number' || typeof lon !== 'number' || !Array.isArray(urls)) {
+        throw new functions.https.HttpsError('invalid-argument', 'lat, lon, urls 배열을 전달하세요.');
+    }
+    const { geoKey } = makeGeoKey(lon, lat);
+    const db = getFirestore(app, 'peekandfree');
+    const docRef = db.collection('placeImageCache').doc(geoKey);
+    await docRef.set({
+        imageUrls: urls,
+        updatedAt: new Date().toISOString(),
+    });
+    console.log(`[ImageCache] Stored ${urls.length} images for ${geoKey}.`);
+    return { success: true };
+});
+
+// 축제정보 캘린더에 추가
+exports.getFestivalInfo = onCall(async (data, context) => {
+  const { country } = data.data;
+  const { month } = data.data;
+  if (!country | !month) {
+    return { error: "국가명, 월이 제공되지 않았습니다." };
+  }
+
+const inputCountry = country.trim().toUpperCase();
+const inputMonth = month.trim().toUpperCase();
+  const csvPath = path.join(__dirname, 'festival.csv');
+
+  return new Promise((resolve, reject) => {
+    let results = [];
+
+    const stream = fs.createReadStream(csvPath);
+
+    stream
+      .pipe(csv())
+      .on('data', (row) => {
+        console.log("국가 ====")
+        console.log(typeof row["국가"])
+	 console.log("시기 ====")
+        console.log(typeof row["시기"])
+        if(!row["국가"] | !row["시기"])
+          return
+        const countryName = row["국가"].trim().toUpperCase();
+	const monthName = row["시기"].trim().toUpperCase();
+        if (inputCountry.includes(countryName) && monthName.includes(inputMonth)) {
+          results.push(row);
+        }
+      })
+      .on('end', () => {
+        if (results.length > 0) {
+          resolve({ festivals: results }); 
+        } else {
+          resolve({ error: `국가명 '${inputCountry}'에 해당하는 축제를 찾을 수 없습니다.` });
+        }
+      })
+      .on('error', (error) => {
+        reject({ error: error.message });
+      });
+  });
+});

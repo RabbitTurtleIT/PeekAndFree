@@ -4,6 +4,9 @@ let serviceAirportInIncheon = undefined;
 
 // map.js 시작 부분
 $(document).ready(function () {
+        const layerIDs = []; // 공항 마커들의 위치를 담고있습니다.
+
+    let serviceAirportInIncheon = undefined
     console.log('map.js 로딩 시작');
     
     // Firebase가 로드될 때까지 대기
@@ -106,6 +109,7 @@ function initializeMap() {
                     }
                 }
             });
+        });
 
             map.addLayer({
                 'id': 'route',
@@ -126,70 +130,154 @@ function initializeMap() {
                 console.log('맵 로드 완료, Firebase 데이터 있음 - 공항 추가');
                 appendAirportOnMap();
             } else {
-                console.log('맵 로드 완료, Firebase 데이터 대기 중');
-            }
-        });
-
-        // 스타일 로드 완료 이벤트 추가 (한 번만 실행)
-        map.once('styledata', () => {
-            console.log('맵 스타일 로드 완료 (once)');
-            if (serviceAirportInIncheon && serviceAirportInIncheon.length > 0 && !isAirportAdded) {
-                appendAirportOnMap();
-            }
-        });
-
-        map.on('error', (e) => {
-            console.error('맵 로딩 에러:', e);
-            showMapError();
-        });
-        
-        console.log('맵 초기화 완료');
-        
-    } catch (error) {
-        console.error('맵 초기화 실패:', error);
-        showMapError();
-    }
-}
-
-function appendAirportOnMap() {
-    console.log('=== appendAirportOnMap 시작 ===');
-    
-    // 이미 추가되었다면 중복 실행 방지
-    if (isAirportAdded) {
-        console.log('공항이 이미 추가됨 - 중복 실행 방지');
-        return;
-    }
-    
-    console.log('map 상태:', map ? 'OK' : 'UNDEFINED');
-    console.log('serviceAirportInIncheon 길이:', serviceAirportInIncheon?.length);
-    
-    // 맵 존재 여부만 확인
-    if (!map) {
-        console.warn('맵이 존재하지 않음');
-        return;
-    }
-    
-    if (!serviceAirportInIncheon || serviceAirportInIncheon.length === 0) {
-        console.warn('취항지 데이터가 없음');
-        return;
-    }
-    
-    console.log('공항 데이터를 맵에 추가 시작');
-    console.log('첫 5개 취항지:', serviceAirportInIncheon.slice(0, 5));
-    
-    try {
-        // 기존 소스가 있다면 제거
-        if (map.getSource('airport')) {
-            console.log('기존 airport 소스 제거');
-            try {
-                map.removeLayer('airport-point');
-                map.removeSource('airport');
-            } catch (e) {
-                console.log('기존 소스 제거 중 에러:', e);
+                const filterExpression = [
+                    'all',
+                    ['in', ['get', '공항코드1.IATA.'], ['literal', serviceAirportInIncheon || []]],
+                    [
+                        'any',
+                        ['in', searchText, ['downcase', ['get', '한글공항']]],
+                        ['in', searchText, ['downcase', ['get', '영문공항명']]],
+                        ['in', searchText, ['downcase', ['get', '한글국가명']]],
+                        ['in', searchText, ['downcase', ['get', '영문도시명']]],
+                        ['in', searchText, ['downcase', ['get', '공항코드1.IATA.']]]
+                    ]
+                ];
+                map.setFilter('airport-point', filterExpression);
+                
             }
         }
+    
+    
 
-        map.addSource('airport', {
+    // inspect a cluster on click
+    map.on('click', 'clusters', (e) => {
+        const features = map.queryRenderedFeatures(e.point, {
+            layers: ['clusters']
+        });
+        const clusterId = features[0].properties.cluster_id;
+        map.getSource('airport').getClusterExpansionZoom(
+            clusterId,
+            (err, zoom) => {
+                if (err) return;
+
+                map.easeTo({
+                    center: features[0].geometry.coordinates,
+                    zoom: zoom
+                });
+            }
+        );
+    });
+
+    map.on('click', 'airport-point', async (e) => {
+        const coordinates = e.features[0].geometry.coordinates.slice();
+        const airport_kor = e.features[0].properties.한글공항;
+        const airport_eng = e.features[0].properties.영문공항명;
+        const nation_kor = e.features[0].properties.한글국가명;
+        const nation_eng = e.features[0].properties.영문도시명;
+        const iata = e.features[0].properties['공항코드1.IATA.']
+        $(".calendar-section").show()
+        clearAllPrices()
+        // if(selectedIATA == undefined)
+        //     $(".calendar-section")[0].scrollIntoView()
+        setIATA({
+            korName: nation_kor,
+            airportKor: airport_kor,
+            iata: iata,
+            coord: coordinates
+        })
+
+    // 축제 정보 추가
+    // 전역 변수
+let currentSelectedCountry = null; // 마지막 클릭한 국가 저장
+
+// 지도에서 공항 클릭 시
+    map.on('click', 'airport-point', (e) => {
+    const nation_kor = e.features[0].properties.한글국가명;
+
+    console.log("선택한 국가:", nation_kor);
+
+    
+
+
+    
+  });
+
+
+
+
+        map.getSource('route').setData({
+
+                'type': 'Feature',
+                'properties': {},
+                // 'geometry': createGeometry(true, [126.4406957,37.4601908], coordinates )
+                'geometry': {
+                    'type': 'LineString',
+                    'coordinates': [
+                        [126.4406957,37.4601908],// ICN
+                        [(126.4406957 + coordinates[0]) / 2, (37.4601908 + coordinates[1]) / 2],// ICN
+                        coordinates
+                    ]
+                }
+            
+        })
+        let citydata = await IATAtoCityInformation(iata)
+        console.log(citydata)
+
+
+        $("#detailFrame").attr("src", "detailmodal.html?coord1="+citydata.longitude+"&coord2="+citydata.Latitude+"&Cityname="+citydata.한글도시명+"&Nationname="+citydata.한글국가명)
+        new mapboxgl.Popup()
+            .setLngLat(coordinates)
+            .setHTML(
+                `
+                    <p class="text-center"><span style="font-size:16px">${airport_kor}</span><br>
+                    <a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${nation_kor} ${citydata.한글도시명}</a>
+                    
+                    `
+            )
+            .setMaxWidth("500px")
+            .addTo(map);
+
+            
+    });
+
+    const detailModal = document.getElementById('detailModal')
+    if (detailModal) {
+        detailModal.addEventListener('show.bs.modal', event => {
+
+        })
+    }
+
+    function createGeometry(doesCrossAntimeridian, coord1, coord2) {
+            const geometry = {
+                'type': 'LineString',
+                'coordinates': [
+                    coord1,
+                    coord2
+                ]
+            };
+
+            // To draw a line across the 180th meridian,
+            // if the longitude of the second point minus
+            // the longitude of original (or previous) point is >= 180,
+            // subtract 360 from the longitude of the second point.
+            // If it is less than 180, add 360 to the second point.
+
+            if (doesCrossAntimeridian) {
+                const startLng = geometry.coordinates[0][0];
+                const endLng = geometry.coordinates[1][0];
+
+                if (endLng - startLng >= 180) {
+                    geometry.coordinates[1][0] -= 360;
+                } else if (endLng - startLng < 180) {
+                    geometry.coordinates[1][0] += 360;
+                }
+            }
+
+            return geometry;
+        }
+
+    function appendAirportOnMap() {
+         map.addSource('airport', {
             type: 'geojson',
             data: 'Airport.geojson'
         });

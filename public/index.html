@@ -252,11 +252,11 @@
   document.addEventListener('DOMContentLoaded', function () {
     
     // 안전정보
-    firebase.functions().httpsCallable('getInformationOfCountry')({iata : "ICN"}).then((result) => {
-      displaySafetyNotices(result.data.response.body);
-    }).catch((error) => {
-      console.log("ERROR!", error);
-    });
+    // firebase.functions().httpsCallable('getInformationOfCountry')({iata : "ICN"}).then((result) => {
+    //   displaySafetyNotices(result.data.response.body);
+    // }).catch((error) => {
+    //   console.log("ERROR!", error);
+    // });
 
 
     // firebase.functions().httpsCallable('getInformationOfCountry')().then((result) => {
