@@ -22,16 +22,48 @@ async function IATAtoCityInformation(IATA) {
 
 }
 
+
 document.addEventListener('DOMContentLoaded', () => {
-    const btnWhen = document.getElementById('btn-when');
-    const btnWhere = document.getElementById('btn-where');
-    const btnMypage = document.getElementById('mypage-btn');
+const now = new Date();
+const currentMonth = now.getMonth() + 1;
+
+//map section
+// 월 선택 드롭다운
+document.querySelectorAll('[data-month]').forEach(item => {
+    item.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const month = this.getAttribute('data-month');
+        const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+        const emoji = month === '7' || month === '8' ? '☀️' : month === '12' || month === '1' || month === '2' ? '❄️' : '🌸';
+        
+        document.getElementById('monthDropdown').innerHTML = `${emoji} ${monthNames[month-1]}`;
+        console.log(`선택된 월: ${month}`);
+        
+        // 여기에 실제 지도 필터링 로직 추가
+    });
+    
+});
+
+// 시즌 선택 드롭다운
+document.querySelectorAll('[data-filter]').forEach(item => {
+    item.addEventListener('click', function(e) {
+        e.preventDefault();
+        const filter = this.getAttribute('data-filter');
+        document.getElementById('seasonDropdown').textContent = filter;
+        console.log(`선택된 필터: ${filter}`);
+        
+        // 여기에 실제 시즌 필터링 로직 추가
+        });
+    });
+    console.log('드롭다운 이벤트 핸들러가 등록되었습니다.');
+    
     const carousel = document.getElementById('mainCarousel');
-    const indicators = $('.indicator-dot');
     const whenContent = document.getElementById('when-content');
     // const whereContent = document.getElementById('where-content');
-    $(".final-reservation").hide()
-    $(".calendar-section").hide()
+    $(".final-reservation").hide();
+    $("#flightResultsSection").hide();
+    $("#initialAction").show();
 
     const selectedImg = 'img/btn_selected.png';
     const unselectedImg = 'img/btn_unselected.png';
@@ -40,11 +72,31 @@ document.addEventListener('DOMContentLoaded', () => {
         indicators.attr('src', unselectedImg);
         indicators[activeIndex].src = selectedImg;
     }
+// 달력 네비게이션 함수
+function changeMonth(direction) {
+    console.log(`달력 월 변경: ${direction}`);
+    // 여기에 달력 월 변경 로직 추가
+}
 
-    function activateButton(activeBtn, inactiveBtn) {
-        activeBtn.classList.add('active');
-        inactiveBtn.classList.remove('active');
+// 디버깅용: 드롭다운 위치 확인
+function checkDropdownPosition() {
+    const mapContainer = document.querySelector('.map-container');
+    const mapFilters = document.querySelector('.map-filters');
+    
+    if (mapContainer && mapFilters) {
+        const containerStyle = window.getComputedStyle(mapContainer);
+        const filtersStyle = window.getComputedStyle(mapFilters);
+        
+        console.log('Map Container position:', containerStyle.position);
+        console.log('Map Filters position:', filtersStyle.position);
+        console.log('Map Filters top:', filtersStyle.top);
+        console.log('Map Filters left:', filtersStyle.left);
     }
+}
+    //function activateButton(activeBtn, inactiveBtn) {
+    //    activeBtn.classList.add('active');
+    //    inactiveBtn.classList.remove('active');
+    //}
 
     // function showContent(type, isScroll) {
     //     if (type === 'when') {
@@ -86,9 +138,9 @@ document.addEventListener('DOMContentLoaded', () => {
     //     showContent('where', true);
     // });
 
-    btnMypage.addEventListener('click', () => {
-        window.location.href = 'mypage.html';
-    });
+    //btnMypage.addEventListener('click', () => {
+    //    window.location.href = 'mypage.html';
+    //});
 
     function selectBtn(selectedBtn, unselectedBtn) {
         selectedBtn.classList.add('selected');
@@ -136,7 +188,43 @@ document.addEventListener('DOMContentLoaded', () => {
     hideLoading();
 });
 
+//지도에서 예매하기 버튼 클릭 시 달력 잠금 해제 함수 (전역 함수로 선언)
+window.unlockCalendarSectionFromMap = function() {
+    $("#initialAction").hide() // 잠금 화면 숨기기
+    $("#flightResultsSection").hide() 
+    clearAllPrices() // 가격 캐시 초기화
+    
+    // 달력 섹션으로 스크롤
+    setTimeout(() => {
+        $(".calendar-section")[0].scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
+    }, 100);
+}
 
+//checkBookingFromMap();
+
+function checkBookingFromMap() {
+    // sessionStorage에서 예매 정보 확인
+    const selectedDestination = sessionStorage.getItem('selectedDestination');
+    const bookingAction = sessionStorage.getItem('bookingAction');
+    const selectedAirportCode = sessionStorage.getItem('selectedAirportCode');
+    
+    if (bookingAction === 'true' && selectedDestination) {
+        console.log(`🎯 map.html에서 예매 요청: ${selectedDestination}`);
+        
+        // 1. 달력 섹션 자동으로 표시
+        showCalendarFromMap(selectedDestination, selectedAirportCode);
+        
+        // 2. 목적지 정보 업데이트
+        updateDestinationInfo(selectedDestination);
+        
+        // 3. 사용한 정보 정리
+        sessionStorage.removeItem('bookingAction');
+        // selectedDestination과 selectedAirportCode는 유지 (예매 과정에서 사용)
+    }
+}
 
 let currentDate = new Date();
 let selectedStartDate = null;
@@ -350,6 +438,7 @@ function refreshFlightCard(result) {
             time = time.replaceAll("PT", "").replaceAll("H", "시간 ").replaceAll("M","분")
             let loc = item.dictionaries.locations[arrivalIata]
             $('#nearbyFlightList').append(FlightCard(loc.countryCode + " " + loc.cityCode + " (" + arrivalIata + ")", price, time, item))
+            $('#nearbyFlightList').empty(); 
         } catch(e) {
             console.log(e)
             continue
@@ -370,13 +459,33 @@ async function appendFlightCard(IATA, korName, airportKor, coord) {
                 iata: IATA
             });
             console.log(result)
+
+            const flightData = result.data.data[0];
+            console.log('항공편 데이터:', flightData);
+            
             let price = result.data.data[0].price.total
             let arrivalIata = result.data.data[0].itineraries[0].segments[0].arrival.iataCode
             let time = result.data.data[0].itineraries[0].duration
             time = time.replaceAll("PT", "").replaceAll("H", "시간 ").replaceAll("M","분")
             $('#nearbyFlightList').append(FlightCard(korName + " " + airportKor + " (" + arrivalIata + ")", price, time, result.data))
+            //항공편 카드를 지도 아래 영역에 추가
+            $('#nearbyFlightList').empty(); // 기존 내용 제거
+            $('#nearbyFlightList').append(FlightCard(korName + " " + airportKor + " (" + arrivalIata + ")", price, time, result.data))
+            
+            //항공편 목록이 보이는 영역으로 스크롤
+             $('.flight-results-section').show(); // 섹션 표시
+            setTimeout(() => {
+                $('.flight-results-section')[0].scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }, 100);
+            
+            console.log('항공편 카드 생성 완료');
+            
         } catch(e) {
-            alert("조건에 맞는 항공권을 찾지 못했어요.")
+            console.error('항공편 조회 에러:', e);
+            console.log('에러 상세:', e.message);
         }
         hideLoading();
         isFetchingFlightNearby = false;
@@ -396,8 +505,13 @@ function FlightCard(locName, price, time, data) {
                 
 
         card.on("click", function() {
-            $(".final-reservation").show()
-            $(".final-reservation")[0].scrollIntoView();
+            $(".final-reservation").show() 
+            setTimeout(() => {
+            $(".final-reservation")[0].scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }, 100);
             viewTrip(locName, peopleNum, seatClass, startDate, endDate)
         })
 
@@ -569,56 +683,29 @@ async function fetchIndividualPrices(dates, priceData) {
     const today = new Date();
     const maxAllowedDate = new Date(today.getFullYear(), today.getMonth() + 2, 0);
     
-    console.log(`fetchIndividualPrices 호출 - 시작일: ${startDateStr}, 조회할 날짜들:`, dates);
+     if (dates.length === 0) return;
+    const endDateStr = dates[0]; // 첫 번째 날짜만 사용
     
-    for (const dateStr of dates) {
-        // 프론트엔드에서 한 번 더 날짜 범위 검증
-        const requestDate = new Date(dateStr);
-        if (requestDate > maxAllowedDate) {
-            console.log(`날짜 범위 초과로 API 호출 차단: ${dateStr}`);
-            setPriceForDate(dateStr, '조회 불가');
-            priceData[dateStr] = '조회 불가';
-            continue;
-        }
+    console.log(`단일 항공편 조회: ${startDateStr} - ${endDateStr}`);
+    
+    try {
+        const result = await firebase.functions().httpsCallable('fetchFlightForCalendar')({
+            startDate: startDateStr,
+            endDate: endDateStr,
+            iata: selectedIATA.iata
+        });
         
-        try {
-            console.log(`API 호출 시작: 가는날=${startDateStr}, 오는날=${dateStr}`);
-            
-            // 왕복 요청: 가는날은 시작일, 오는날은 각 날짜
-            const result = await firebase.functions().httpsCallable('fetchFlightForCalendar')({
-                startDate: startDateStr,
-                endDate: dateStr,
-                iata: selectedIATA.iata
-            });
-            
-            if (result.data && result.data.error) {
-                console.log(`범위 초과: ${dateStr}`);
-                setPriceForDate(dateStr, '범위 초과');
-                priceData[dateStr] = '범위 초과';
-            } else if (result.data && result.data.data && result.data.data.data && result.data.data.data.length > 0) {
-                // 왕복 총 가격 (시작일 출발 + 각 날짜 복귀)
-                const totalPrice = result.data.data.data[0].price.total;
-                console.log(`가격 설정: ${dateStr} = ${totalPrice}`);
-                setPriceForDate(dateStr, totalPrice);
-                priceData[dateStr] = totalPrice;
-            } else {
-                console.log(`비행편 없음: ${dateStr}`);
-                console.log('비행편이 없어서 추가 조회를 중단합니다.');
-                setPriceForDate(dateStr, '비행편 없음');
-                priceData[dateStr] = '비행편 없음';
-                break; // 비행편 없음 시 즉시 반복문 중단
-            }
-            
-            // Firestore 캐싱으로 속도가 빨라졌으므로 지연 시간 단축
-            await new Promise(resolve => setTimeout(resolve, 50));
-            
-        } catch (e) {
-            console.log(`날짜 ${dateStr} 조회 실패:`, e);
-            console.log('API 호출 실패로 인해 추가 조회를 중단합니다.');
-            setPriceForDate(dateStr, '조회 실패');
-            priceData[dateStr] = '조회 실패';
-            break; // 실패 시 즉시 반복문 중단
+        if (result.data && result.data.data && result.data.data.data && result.data.data.data.length > 0) {
+            const totalPrice = result.data.data.data[0].price.total;
+            console.log(`항공편 찾음: 가격 ${totalPrice}`);
+            // 가격 표시는 생략 (달력에 표시 안 함)
+        } else {
+            console.log(`비행편 없음`);
+            throw new Error('해당 날짜에 이용 가능한 항공편이 없습니다.');
         }
+    } catch (e) {
+        console.log(`항공편 조회 실패:`, e);
+        throw e;
     }
 }
 
