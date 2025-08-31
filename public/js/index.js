@@ -40,7 +40,6 @@ document.querySelectorAll('[data-month]').forEach(item => {
         document.getElementById('monthDropdown').innerHTML = `${emoji} ${monthNames[month-1]}`;
         console.log(`선택된 월: ${month}`);
         
-        // 여기에 실제 지도 필터링 로직 추가
         if (window.updateAirportMarkers) {
             window.updateAirportMarkers(month);
         }
@@ -56,7 +55,9 @@ document.querySelectorAll('[data-filter]').forEach(item => {
         document.getElementById('seasonDropdown').textContent = filter;
         console.log(`선택된 필터: ${filter}`);
         
-        // 여기에 실제 시즌 필터링 로직 추가
+        if (window.filterBySeason) {
+            window.filterBySeason(filter);
+        }
         });
     });
     console.log('드롭다운 이벤트 핸들러가 등록되었습니다.');

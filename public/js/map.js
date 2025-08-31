@@ -29,11 +29,10 @@ function initializeMap() {
             console.log('모든 데이터와 이미지 로딩 완료');
             appendAirportOnMap();
             isMapReady = true; // 맵과 데이터가 준비되었음을 표시
-            // 큐에 저장된 업데이트가 있는지 확인하고 실행
             if (queuedMonthUpdate) {
                 console.log(`큐에 저장된 월(${queuedMonthUpdate})로 마커 업데이트 실행`);
                 window.updateAirportMarkers(queuedMonthUpdate);
-                queuedMonthUpdate = null; // 큐 비우기
+                queuedMonthUpdate = null;
             }
         }).catch(error => {
             console.error("데이터 또는 이미지 로딩 실패:", error);
@@ -124,8 +123,8 @@ function appendAirportOnMap() {
             source: 'airport',
             filter: ['in', ['get', '공항코드1.IATA.'], ['literal', serviceAirportInIncheon]],
             layout: {
-                'icon-image': ['get', 'season_icon'], // 데이터 기반으로 아이콘 설정
-                'icon-size': 0.5, // 사이즈 줄임
+                'icon-image': ['get', 'season_icon'],
+                'icon-size': 0.5,
                 'icon-allow-overlap': true
             }
         });
@@ -179,13 +178,32 @@ window.updateAirportMarkers = function(month) {
         return;
     }
     console.log(`마커 업데이트, 월: ${month}`);
-    if (!map || !map.getSource('airport') || !airportGeoJSON) {
-        console.warn('마커 업데이트 실패: 맵 또는 데이터 미준비');
-        return;
-    }
     updateAirportFeaturesWithSeason(month);
     map.getSource('airport').setData(airportGeoJSON);
     console.log('공항 소스 데이터 업데이트 완료');
+}
+
+window.filterBySeason = function(seasonType) {
+    if (!isMapReady || !map.getLayer('airport-point')) {
+        console.warn('시즌 필터링 실패: 맵이 준비되지 않음');
+        return;
+    }
+    console.log(`시즌 필터링: ${seasonType}`);
+
+    const baseFilter = ['in', ['get', '공항코드1.IATA.'], ['literal', serviceAirportInIncheon]];
+    let seasonFilter;
+
+    if (seasonType === '성수기') {
+        seasonFilter = ['==', ['get', 'season_icon'], 'hot'];
+    } else if (seasonType === '비성수기') {
+        seasonFilter = ['==', ['get', 'season_icon'], 'sleep'];
+    }
+
+    if (seasonFilter) {
+        map.setFilter('airport-point', ['all', baseFilter, seasonFilter]);
+    } else {
+        map.setFilter('airport-point', baseFilter);
+    }
 }
 
 function setupSearchbox() {
