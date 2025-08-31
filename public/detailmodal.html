@@ -35,7 +35,16 @@
   <script src="js/jquery-3.7.1.min"></script>
 
   <script defer src="/__/firebase/init.js?useEmulator=true"></script>
-
+  <style>
+    #imgDiv img {
+      width: 200px !important;
+      height: 200px !important;
+      object-fit: cover !important;
+    }
+    .weather-summary-line {
+      margin-bottom: 0;
+    }
+  </style>
 </head>
 
 <body>
@@ -63,9 +72,11 @@
         <div class="mt-3 modal-body">
             <p>💵 <span id="exchangerate">환율 정보를 제공하지 않는 국가</span></p>
         </div>
-        <div class="mt-3 modal-body" id="weather-forecast-section">
+        <div class="mt-3 modal-body d-flex align-items-center" id="weather-forecast-section">
             <div id="weather-forecast-container">
                 <!-- 날씨 정보가 동적으로 여기에 추가됩니다. -->
+            </div>
+            <div id="weather-summary" style="text-align: left !important;">
             </div>
         </div>
         <style>
@@ -254,7 +265,7 @@
                 console.log("이미지 캐시 발견! DB에서 로드합니다.");
                 $("#imgDiv").empty();
                 cachedResult.data.forEach(url => {
-                    const img = $(`<img class="rounded m-1" style="object-fit:cover; max-height: 200px; max-width: 200px;" src="${url}"/>`);
+                    const img = $(`<img class="rounded m-1" src="${url}"/>`);
                     $("#imgDiv").append(img);
                 });
             } else {
@@ -281,7 +292,7 @@
                     // Display images
                     $("#imgDiv").empty();
                     imageUrls.forEach(url => {
-                        const img = $(`<img class="rounded m-1" style="object-fit:cover; max-height: 200px; max-width: 200px;" src="${url}"/>`);
+                        const img = $(`<img class="rounded m-1" src="${url}"/>`);
                         $("#imgDiv").append(img);
                     });
 
@@ -404,6 +415,10 @@
         const forecasts = result.data;
         if (forecasts && forecasts.length > 0) {
             $("#weather-forecast-container").empty(); // 기존 카드 비우기
+
+            let totalTemp = 0;
+            let totalPrecipProb = 0;
+
             forecasts.forEach((day, index) => {
                 const dateParts = day.date.split('-');
                 const month = parseInt(dateParts[1], 10);
@@ -412,6 +427,9 @@
 
                 const temp = Math.round(day.maxTemp);
                 const emoji = weatherTypeToEmoji(day.daytime.type);
+
+                totalTemp += (day.maxTemp + day.minTemp) / 2;
+                totalPrecipProb += (day.daytime.precipProbPercent + day.nighttime.precipProbPercent) / 2;
 
                 const cardHtml = `
                     <div class="weather-day-card" id="weather-day-${index}">
@@ -422,6 +440,16 @@
                 `;
                 $("#weather-forecast-container").append(cardHtml);
             });
+
+            const avgTemp = Math.round(totalTemp / forecasts.length);
+            const avgPrecipProb = Math.round(totalPrecipProb / forecasts.length);
+
+            const summaryHtml = `
+                <p class="weather-summary-line">평균기온: ${avgTemp}°</p>
+                <p class="weather-summary-line">강수확률: ${avgPrecipProb}%</p>
+            `;
+            $("#weather-summary").html(summaryHtml);
+
         }
       }).catch(error => {
         console.error("날씨 정보 로딩 에러!", error);

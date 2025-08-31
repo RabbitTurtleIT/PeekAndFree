@@ -41,6 +41,9 @@ document.querySelectorAll('[data-month]').forEach(item => {
         console.log(`선택된 월: ${month}`);
         
         // 여기에 실제 지도 필터링 로직 추가
+        if (window.updateAirportMarkers) {
+            window.updateAirportMarkers(month);
+        }
     });
     
 });
