@@ -17,7 +17,7 @@ function initializeMap() {
         container: 'map',
         style: 'mapbox://styles/chlwhdtn03/cmags3pq200s601rf85pfep41',
         center: [127, 37.5],
-        zoom: 3
+        zoom: 5
     });
 
     map.on('load', () => {
