@@ -369,6 +369,7 @@ function selectDate(date) {
         }
 
         // 종요일 선택 시 그 범위의 추정 예산 표시
+        console.log(selectedIATA.iata + " 선택된 상태")
         if (selectedIATA) {
             fetchMonthPrices(selectedStartDate, selectedEndDate);
         }
@@ -687,29 +688,56 @@ async function fetchIndividualPrices(dates, priceData) {
     const today = new Date();
     const maxAllowedDate = new Date(today.getFullYear(), today.getMonth() + 2, 0);
     
-     if (dates.length === 0) return;
-    const endDateStr = dates[0]; // 첫 번째 날짜만 사용
+    console.log(`fetchIndividualPrices 호출 - 시작일: ${startDateStr}, 조회할 날짜들:`, dates);
     
-    console.log(`단일 항공편 조회: ${startDateStr} - ${endDateStr}`);
-    
-    try {
-        const result = await firebase.functions().httpsCallable('fetchFlightForCalendar')({
-            startDate: startDateStr,
-            endDate: endDateStr,
-            iata: selectedIATA.iata
-        });
-        
-        if (result.data && result.data.data && result.data.data.data && result.data.data.data.length > 0) {
-            const totalPrice = result.data.data.data[0].price.total;
-            console.log(`항공편 찾음: 가격 ${totalPrice}`);
-            // 가격 표시는 생략 (달력에 표시 안 함)
-        } else {
-            console.log(`비행편 없음`);
-            throw new Error('해당 날짜에 이용 가능한 항공편이 없습니다.');
+    for (const dateStr of dates) {
+        // 프론트엔드에서 한 번 더 날짜 범위 검증
+        const requestDate = new Date(dateStr);
+        if (requestDate > maxAllowedDate) {
+            console.log(`날짜 범위 초과로 API 호출 차단: ${dateStr}`);
+            setPriceForDate(dateStr, '조회 불가');
+            priceData[dateStr] = '조회 불가';
+            continue;
         }
-    } catch (e) {
-        console.log(`항공편 조회 실패:`, e);
-        throw e;
+        
+        try {
+            console.log(`API 호출 시작: 가는날=${startDateStr}, 오는날=${dateStr}`);
+            
+            // 왕복 요청: 가는날은 시작일, 오는날은 각 날짜
+            const result = await firebase.functions().httpsCallable('fetchFlightForCalendar')({
+                startDate: startDateStr,
+                endDate: dateStr,
+                iata: selectedIATA.iata
+            });
+            
+            if (result.data && result.data.error) {
+                console.log(`범위 초과: ${dateStr}`);
+                setPriceForDate(dateStr, '범위 초과');
+                priceData[dateStr] = '범위 초과';
+            } else if (result.data && result.data.data && result.data.data.data && result.data.data.data.length > 0) {
+                // 왕복 총 가격 (시작일 출발 + 각 날짜 복귀)
+                const totalPrice = result.data.data.data[0].price.total;
+                console.log(`가격 설정: ${dateStr} = ${totalPrice}`);
+                setPriceForDate(dateStr, totalPrice);
+                priceData[dateStr] = totalPrice;
+            } else {
+                console.log(`비행편 없음: ${dateStr}`);
+                console.log('비행편이 없어서 추가 조회를 중단합니다.');
+                setPriceForDate(dateStr, '비행편 없음');
+                priceData[dateStr] = '비행편 없음';
+                break; // 비행편 없음 시 즉시 반복문 중단
+            }
+            
+            // Firestore 캐싱으로 속도가 빨라졌으므로 지연 시간 단축
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
+        } catch (e) {
+            console.log(`날짜 ${dateStr} 조회 실패:`, e);
+            console.log('API 호출 실패로 인해 추가 조회를 중단합니다.');
+            setPriceForDate(dateStr, '조회 실패');
+            priceData[dateStr] = '조회 실패';
+            break; // 실패 시 즉시 반복문 중단
+        }
     }
 }
 
