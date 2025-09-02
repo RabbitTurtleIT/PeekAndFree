@@ -1257,9 +1257,7 @@ const inputMonth = month.trim().toUpperCase();
     stream
       .pipe(csv())
       .on('data', (row) => {
-        console.log("국가 ====")
         console.log(typeof row["국가"])
-	 console.log("시기 ====")
         console.log(typeof row["시기"])
         if(!row["국가"] | !row["시기"])
           return
