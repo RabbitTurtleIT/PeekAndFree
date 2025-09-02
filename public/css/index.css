@@ -34,78 +34,11 @@ body {
   margin: 0;
   padding: 0;
 }
-/*
-.carousel-wrapper {
-  align-items: center;
-  padding-top:24px;
-  width: 80vw;
-  overflow: hidden;
-}
-
-#mainCarousel {
-  position: relative;
-  overflow: hidden;
-  border-radius: 20px;
-}
-
-.carousel-inner,
-.carousel-inner img { 
-  display: block;
-  margin: auto;
-  object-fit: cover;
-}
-
-
-.custom-indicators {
-  margin-top: 12px;
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-}
-.select {
-  text-align: center;
-  margin: 30px 0;
-}
-
-.select h2 {
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-bottom: 10px;
-}
-
-.additional-text {
-  color: var(--black);
-  margin-bottom: 30px;
-}
-
-.btn-toggle-wrap {
-  display: inline-flex;
-  border-radius: 50px;
-  overflow: hidden;
-  border: 2px solid #FFA500;
-}
-
-.btn-toggle {
-  padding: 0.5rem 1.5rem;
-  font-weight: 600;
-  border: none;
-  background-color: white;
-  color: #FFA500;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  font-size: 1.2rem;
-}
-
-.btn-toggle.active {
-  background-color: #FFA500;
-  color: white;
-}
-*/
-/*when-section*/
 
 .map-section{
   height: auto;
   max-width: 100vw;
+  justify-items: center;
   
 
 }
@@ -113,7 +46,7 @@ body {
 .banner-area {
   max-width: 100%;
   height: 20vh;
-  background-color: #eee; /* 임시 회색 배경 */
+  background-color: red; /* 임시 회색 배경 */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -130,14 +63,13 @@ body {
 .map-background {
   background-color: white;
   margin: 0;
-  max-width: 100vw;
+  max-width: 95vw;
   height: 60vh;
   position: relative;
-  border-radius: 15px;
+  border-radius: 20px;
   overflow: visible;
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   margin-bottom: 20px; /* 하단 여백 추가 */
-
 }
 
 .map-container {
@@ -253,11 +185,11 @@ body {
 /* 초기 액션 섹션 (달력 대신 보이는 부분) */
 .initial-action-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, #FFE3BF 0%, #FFBA61 100%);
+  top: 2vb;
+  left: 5vb;
+  right: 5vb;
+  bottom: 2vb;
+  background: rgba(255, 241, 222, 0.95);  
   border-radius: 20px;
   padding: 40px 20px;
   text-align: center;
@@ -286,22 +218,22 @@ body {
 }
 
 .airplane-icon {
-  font-size: 3rem;
+  font-size: 100px;
   margin-bottom: 20px;
   color: var(--orange-primary);
 }
 
 .initial-title {
-  font-size: 1.5rem;
+  font-size: 40px;
   font-weight: bold;
-  color: var(--black);
+  color: #FF9000;
   margin-bottom: 10px;
 }
 
 .initial-subtitle {
   color: #666;
   margin-bottom: 30px;
-  font-size: 1rem;
+  font-size: 20px;
 }
 
 .show-calendar-btn {
@@ -597,11 +529,11 @@ body {
 
 /* 푸터 */
 footer {
-  background: #f8f9fa;
+  background: #f9f9f9;
   padding: 30px 20px;
-  text-align: center;
-  color: #666;
-  border-top: 1px solid #e9ecef;
+  text-align: right;
+  color: #FF9000;
+  border-top: 1px solid #f9f9f9;
 }
 
 /* 반응형 */
