@@ -63,19 +63,42 @@ document.querySelectorAll('[data-filter]').forEach(item => {
     console.log('드롭다운 이벤트 핸들러가 등록되었습니다.');
     
     const carousel = document.getElementById('mainCarousel');
+    const indicators = document.querySelectorAll('.indicator-dot'); 
     const whenContent = document.getElementById('when-content');
     // const whereContent = document.getElementById('where-content');
     $(".final-reservation").hide();
     $("#flightResultsSection").hide();
     $("#initialAction").show();
 
-    const selectedImg = 'img/btn_selected.png';
-    const unselectedImg = 'img/btn_unselected.png';
-
     function updateIndicators(activeIndex) {
-        indicators.attr('src', unselectedImg);
-        indicators[activeIndex].src = selectedImg;
+        indicators.forEach((indicator, index) => {
+            if (index === activeIndex) {
+                indicator.classList.add('active');
+            } else {
+                indicator.classList.remove('active');
+            }
+        });
     }
+    indicators.forEach((indicator, index) => {
+        indicator.addEventListener('click', function() {
+            // Bootstrap 캐러셀 인스턴스 가져오기
+            const carouselInstance = bootstrap.Carousel.getInstance(carousel) || 
+                                   new bootstrap.Carousel(carousel);
+            carouselInstance.to(index);
+        });
+    });
+    
+    // 캐러셀 슬라이드 변경 이벤트
+    if (carousel) {
+        // 초기 인디케이터 설정
+        updateIndicators(0);
+        
+        // Bootstrap 5 이벤트 사용
+        carousel.addEventListener('slid.bs.carousel', function(event) {
+            updateIndicators(event.to);
+        });
+    }
+    
 // 달력 네비게이션 함수
 function changeMonth(direction) {
     console.log(`달력 월 변경: ${direction}`);
@@ -97,54 +120,9 @@ function checkDropdownPosition() {
         console.log('Map Filters left:', filtersStyle.left);
     }
 }
-    //function activateButton(activeBtn, inactiveBtn) {
-    //    activeBtn.classList.add('active');
-    //    inactiveBtn.classList.remove('active');
-    //}
-
-    // function showContent(type, isScroll) {
-    //     if (type === 'when') {
-    //         whenContent.style.display = 'block';
-    //         whereContent.style.display = 'none';
-    //         if (isScroll) {
-    //             $("div#map").appendTo('div#when-mapdiv')
-    //             $(".calendar-container").appendTo('section#when-calsec')
-    //             whenContent.scrollIntoView({ behavior: 'smooth' });
-    //         }
-    //     } else {
-    //         whenContent.style.display = 'none';
-    //         whereContent.style.display = 'block';
-    //         // jQuery("#map").detach().append('#where-content.map-section')
-    //         if (isScroll) {
-    //             $("div#map").appendTo('div#where-mapdiv')
-    //             $(".calendar-container").appendTo('section#where-calsec')
-    //             whereContent.scrollIntoView({ behavior: 'smooth' });
-    //         }
-    //     }
-    // }
-
-    // updateIndicators(0);
     // showContent('when', false);
     initCalendar();
-    
-    // carousel.addEventListener('slide.bs.carousel', function (e) {
-    //     updateIndicators(e.to);
-    // });
-
-
-    // btnWhen.addEventListener('click', () => {
-    //     activateButton(btnWhen, btnWhere);
-    //     showContent('when', true);
-    // });
-
-    // btnWhere.addEventListener('click', () => {
-    //     activateButton(btnWhere, btnWhen);
-    //     showContent('where', true);
-    // });
-
-    //btnMypage.addEventListener('click', () => {
-    //    window.location.href = 'mypage.html';
-    //});
+   
 
     function selectBtn(selectedBtn, unselectedBtn) {
         selectedBtn.classList.add('selected');
@@ -169,23 +147,6 @@ function checkDropdownPosition() {
             slider.style.background = `linear-gradient(to right, orange ${percent * 100}%, lightgray ${percent * 100}%)`;
         }
 
-        // updateSliderUI(slider.value);
-
-        // slider.addEventListener('input', (e) => {
-        //     updateSliderUI(e.target.value);
-        // });
-
-        // slider.addEventListener('mouseup', (e) => {
-        //     if (isDateReady) {
-        //         fetchFlightDataNearby(startTripDate, endTripDate, e.target.value);
-        //     }
-        // });
-        
-        // slider.addEventListener('touchend', (e) => {
-        //     if (isDateReady) {
-        //         fetchFlightDataNearby(startTripDate, endTripDate, e.target.value);
-        //     }
-        // });
     }
 
     setupSlider('budget-slider-when', 'slider-value-when');
