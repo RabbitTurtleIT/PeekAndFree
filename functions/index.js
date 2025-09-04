@@ -1280,13 +1280,13 @@ const inputMonth = month.trim().toUpperCase();
   });
 });
 
+
+//국가 정보 추가
 exports.getCountryInfo = onCall(async (data, context) => {
   const { country } = data.data;
 
-  // 추가: null 체크 후 trim 사용
   const inputCountry = (country ? country.trim() : "").toUpperCase();
 
-  // 이하 동일
   const csvPath = path.join(__dirname, 'country.csv');
 
   return new Promise((resolve, reject) => {

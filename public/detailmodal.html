@@ -560,6 +560,7 @@ firebase.functions().httpsCallable('getLatestExchangeRate')().then((result) => {
     div.textContent = country;
 }
 
+// 국가 정보 추가
 firebase.functions().httpsCallable('getCountryInfo')({
     country: nationname ? nationname.trim() : "",
   })
