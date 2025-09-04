@@ -1279,3 +1279,40 @@ const inputMonth = month.trim().toUpperCase();
       });
   });
 });
+
+exports.getCountryInfo = onCall(async (data, context) => {
+  const { country } = data.data;
+
+  // 추가: null 체크 후 trim 사용
+  const inputCountry = (country ? country.trim() : "").toUpperCase();
+
+  // 이하 동일
+  const csvPath = path.join(__dirname, 'country.csv');
+
+  return new Promise((resolve, reject) => {
+    let results = [];
+
+    const stream = fs.createReadStream(csvPath);
+
+    stream
+      .pipe(csv())
+      .on('data', (row) => {
+        if(!row["국가명"])
+          return
+        const countryName = row["국가명"].trim().toUpperCase();
+        if (inputCountry.includes(countryName)) {
+          results.push(row);
+        }
+      })
+      .on('end', () => {
+        if (results.length > 0) {
+          resolve({ country: results }); 
+        } else {
+          resolve({ error: `국가명 '${inputCountry}'에 해당하는 정보를 찾을 수 없습니다.` });
+        }
+      })
+      .on('error', (error) => {
+        reject({ error: error.message });
+      });
+  });
+});
