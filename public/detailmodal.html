@@ -276,7 +276,7 @@
                     fields: ["displayName", "photos"],
                     locationRestriction: {
                         center: center,
-                        radius: 30000,
+                        radius: 10000,
                     },
                     includedPrimaryTypes: ["cultural_landmark", "historical_landmark", "beach", "hiking_area"],
                     maxResultCount: 10,
@@ -287,7 +287,7 @@
                 const { places } = await Place.searchNearby(request);
 
                 if (places.length) {
-                    const imageUrls = places.map(place => place.photos[0].getURI());
+                    const imageUrls = places.map(place => place.photos[0].getURI({ maxWidth: 400, maxHeight: 400 }));
 
                     // Display images
                     $("#imgDiv").empty();
