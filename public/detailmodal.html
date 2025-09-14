@@ -267,6 +267,37 @@
 
     }
     async function loadImg(coord1, coord2) {
+        const pixabayApiKey = '52281114-88b2ee02640359c4a109ad9a7';
+        let query = window.location.search;
+        let param = new URLSearchParams(query);
+        let cityname = param.get('Cityname');
+        let nationname = param.get('Nationname');
+
+        const fetchImagesFromPixabay = async () => {
+            console.log("Google Places API 실패. Pixabay API로 대체합니다.");
+            const query = encodeURIComponent(cityname || nationname);
+            const pixabayUrl = `https://pixabay.com/api/?key=${pixabayApiKey}&q=${query}&image_type=photo&per_page=10`;
+
+            try {
+                const response = await fetch(pixabayUrl);
+                const data = await response.json();
+
+                if (data.hits && data.hits.length > 0) {
+                    $("#imgDiv").empty();
+                    data.hits.forEach(hit => {
+                        const img = $(`<img class="rounded m-1" src="${hit.webformatURL}"/>`);
+                        $("#imgDiv").append(img);
+                    });
+                    console.log("Pixabay 이미지 로드 성공.");
+                } else {
+                    $("#imgDiv").text("주변의 추천 장소 이미지를 찾지 못했습니다.");
+                }
+            } catch (pixabayError) {
+                console.error("Pixabay API 호출 중 에러 발생:", pixabayError);
+                $("#imgDiv").text("이미지를 불러오는 데 실패했습니다.");
+            }
+        };
+
         const getImagesFn = firebase.functions().httpsCallable('getPlaceImages');
         try {
             const cachedResult = await getImagesFn({ lat: coord1, lon: coord2 });
@@ -281,48 +312,49 @@
 
             } else {
                 console.log("이미지 캐시 없음. Google Places API를 호출합니다.");
-                const { Place, SearchNearbyRankPreference } = await google.maps.importLibrary("places");
-                let center = new google.maps.LatLng(coord1, coord2);
-                const request = {
-                    fields: ["displayName", "photos"],
-                    locationRestriction: {
-                        center: center,
-                        radius: 30000,
-                    },
-                    includedPrimaryTypes: ["cultural_landmark", "historical_landmark", "beach", "hiking_area"],
-                    maxResultCount: 10,
-                    rankPreference: SearchNearbyRankPreference.POPULARITY,
-                    language: "ko-kr",
-                };
+                try {
+                    const { Place, SearchNearbyRankPreference } = await google.maps.importLibrary("places");
+                    let center = new google.maps.LatLng(coord1, coord2);
+                    const request = {
+                        fields: ["displayName", "photos"],
+                        locationRestriction: {
+                            center: center,
+                            radius: 30000,
+                        },
+                        includedPrimaryTypes: ["cultural_landmark", "historical_landmark", "beach", "hiking_area"],
+                        maxResultCount: 10,
+                        rankPreference: SearchNearbyRankPreference.POPULARITY,
+                        language: "ko-kr",
+                    };
 
-                const { places } = await Place.searchNearby(request);
+                    const { places } = await Place.searchNearby(request);
 
-                if (places.length) {
-                    const imageUrls = places.map(place => place.photos[0].getURI({ maxWidth: 400, maxHeight: 400 }));
+                    if (places.length > 0 && places[0].photos && places[0].photos.length > 0) {
+                        const imageUrls = places.map(place => place.photos[0].getURI({ maxWidth: 400, maxHeight: 400 }));
 
-                    // Display images
-                    $("#imgDiv").empty();
-                    imageUrls.forEach(url => {
-                        const img = $(`<img class="rounded m-1" src="${url}"/>`);
-                        $("#imgDiv").append(img);
-                    });
+                        // Display images
+                        $("#imgDiv").empty();
+                        imageUrls.forEach(url => {
+                            const img = $(`<img class="rounded m-1" src="${url}"/>`);
+                            $("#imgDiv").append(img);
+                        });
 
-                    // Store images in cache for next time
-                    const storeImagesFn = firebase.functions().httpsCallable('storePlaceImages');
-                    await storeImagesFn({ lat: coord1, lon: coord2, urls: imageUrls });
-                    console.log("새로운 이미지를 캐시에 저장했습니다.");
+                        // Store images in cache for next time
+                        const storeImagesFn = firebase.functions().httpsCallable('storePlaceImages');
+                        await storeImagesFn({ lat: coord1, lon: coord2, urls: imageUrls });
+                        console.log("새로운 이미지를 캐시에 저장했습니다.");
 
-                } else {
-                    $("#imgDiv").text("주변의 추천 장소 이미지를 찾지 못했습니다.");
-
-                   
+                    } else {
+                        await fetchImagesFromPixabay();
+                    }
+                } catch (googleError) {
+                    console.error("Google Places API 호출 중 에러 발생:", googleError);
+                    await fetchImagesFromPixabay();
                 }
             }
         } catch (error) {
             console.error("이미지 로딩 중 에러 발생:", error);
-            $("#imgDiv").text("이미지를 불러오는 데 실패했습니다.");
-
-            
+            await fetchImagesFromPixabay();
         }
     }
         
