@@ -39,7 +39,7 @@ function initializeMap() {
         });
 
         map.addSource('route', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } } });
-        map.addLayer({ id: 'route', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#080', 'line-width': 8 } });
+        // map.addLayer({ id: 'route', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#080', 'line-width': 8 } });
         
         setTimeout(replaceWithSeoulButton, 500);
     });
@@ -100,28 +100,96 @@ function loadDataSources() {
     });
 }
 
+function getPreferredAirports() {
+    if (!airportGeoJSON || !serviceAirportInIncheon) {
+        return { type: 'FeatureCollection', features: [] };
+    }
+    return {
+        ...airportGeoJSON,
+        features: airportGeoJSON.features.filter(f => serviceAirportInIncheon.includes(f.properties['공항코드1.IATA.']))
+    };
+}
+
+function groupAirportsByCountry(geojson) {
+    const airportsByCountry = {};
+    if (!geojson || !geojson.features) return airportsByCountry;
+    geojson.features.forEach(feature => {
+        const country = feature.properties.한글국가명;
+        if (country) {
+            if (!airportsByCountry[country]) {
+                airportsByCountry[country] = {
+                    type: 'FeatureCollection',
+                    features: []
+                };
+            }
+            airportsByCountry[country].features.push(feature);
+        }
+    });
+    return airportsByCountry;
+}
+
 function appendAirportOnMap() {
     console.log('=== appendAirportOnMap 시작 ===');
     if (!map.isStyleLoaded()) {
         console.warn("맵 스타일이 아직 로드되지 않았습니다.");
         return;
     }
+    
 
     const currentMonth = new Date().getMonth() + 1;
     updateAirportFeaturesWithSeason(currentMonth);
 
-    if (map.getSource('airport')) {
-        map.getSource('airport').setData(airportGeoJSON);
-    } else {
-        map.addSource('airport', { type: 'geojson', data: airportGeoJSON });
-    }
+    const preferredAirports = getPreferredAirports();
+    const airportsByCountry = groupAirportsByCountry(preferredAirports);
 
-    if (!map.getLayer('airport-point')) {
+    for (const country in airportsByCountry) {
+        if (country === '대한민국') continue;
+
+        const sourceId = `airport-${country}`;
+        const countryData = airportsByCountry[country];
+
+        if (countryData.features.length === 0) continue;
+
+        map.addSource(sourceId, {
+            type: 'geojson',
+            data: countryData,
+            cluster: true,
+            clusterMaxZoom: 3,
+            clusterRadius: 1000
+        });
+
+        const countryName = country;
+        const seasonIcon = countryData.features[0].properties.season_icon;
+        const clusterLayerId = `clusters-${country}`;
+
         map.addLayer({
-            id: 'airport-point',
+            id: clusterLayerId,
             type: 'symbol',
-            source: 'airport',
-            filter: ['in', ['get', '공항코드1.IATA.'], ['literal', serviceAirportInIncheon]],
+            source: sourceId,
+            filter: ['has', 'point_count'],
+            layout: {
+                'icon-image': seasonIcon,
+                'icon-size': 0.8,
+                'icon-allow-overlap': true,
+                'text-field': countryName,
+                'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                'text-size': 12,
+                'text-offset': [0, 2],
+                'text-anchor': 'top'
+            },
+            paint: {
+                'text-color': '#000000',
+                'text-halo-color': '#FFFFFF',
+                'text-halo-width': 1
+            }
+        });
+
+        const unclusteredLayerId = `unclustered-point-${country}`;
+        map.addLayer({
+            id: unclusteredLayerId,
+            type: 'symbol',
+            source: sourceId,
+            filter: ['!', ['has', 'point_count']],
             layout: {
                 'icon-image': ['get', 'season_icon'],
                 'icon-size': 0.5,
@@ -129,19 +197,25 @@ function appendAirportOnMap() {
             }
         });
 
-        map.on('click', 'airport-point', async (e) => {
+        map.on('click', clusterLayerId, (e) => {
+            const features = map.queryRenderedFeatures(e.point, { layers: [clusterLayerId] });
+            const clusterId = features[0].properties.cluster_id;
+            map.getSource(sourceId).getClusterExpansionZoom(clusterId, (err, zoom) => {
+                if (err) return;
+                map.easeTo({ center: features[0].geometry.coordinates, zoom: zoom });
+            });
+        });
+
+        map.on('click', unclusteredLayerId, async (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
-            const airport_kor = e.features[0].properties.한글공항;
-            const nation_kor = e.features[0].properties.한글국가명;
+            const { 한글공항, 한글국가명 } = e.features[0].properties;
             const iata = e.features[0].properties['공항코드1.IATA.'];
-            
+
             $(".calendar-section").show();
             if (typeof clearAllPrices === 'function') clearAllPrices();
-            if (typeof setIATA === 'function') {
-                setIATA({ korName: nation_kor, airportKor: airport_kor, iata: iata, coord: coordinates });
-            }
+            if (typeof setIATA === 'function') setIATA({ korName: 한글국가명, airportKor: 한글공항, iata: iata, coord: coordinates });
 
-            map.getSource('route').setData({ 'type': 'Feature', 'properties': {}, 'geometry': { 'type': 'LineString', 'coordinates': [ [126.4406957, 37.4601908], coordinates ] } });
+            map.getSource('route').setData({ 'type': 'Feature', 'properties': {}, 'geometry': { 'type': 'LineString', 'coordinates': [[126.4406957, 37.4601908], coordinates] } });
             
             let citydata = await IATAtoCityInformation(iata);
             if (citydata) {
@@ -150,10 +224,13 @@ function appendAirportOnMap() {
 
             new mapboxgl.Popup()
                 .setLngLat(coordinates)
-                .setHTML(`<p class="text-center"><span style="font-size:16px">${airport_kor}</span><br><a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${nation_kor} ${citydata?.한글도시명 || ''}</a></p>`)
+                .setHTML(`<p class="text-center p-1" style="opacity: 1"><span style="font-size:20px">${한글공항} ${iata}</span><br><a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${한글국가명} ${citydata?.한글도시명 || ''}</a></p><style>.mapboxgl-popup-content { position: relative; background: #fff; opacity: 0.9; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.10); pointer-events: auto; }</style>`) // Corrected escaping for inner HTML string
                 .setMaxWidth("500px")
                 .addTo(map);
         });
+
+        map.on('mouseenter', clusterLayerId, () => { map.getCanvas().style.cursor = 'pointer'; });
+        map.on('mouseleave', clusterLayerId, () => { map.getCanvas().style.cursor = ''; });
     }
     console.log('=== 공항 데이터 추가/업데이트 완료 ===');
 }
@@ -163,69 +240,90 @@ function updateAirportFeaturesWithSeason(month) {
     airportGeoJSON.features.forEach(feature => {
         const countryName = feature.properties.한글국가명;
         const seasonInfo = seasonData[countryName];
-        let icon = 'sleep';
-        if (seasonInfo && seasonInfo[month] == '1') {
-            icon = 'hot';
-        }
-        feature.properties.season_icon = icon;
+        feature.properties.season_icon = (seasonInfo && seasonInfo[month] == '1') ? 'hot' : 'sleep';
     });
 }
 
 window.updateAirportMarkers = function(month) {
     if (!isMapReady) {
-        console.log(`맵이 아직 준비되지 않아 월(${month}) 업데이트를 큐에 저장합니다.`);
         queuedMonthUpdate = month;
         return;
     }
     console.log(`마커 업데이트, 월: ${month}`);
     updateAirportFeaturesWithSeason(month);
-    map.getSource('airport').setData(airportGeoJSON);
+    
+    const preferredAirports = getPreferredAirports();
+    const airportsByCountry = groupAirportsByCountry(preferredAirports);
+
+    for (const country in airportsByCountry) {
+        if (!country) continue;
+        const sourceId = `airport-${country}`;
+        const countryData = airportsByCountry[country];
+
+        if (map.getSource(sourceId)) {
+            map.getSource(sourceId).setData(countryData);
+        }
+
+        if (countryData.features.length > 0) {
+            const clusterLayerId = `clusters-${country}`;
+            if (map.getLayer(clusterLayerId)) {
+                const newSeasonIcon = countryData.features[0].properties.season_icon;
+                map.setLayoutProperty(clusterLayerId, 'icon-image', newSeasonIcon);
+            }
+        }
+    }
     console.log('공항 소스 데이터 업데이트 완료');
 }
 
 window.filterBySeason = function(seasonType) {
-    if (!isMapReady || !map.getLayer('airport-point')) {
-        console.warn('시즌 필터링 실패: 맵이 준비되지 않음');
-        return;
-    }
+    if (!isMapReady) return;
     console.log(`시즌 필터링: ${seasonType}`);
 
-    const baseFilter = ['in', ['get', '공항코드1.IATA.'], ['literal', serviceAirportInIncheon]];
     let seasonFilter;
+    if (seasonType === '성수기') seasonFilter = ['==', ['get', 'season_icon'], 'hot'];
+    else if (seasonType === '비성수기') seasonFilter = ['==', ['get', 'season_icon'], 'sleep'];
 
-    if (seasonType === '성수기') {
-        seasonFilter = ['==', ['get', 'season_icon'], 'hot'];
-    } else if (seasonType === '비성수기') {
-        seasonFilter = ['==', ['get', 'season_icon'], 'sleep'];
-    }
+    const preferredAirports = getPreferredAirports();
+    const airportsByCountry = groupAirportsByCountry(preferredAirports);
 
-    if (seasonFilter) {
-        map.setFilter('airport-point', ['all', baseFilter, seasonFilter]);
-    } else {
-        map.setFilter('airport-point', baseFilter);
+    for (const country in airportsByCountry) {
+        if (!country) continue;
+        const layerId = `unclustered-point-${country}`;
+        if (map.getLayer(layerId)) {
+            const unclusteredFilter = ['!', ['has', 'point_count']];
+            const newFilter = seasonFilter ? ['all', unclusteredFilter, seasonFilter] : ['all', unclusteredFilter];
+            map.setFilter(layerId, newFilter);
+        }
     }
 }
 
 function setupSearchbox() {
     $("#searchbox").on('keyup', (e) => {
         const searchText = e.target.value.toLowerCase().trim();
-        if (map && map.getSource('airport')) {
-            if (searchText === '') {
-                map.setFilter('airport-point', ['in', ['get', '공항코드1.IATA.'], ['literal', serviceAirportInIncheon || []]]);
-            } else {
-                const filterExpression = [
-                    'all',
-                    ['in', ['get', '공항코드1.IATA.'], ['literal', serviceAirportInIncheon || []]],
-                    [
+        if (!map) return;
+
+        const preferredAirports = getPreferredAirports();
+        const airportsByCountry = groupAirportsByCountry(preferredAirports);
+
+        for (const country in airportsByCountry) {
+            if (!country) continue;
+            const layerId = `unclustered-point-${country}`;
+            if (map.getLayer(layerId)) {
+                const baseUnclusteredFilter = ['all', ['!', ['has', 'point_count']]];
+                
+                if (searchText === '') {
+                    map.setFilter(layerId, baseUnclusteredFilter);
+                } else {
+                    const searchFilter = [
                         'any',
                         ['in', searchText, ['downcase', ['get', '한글공항']]],
                         ['in', searchText, ['downcase', ['get', '영문공항명']]],
                         ['in', searchText, ['downcase', ['get', '한글국가명']]],
                         ['in', searchText, ['downcase', ['get', '영문도시명']]],
                         ['in', searchText, ['downcase', ['get', '공항코드1.IATA.']]]
-                    ]
-                ];
-                map.setFilter('airport-point', filterExpression);
+                    ];
+                    map.setFilter(layerId, ['all', ...baseUnclusteredFilter, searchFilter]);
+                }
             }
         }
     });

@@ -191,6 +191,9 @@ function checkBookingFromMap() {
     }
 }
 
+function updateSelectedTitle() {
+    $("#selectedTitle").text(`지금 ${selectedIATA.korName}는 `)
+}
 let currentDate = new Date();
 let selectedStartDate = null;
 let selectedEndDate = null;
