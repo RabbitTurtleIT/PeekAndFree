@@ -22,73 +22,107 @@ async function IATAtoCityInformation(IATA) {
 
 }
 
+
 document.addEventListener('DOMContentLoaded', () => {
-    const btnWhen = document.getElementById('btn-when');
-    const btnWhere = document.getElementById('btn-where');
-    const btnMypage = document.getElementById('mypage-btn');
+const now = new Date();
+const currentMonth = now.getMonth() + 1;
+
+//map section
+// 월 선택 드롭다운
+document.querySelectorAll('[data-month]').forEach(item => {
+    item.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        const month = this.getAttribute('data-month');
+        const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+        const emoji = month === '7' || month === '8' ? '☀️' : month === '12' || month === '1' || month === '2' ? '❄️' : '🌸';
+        
+        document.getElementById('monthDropdown').innerHTML = `${emoji} ${monthNames[month-1]}`;
+        console.log(`선택된 월: ${month}`);
+        
+        if (window.updateAirportMarkers) {
+            window.updateAirportMarkers(month);
+        }
+    });
+    
+});
+
+// 시즌 선택 드롭다운
+document.querySelectorAll('[data-filter]').forEach(item => {
+    item.addEventListener('click', function(e) {
+        e.preventDefault();
+        const filter = this.getAttribute('data-filter');
+        document.getElementById('seasonDropdown').textContent = filter;
+        console.log(`선택된 필터: ${filter}`);
+        
+        if (window.filterBySeason) {
+            window.filterBySeason(filter);
+        }
+        });
+    });
+    console.log('드롭다운 이벤트 핸들러가 등록되었습니다.');
+    
     const carousel = document.getElementById('mainCarousel');
-    const indicators = $('.indicator-dot');
+    const indicators = document.querySelectorAll('.indicator-dot'); 
     const whenContent = document.getElementById('when-content');
     // const whereContent = document.getElementById('where-content');
-    $(".final-reservation").hide()
-    $(".calendar-section").hide()
-
-    const selectedImg = 'img/btn_selected.png';
-    const unselectedImg = 'img/btn_unselected.png';
+    $(".final-reservation").hide();
+    $("#flightResultsSection").hide();
+    $("#initialAction").show();
 
     function updateIndicators(activeIndex) {
-        indicators.attr('src', unselectedImg);
-        indicators[activeIndex].src = selectedImg;
+        indicators.forEach((indicator, index) => {
+            if (index === activeIndex) {
+                indicator.classList.add('active');
+            } else {
+                indicator.classList.remove('active');
+            }
+        });
     }
-
-    function activateButton(activeBtn, inactiveBtn) {
-        activeBtn.classList.add('active');
-        inactiveBtn.classList.remove('active');
+    indicators.forEach((indicator, index) => {
+        indicator.addEventListener('click', function() {
+            // Bootstrap 캐러셀 인스턴스 가져오기
+            const carouselInstance = bootstrap.Carousel.getInstance(carousel) || 
+                                   new bootstrap.Carousel(carousel);
+            carouselInstance.to(index);
+        });
+    });
+    
+    // 캐러셀 슬라이드 변경 이벤트
+    if (carousel) {
+        // 초기 인디케이터 설정
+        updateIndicators(0);
+        
+        // Bootstrap 5 이벤트 사용
+        carousel.addEventListener('slid.bs.carousel', function(event) {
+            updateIndicators(event.to);
+        });
     }
+    
+// 달력 네비게이션 함수
+function changeMonth(direction) {
+    console.log(`달력 월 변경: ${direction}`);
+    // 여기에 달력 월 변경 로직 추가
+}
 
-    // function showContent(type, isScroll) {
-    //     if (type === 'when') {
-    //         whenContent.style.display = 'block';
-    //         whereContent.style.display = 'none';
-    //         if (isScroll) {
-    //             $("div#map").appendTo('div#when-mapdiv')
-    //             $(".calendar-container").appendTo('section#when-calsec')
-    //             whenContent.scrollIntoView({ behavior: 'smooth' });
-    //         }
-    //     } else {
-    //         whenContent.style.display = 'none';
-    //         whereContent.style.display = 'block';
-    //         // jQuery("#map").detach().append('#where-content.map-section')
-    //         if (isScroll) {
-    //             $("div#map").appendTo('div#where-mapdiv')
-    //             $(".calendar-container").appendTo('section#where-calsec')
-    //             whereContent.scrollIntoView({ behavior: 'smooth' });
-    //         }
-    //     }
-    // }
-
-    // updateIndicators(0);
+// 디버깅용: 드롭다운 위치 확인
+function checkDropdownPosition() {
+    const mapContainer = document.querySelector('.map-container');
+    const mapFilters = document.querySelector('.map-filters');
+    
+    if (mapContainer && mapFilters) {
+        const containerStyle = window.getComputedStyle(mapContainer);
+        const filtersStyle = window.getComputedStyle(mapFilters);
+        
+        console.log('Map Container position:', containerStyle.position);
+        console.log('Map Filters position:', filtersStyle.position);
+        console.log('Map Filters top:', filtersStyle.top);
+        console.log('Map Filters left:', filtersStyle.left);
+    }
+}
     // showContent('when', false);
     initCalendar();
-    
-    // carousel.addEventListener('slide.bs.carousel', function (e) {
-    //     updateIndicators(e.to);
-    // });
-
-
-    // btnWhen.addEventListener('click', () => {
-    //     activateButton(btnWhen, btnWhere);
-    //     showContent('when', true);
-    // });
-
-    // btnWhere.addEventListener('click', () => {
-    //     activateButton(btnWhere, btnWhen);
-    //     showContent('where', true);
-    // });
-
-    btnMypage.addEventListener('click', () => {
-        window.location.href = 'mypage.html';
-    });
+   
 
     function selectBtn(selectedBtn, unselectedBtn) {
         selectedBtn.classList.add('selected');
@@ -113,31 +147,53 @@ document.addEventListener('DOMContentLoaded', () => {
             slider.style.background = `linear-gradient(to right, orange ${percent * 100}%, lightgray ${percent * 100}%)`;
         }
 
-        // updateSliderUI(slider.value);
-
-        // slider.addEventListener('input', (e) => {
-        //     updateSliderUI(e.target.value);
-        // });
-
-        // slider.addEventListener('mouseup', (e) => {
-        //     if (isDateReady) {
-        //         fetchFlightDataNearby(startTripDate, endTripDate, e.target.value);
-        //     }
-        // });
-        
-        // slider.addEventListener('touchend', (e) => {
-        //     if (isDateReady) {
-        //         fetchFlightDataNearby(startTripDate, endTripDate, e.target.value);
-        //     }
-        // });
     }
 
     setupSlider('budget-slider-when', 'slider-value-when');
     hideLoading();
 });
 
+//지도에서 예매하기 버튼 클릭 시 달력 잠금 해제 함수 (전역 함수로 선언)
+window.unlockCalendarSectionFromMap = function() {
+    $("#initialAction").hide() // 잠금 화면 숨기기
+    $("#flightResultsSection").hide() 
+    clearAllPrices() // 가격 캐시 초기화
+    
+    // 달력 섹션으로 스크롤
+    setTimeout(() => {
+        $(".calendar-section")[0].scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'start' 
+        });
+    }, 100);
+}
 
+//checkBookingFromMap();
 
+function checkBookingFromMap() {
+    // sessionStorage에서 예매 정보 확인
+    const selectedDestination = sessionStorage.getItem('selectedDestination');
+    const bookingAction = sessionStorage.getItem('bookingAction');
+    const selectedAirportCode = sessionStorage.getItem('selectedAirportCode');
+    
+    if (bookingAction === 'true' && selectedDestination) {
+        console.log(`🎯 map.html에서 예매 요청: ${selectedDestination}`);
+        
+        // 1. 달력 섹션 자동으로 표시
+        showCalendarFromMap(selectedDestination, selectedAirportCode);
+        
+        // 2. 목적지 정보 업데이트
+        updateDestinationInfo(selectedDestination);
+        
+        // 3. 사용한 정보 정리
+        sessionStorage.removeItem('bookingAction');
+        // selectedDestination과 selectedAirportCode는 유지 (예매 과정에서 사용)
+    }
+}
+
+function updateSelectedTitle() {
+    $("#selectedTitle").text(`지금 ${selectedIATA.korName}는 `)
+}
 let currentDate = new Date();
 let selectedStartDate = null;
 let selectedEndDate = null;
@@ -277,6 +333,7 @@ function selectDate(date) {
         }
 
         // 종요일 선택 시 그 범위의 추정 예산 표시
+        console.log(selectedIATA.iata + " 선택된 상태")
         if (selectedIATA) {
             fetchMonthPrices(selectedStartDate, selectedEndDate);
         }
@@ -350,6 +407,7 @@ function refreshFlightCard(result) {
             time = time.replaceAll("PT", "").replaceAll("H", "시간 ").replaceAll("M","분")
             let loc = item.dictionaries.locations[arrivalIata]
             $('#nearbyFlightList').append(FlightCard(loc.countryCode + " " + loc.cityCode + " (" + arrivalIata + ")", price, time, item))
+            $('#nearbyFlightList').empty(); 
         } catch(e) {
             console.log(e)
             continue
@@ -370,13 +428,33 @@ async function appendFlightCard(IATA, korName, airportKor, coord) {
                 iata: IATA
             });
             console.log(result)
+
+            const flightData = result.data.data[0];
+            console.log('항공편 데이터:', flightData);
+            
             let price = result.data.data[0].price.total
             let arrivalIata = result.data.data[0].itineraries[0].segments[0].arrival.iataCode
             let time = result.data.data[0].itineraries[0].duration
             time = time.replaceAll("PT", "").replaceAll("H", "시간 ").replaceAll("M","분")
             $('#nearbyFlightList').append(FlightCard(korName + " " + airportKor + " (" + arrivalIata + ")", price, time, result.data))
+            //항공편 카드를 지도 아래 영역에 추가
+            $('#nearbyFlightList').empty(); // 기존 내용 제거
+            $('#nearbyFlightList').append(FlightCard(korName + " " + airportKor + " (" + arrivalIata + ")", price, time, result.data))
+            
+            //항공편 목록이 보이는 영역으로 스크롤
+             $('.flight-results-section').show(); // 섹션 표시
+            setTimeout(() => {
+                $('.flight-results-section')[0].scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start' 
+                });
+            }, 100);
+            
+            console.log('항공편 카드 생성 완료');
+            
         } catch(e) {
-            alert("조건에 맞는 항공권을 찾지 못했어요.")
+            console.error('항공편 조회 에러:', e);
+            console.log('에러 상세:', e.message);
         }
         hideLoading();
         isFetchingFlightNearby = false;
@@ -396,8 +474,13 @@ function FlightCard(locName, price, time, data) {
                 
 
         card.on("click", function() {
-            $(".final-reservation").show()
-            $(".final-reservation")[0].scrollIntoView();
+            $(".final-reservation").show() 
+            setTimeout(() => {
+            $(".final-reservation")[0].scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }, 100);
             viewTrip(locName, peopleNum, seatClass, startDate, endDate)
         })
 

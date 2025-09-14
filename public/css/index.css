@@ -10,131 +10,405 @@
   --blue: #338FEB;
 
   /* Font */
-  --font-main: 'Wanted Sans Variable', sans-serif;
-  --font-logo: 'Bookk Myungjo', sans-serif;
+  --font-main: 'Pretendard Variable', sans-serif;
+  --font-logo: 'Pretendard Variable', sans-serif;
 }
 
-.body {
-  max-width: 100%;
-  overflow-x: hidden;
+body {
+  margin: 0;
+  padding: 0;
 }
 
+/*웹 상단 바*/
 .top {
-  height: 10vh;
+  height: 8vh;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.search-bar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-
-
-.search-bar input {
-  padding: 8px 16px;
-  border: 2px solid var(--orange-primary);
-  border-radius: 30px;
-  outline: none;
-  width: 260px;
-  font-size: 0.95rem;
-}
-
-.search-btn {
-  background-color: var(--white);
-  border: none;
-  cursor: pointer;
-  padding: 6px;
-}
-
-.mypage_btn {
-  background-color: var(--white);
-  border: none;
-  cursor: pointer;
-  padding: 6px;
-}
 
 .main-section {
-  font-family: var(--font-main);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: start;
-  max-width: 100%;
-  background-color: var(--white);
+  padding: 2rem 0;
+  background-color: #f8f9fa;
 }
 
 .carousel-wrapper {
-  align-items: center;
-  padding-top:24px;
-  width: 80vw;
-  overflow: hidden;
+  margin: 0 auto;
+  padding: 0 1rem;
 }
 
+/* Carousel 기본 스타일 */
 #mainCarousel {
   position: relative;
   overflow: hidden;
-  border-radius: 20px;
 }
 
-.carousel-inner,
-.carousel-inner img { 
-  display: block;
-  margin: auto;
+.carousel-inner {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+
+.carousel-item img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+}
+
+/* carousel 컨트롤 버튼 커스터마이징 */
+.carousel-control-prev,
+.carousel-control-next {
+  width: 50px;
+  height: 50px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  border: none;
+  transition: all 0.3s ease;
+  opacity: 0.8;
+}
+
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.carousel-control-prev {
+  left: 20px;
+}
+
+.carousel-control-next {
+  right: 20px;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  width: 20px;
+  height: 20px;
+  background-size: 20px 20px;
+  filter: brightness(0) saturate(100%) invert(25%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(0%) contrast(100%);
+}
+
+/* 커스텀 인디케이터 */
+.custom-indicators {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.indicator-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid #6c757d;
+  background-color: transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+.indicator-dot:hover {
+  border-color: #FF9000;
+  transform: scale(1.1);
+}
+
+.indicator-dot.active {
+  background-color:#FF9000;
+  border-color: #FF9000;
+  transform: scale(1.1);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .main-section {
+    padding: 1rem 0;
+  }
+  
+  .carousel-wrapper {
+    padding: 0 0.5rem;
+  }
+  
+  .carousel-item {
+    height: 250px;
+  }
+  
+  .carousel-item.px-5 {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+  
+  .carousel-control-prev,
+  .carousel-control-next {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .carousel-control-prev {
+    left: 10px;
+  }
+  
+  .carousel-control-next {
+    right: 10px;
+  }
+  
+  .carousel-control-prev-icon,
+  .carousel-control-next-icon {
+    width: 16px;
+    height: 16px;
+    background-size: 16px 16px;
+  }
+  
+  .indicator-dot {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .carousel-item {
+    height: 200px;
+  }
+  
+  .carousel-item.px-5 {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+}
+
+/* 추가 애니메이션 효과 */
+.carousel-item.active {
+  animation: fadeIn 0.6s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.map-section{
+  height: auto;
+  max-width: 100vw;
+  justify-items: center;
+}
+
+
+.banner-img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
 }
 
+.map-background {
+  background-color: white;
+  margin: 0;
+  max-width: 95vw;
+  height: 60vh;
+  position: relative;
+  border-radius: 20px;
+  overflow: visible;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  margin-bottom: 20px; /* 하단 여백 추가 */
+  margin-top: 20Px;
+}
 
-.custom-indicators {
-  margin-top: 12px;
+.map-container {
+  width: 95vw ;
+  height: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+  margin: 0 auto;
+  position: relative;
+  
+}
+
+
+#map {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.map-filters {
+  position: absolute !important;  
+  top: 16px;
+  left: 16px;
+  z-index: 1000;
   display: flex;
-  justify-content: center;
-  gap: 8px;
+  gap: 10px;
+  pointer-events: auto;
 }
-.select {
-  text-align: center;
-  margin: 30px 0;
+.map-filters .dropdown .btn {
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-weight: 500;
 }
 
-.select h2 {
-  font-size: 1.5rem;
+.map-filters .dropdown .btn:hover {
+  background-color: rgba(255, 255, 255, 1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+
+/* 드롭다운 메뉴 개선 */
+.map-filters .dropdown-menu {
+  max-height: 300px;
+  overflow-y: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  border: 1px solid #e0e0e0;
+}
+
+.map-filters .dropdown-item {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.map-filters .dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+.seoul-ctrl {
+    background: white;
+    border-radius: 4px;
+    box-shadow: 0 0 0 2px rgba(0,0,0,.1);
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+}
+
+.seoul-ctrl-btn {
+    background: none;
+    border: none;
+    padding: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.seoul-ctrl-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+.seoul-ctrl-btn:hover {
+    background: #f0f0f0;
+}
+.whereFetchDone {
+  position: relative;
+  height: 1px;
+  margin-top: 20px; /* 지도와 항공편 목록 사이 간격 */
+}
+/* 질문 텍스트 */
+.question-text {
+  text-align: center;
+  padding: 30px 20px;
+  background: white;
+  margin: 20px;
+  border-radius: 15px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.question-text h3 {
+  color: var(--black);
+  font-weight: 600;
+  font-size: 1.2rem;
+  margin: 0;
+}
+
+/* 초기 액션 섹션 (달력 대신 보이는 부분) */
+.initial-action-overlay {
+  position: absolute;
+  top: 2vb;
+  left: 5vb;
+  right: 5vb;
+  bottom: 2vb;
+  background: rgba(255, 241, 222, 0.95);  
+  border-radius: 20px;
+  padding: 40px 20px;
+  text-align: center;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100vw;
+  max-height: 100vh;
+}
+
+.initial-action::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.initial-action-content {
+  position: relative;
+  z-index: 2;
+}
+
+.airplane-icon {
+  font-size: 9rem;
+  margin-bottom: 20px;
+  color: var(--orange-primary);
+}
+
+.initial-title {
+  font-size: 3rem;
   font-weight: bold;
+  color: #FF9000;
   margin-bottom: 10px;
 }
 
-.additional-text {
-  color: var(--black);
+.initial-subtitle {
+  color: #666;
   margin-bottom: 30px;
+  font-size: 1.5rem;
 }
 
-.btn-toggle-wrap {
-  display: inline-flex;
-  border-radius: 50px;
-  overflow: hidden;
-  border: 2px solid #FFA500;
-}
-
-.btn-toggle {
-  padding: 0.5rem 1.5rem;
-  font-weight: 600;
-  border: none;
-  background-color: white;
-  color: #FFA500;
-  cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  font-size: 1.2rem;
-}
-
-.btn-toggle.active {
-  background-color: #FFA500;
+.show-calendar-btn {
+  background: var(--orange-primary);
   color: white;
+  border: none;
+  padding: 15px 40px;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(255, 144, 0, 0.3);
 }
 
-/*when-section*/
+.show-calendar-btn:hover {
+  background: #e68900;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(255, 144, 0, 0.4);
+}
 
+/*text*/
 .calendar-section {
   margin: 0;
   background-color: var(--white);
@@ -142,211 +416,36 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
+  position: relative; 
+
+  min-height: 400px;
 }
 
-.title-calendar {
-  margin-top: 5em;
-  color: var(--orange-primary);
-}
-
-.container {
-  max-width: 1120px;
-  padding: 16px;
-  box-sizing: border-box;
-}
-
-.map-background {
-  background-color: #FFBA61;
-  margin: 0;
-  max-width: 100%;
-}
-
-.map-container {
-
-  width: 77.7vw;
-  height: 62.5vh;
-  position: relative;
-  border-radius: 16px;
-}
-
-#map {
-  max-width: 100%;
-  max-height: 100%;
-}
-
-.map-search {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 32px;
-}
-
-.nearby-btn-group {
-  display: flex;
-  gap: 8px;
-}
-
-.btn-budget,
-.btn-nearby {
-  padding: 6px 12px;
-  border-radius: 20px;
-  border: 2px solid #ccc;
-  background-color: white;
-  color: #333;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.btn-budget.selected,
-.btn-nearby.selected {
-  border-color: #FF8A00;
-  color: #FF8A00;
-}
-
-.search-input {
-  margin-top: 40px;
-  width: 400px;
-  border-radius: 30px;
-  padding: 8px 16px;
-  border: none;
-}
-
-/*where-section*/
-
-.map-background {
-  background-color: #FFBA61;
-  margin: 0;
-  max-width: 100%;
-}
-
-.map-container {
-  width: 77.7vw;
-  position: relative;
-  border-radius: 16px;
-}
-
-#map {
-  max-width: 100%;
-  max-height: 100%;
-}
-
-.map-search {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-bottom: 32px;
-}
-
-.nearby-btn {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-}
-
-.search-input {
-
-  margin-top: 40px;
-  width: 400px;
-  border-radius: 30px;
-  padding: 8px 16px;
-  border: none;
-}
-
-.recommendation-section {
-  padding: 0;
-  display: flex;
-  padding: 50px 0;
-  background-color: #F9F9F9;
-  justify-content: center;
-  align-items: center;
-}
-
-.slider-group {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 16px;
-}
-
-.title {
+.calendar-header {
+  background: #f8f9fa;
+  padding: 20px;
   text-align: center;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.calendar-header h4 {
+  margin: 0;
+  color: var(--black);
   font-weight: 600;
-  margin-bottom: 16px;
 }
 
-.budget-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  text-align: center;
-  margin-bottom: 8px;
-  position: relative;
+.calendar-container {
+  padding: 20px;
 }
 
-.budget-label {
-  font-size: 14px;
-  font-weight: 500;
+.flight-results-section {
+  background: white;
+  margin: 20px;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  min-height: 100px;
 }
-
-.slider {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 40vw;
-  height: 15px;
-  border-radius: 16px;
-  background: linear-gradient(to right, orange, yellow);
-  outline: none;
-  cursor: pointer;
-}
-
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: #fff;
-  border: 2px solid #ffba00;
-  cursor: pointer;
-}
-
-
-.slider-value {
-  background-color: yellow;
-  border-radius: 12px;
-  padding: 4px 10px;
-  display: inline-block;
-  font-size: 14px;
-  font-weight: bold;
-}
-
-.title-calendar {
-  margin-top: 5em;
-  color: var(--orange-primary);
-}
-
-.container {
-  max-width: 1120px;
-  padding: 16px;
-  box-sizing: border-box;
-}
-
-.final-reservation-section {
-  margin: 0;
-  background-color: var(--white);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  height: 100vh;
-}
-
 .reservation-background {
   position: absolute;
   top: 0;
@@ -492,4 +591,162 @@
 
 .reset-btn:hover {
   background: #c82333;
+}
+#nearbyFlightList {
+  min-height: 50px;
+  padding: 10px;
+}
+
+
+/* 예약 섹션 */
+.reservation-section {
+  background: linear-gradient(135deg, var(--orange-light) 0%, var(--orange-primary) 100%);
+  margin: 20px;
+  height: 70vh;
+  border-radius: 20px;
+  padding: 30px 20px;
+  text-align: center;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  display: none;
+}
+
+.reservation-section::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.reservation-content {
+  position: relative;
+  z-index: 2;
+}
+
+.brand-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.trip-details {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 20px 0;
+  backdrop-filter: blur(10px);
+}
+
+.trip-details h4 {
+  margin: 0 0 10px 0;
+  font-size: 1.1rem;
+}
+
+.reservation-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.reservation-btn {
+  background: white;
+  color: var(--orange-primary);
+  border: none;
+  padding: 12px 24px;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.reservation-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+}
+
+.reservation-btn.primary {
+  background: var(--orange-primary);
+  color: white;
+}
+
+.reservation-btn.primary:hover {
+  background: #e68900;
+}
+
+/* 푸터 */
+footer {
+  background: #f9f9f9;
+  padding: 30px 20px;
+  text-align: right;
+  color: #FF9000;
+  border-top: 1px solid #f9f9f9;
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .map-filters {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .map-filters .dropdown .btn {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+  
+  .map-background {
+    height: 300px;
+  }
+  
+  .calendar-container {
+    padding: 10px;
+  }
+  
+  .calendar-grid {
+    font-size: 12px;
+  }
+  
+  .reservation-buttons {
+    flex-direction: column;
+  }
+  
+  .reservation-btn {
+    width: 100%;
+  }
+}
+
+/* 로딩 상태 */
+.map-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  z-index: 10;
+}
+
+/* 페이드 인 애니메이션 */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
