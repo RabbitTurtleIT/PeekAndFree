@@ -266,16 +266,14 @@
       });
 
     }
-    async function loadImg(coord1, coord2) {
+    async function loadImg(coord1, coord2, cityname, nationname) {
         const pixabayApiKey = '52281114-88b2ee02640359c4a109ad9a7';
-        let query = window.location.search;
-        let param = new URLSearchParams(query);
-        let cityname = param.get('Cityname');
-        let nationname = param.get('Nationname');
 
         const fetchImagesFromPixabay = async () => {
             console.log("Google Places API 실패. Pixabay API로 대체합니다.");
-            const query = encodeURIComponent(cityname || nationname);
+            let searchQuery = cityname && cityname !== 'null' ? cityname : nationname;
+
+            const query = encodeURIComponent(searchQuery);
             const pixabayUrl = `https://pixabay.com/api/?key=${pixabayApiKey}&q=${query}&image_type=photo&per_page=10`;
 
             try {
@@ -377,7 +375,7 @@
           // Add other bootstrap parameters as needed, using camel case.
         });
         console.log("Google map ready")
-        loadImg(Number(coord1), Number(coord2))
+        loadImg(Number(coord1), Number(coord2), cityname, nationname)
       }).catch((error) => {
         console.log("ERROR!", error);
       });

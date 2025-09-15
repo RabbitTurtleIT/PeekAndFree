@@ -109,11 +109,18 @@
 <!-- when section -->
 <section id="when-content" class="select-result" style="display: block;">
   <center>
-    <ins class="kakao_ad_area" style="display:none;"
-data-ad-unit = "DAN-R9rdXacivy5WQQtD"
-data-ad-width = "728"
-data-ad-height = "90"></ins>
-<script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script>
+  <div id="adbig">
+    <ins class="kakao_ad_area"
+    data-ad-unit = "DAN-R9rdXacivy5WQQtD"
+    data-ad-width = "728"
+    data-ad-height = "90"></ins>
+  </div>
+  <div id="adsmall">
+    <ins class="kakao_ad_area"
+    data-ad-unit = "DAN-PzayrOk7XMxMdybi"
+    data-ad-width = "320"
+    data-ad-height = "50"></ins>
+  </div>
   </center>
 
   <section class="map-section">
@@ -254,7 +261,8 @@ data-ad-height = "90"></ins>
 <!-- Firebase Initialization -->
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    
+    $("#adbig").addClass("d-none d-md-block");
+    $("#adsmall").addClass("d-md-none");
     // 안전정보
     // firebase.functions().httpsCallable('getInformationOfCountry')({iata : "ICN"}).then((result) => {
     //   displaySafetyNotices(result.data.response.body);
@@ -308,5 +316,7 @@ data-ad-height = "90"></ins>
       -->
   </address>
 </footer>
+
+<script type="text/javascript" src="//t1.daumcdn.net/kas/static/ba.min.js" async></script>
 </body>
 </html>
