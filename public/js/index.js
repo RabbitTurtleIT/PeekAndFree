@@ -1,3 +1,4 @@
+let g_currentNation = null;
 let nowMaxBudget = 0;
 let startTripDate = '';
 let endTripDate = '';
@@ -6,7 +7,8 @@ let isFetchingFlightNearby = false;
 let selectedIATA = undefined;
 
 function setIATA(selected) {
-    selectedIATA = selected
+    selectedIATA = selected;
+    renderCalendar();
 }
 
 async function IATAtoCityInformation(IATA) {
@@ -212,8 +214,29 @@ function renderCalendar() {
     const firstMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const secondMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
 
-    document.getElementById('monthTitle1').textContent = `${firstMonth.getFullYear()}년 ${monthNames[firstMonth.getMonth()]}`;
-    document.getElementById('monthTitle2').textContent = `${secondMonth.getFullYear()}년 ${monthNames[secondMonth.getMonth()]}`;
+    let month1Title = `${firstMonth.getFullYear()}년 ${monthNames[firstMonth.getMonth()]}`;
+    let month2Title = `${secondMonth.getFullYear()}년 ${monthNames[secondMonth.getMonth()]}`;
+
+    if (window.seasonData && selectedIATA && window.seasonData[selectedIATA.korName]) {
+        const countrySeasonData = window.seasonData[selectedIATA.korName];
+        const month1 = firstMonth.getMonth() + 1;
+        const month2 = secondMonth.getMonth() + 1;
+
+        if (countrySeasonData[month1] === '1') {
+            month1Title += ' 🔥';
+        } else if (countrySeasonData[month1] === '2' || countrySeasonData[month1] === '3') {
+            month1Title += ' 😴';
+        }
+
+        if (countrySeasonData[month2] === '1') {
+            month2Title += ' 🔥';
+        } else if (countrySeasonData[month2] === '2' || countrySeasonData[month2] === '3') {
+            month2Title += ' 😴';
+        }
+    }
+
+    document.getElementById('monthTitle1').textContent = month1Title;
+    document.getElementById('monthTitle2').textContent = month2Title;
 
     renderMonthCalendar('calendar1', firstMonth);
     renderMonthCalendar('calendar2', secondMonth);

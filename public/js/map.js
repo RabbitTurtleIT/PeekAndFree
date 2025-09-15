@@ -90,6 +90,7 @@ function loadDataSources() {
                         }
                     });
                     seasonData = data;
+                    window.seasonData = data; // Expose seasonData to global scope
                     airportGeoJSON = geojsonData;
                     serviceAirportInIncheon = firebaseResult.data;
                     console.log('모든 소스 데이터 로딩 완료');

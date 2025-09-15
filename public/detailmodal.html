@@ -49,6 +49,17 @@
     .weather-summary-line {
       margin-bottom: 0;
     }
+    #detail-calendar-container .calendar-cell {
+      aspect-ratio: auto;
+      height: 40px;
+      font-size: 12px;
+    }
+    #detail-calendar-container .day-number {
+      font-size: 12px;
+    }
+    #detail-calendar-container .price-info {
+      font-size: 8px;
+    }
   </style>
 </head>
 
@@ -131,25 +142,22 @@
     </div>
   </div>
   <div class="tab-pane" id="profile" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
-  <div class="container calendar-container">
+  <div class="container calendar-container" id="detail-calendar-container">
     
     <!-- 월 네비게이션 -->
     <div class="month-navigation">
       <button class="nav-btn" onclick="changeMonthForDetail(-1)">‹</button>
-      <div class="w-100 d-flex justify-content-around">
+      <div class="w-100 d-flex justify-content-center">
         <div class="month-title" id="monthTitle1">2025년 7월</div>
-        <div class="month-title" id="monthTitle2">2025년 8월</div>
       </div>
       <button class="nav-btn" onclick="changeMonthForDetail(1)">›</button>
     </div>
     
-    <!-- 캘린더 2개 -->
+    <!-- 캘린더 1개 -->
     <div class="row">
-      <div class="col-md-6">
+      <div class="col-md-12">
         <div class="calendar-grid" id="calendar1"></div>
       </div>
-      <div class="col-md-6">
-        <div class="calendar-grid" id="calendar2"></div>
       </div>
     </div>
 
@@ -165,6 +173,24 @@
 
   <script>
     let current_nationname = ""
+    function renderCalendar() {
+        const firstMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        let month1Title = `${firstMonth.getFullYear()}년 ${monthNames[firstMonth.getMonth()]}`;
+
+        if (window.parent.seasonData && current_nationname && window.parent.seasonData[current_nationname]) {
+            const countrySeasonData = window.parent.seasonData[current_nationname];
+            const month1 = firstMonth.getMonth() + 1;
+
+            if (countrySeasonData[month1] === '1') {
+                month1Title += ' 🔥';
+            } else if (countrySeasonData[month1] === '2' || countrySeasonData[month1] === '3') {
+                month1Title += ' 😴';
+            }
+        }
+
+        document.getElementById('monthTitle1').textContent = month1Title;
+        renderMonthCalendar('calendar1', firstMonth);
+    }
     // 예매하기 버튼 클릭 핸들러
     function handleBookingClick() {
         console.log('예매하기 버튼 클릭됨');
@@ -365,6 +391,16 @@
         let cityname = param.get('Cityname');
         let nationname = param.get('Nationname');
         current_nationname = nationname
+                g_currentNation = nationname;
+        const checkSeasonData = setInterval(() => {
+            if (window.parent.seasonData) {
+                clearInterval(checkSeasonData);
+                if(typeof renderCalendar === 'function') {
+                    renderCalendar();
+                }
+            }
+        }, 100);
+
         $("#name").text(nationname + " " + cityname)
       //구글맵
       firebase.functions().httpsCallable('getGoogleMapAPIKey')().then((result) => {
