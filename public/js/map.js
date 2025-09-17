@@ -219,13 +219,23 @@ function appendAirportOnMap() {
             map.getSource('route').setData({ 'type': 'Feature', 'properties': {}, 'geometry': { 'type': 'LineString', 'coordinates': [[126.4406957, 37.4601908], coordinates] } });
             
             let citydata = await IATAtoCityInformation(iata);
+            console.log("map.js: citydata from IATAtoCityInformation:", citydata); // Add this log
             if (citydata) {
-                $("#detailFrame").attr("src", `detailmodal.html?coord1=${citydata.longitude}&coord2=${citydata.Latitude}&Cityname=${citydata.한글도시명}&Nationname=${citydata.한글국가명}`);
+                let cityname = citydata.한글도시명;
+                if (!cityname && 한글공항) {
+                    cityname = 한글공항.split(' ')[0];
+                }
+                $("#detailFrame").attr("src", `detailmodal.html?coord1=${citydata.longitude}&coord2=${citydata.Latitude}&Cityname=${cityname}&Nationname=${citydata.한글국가명}`);
+            }
+
+            let popupCityName = citydata?.한글도시명;
+            if (!popupCityName && 한글공항) {
+                popupCityName = 한글공항.split(' ')[0];
             }
 
             new mapboxgl.Popup()
                 .setLngLat(coordinates)
-                .setHTML(`<p class="text-center p-1" style="opacity: 1"><span style="font-size:20px">${한글공항} ${iata}</span><br><a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${한글국가명} ${citydata?.한글도시명 || ''}</a></p><style>.mapboxgl-popup-content { position: relative; background: #fff; opacity: 0.9; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.10); pointer-events: auto; }</style>`) // Corrected escaping for inner HTML string
+                .setHTML(`<p class="text-center p-1" style="opacity: 1"><span style="font-size:20px">${한글공항} ${iata}</span><br><a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${한글국가명} ${popupCityName || ''}</a></p><style>.mapboxgl-popup-content { position: relative; background: #fff; opacity: 0.9; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.10); pointer-events: auto; }</style>`) // Corrected escaping for inner HTML string
                 .setMaxWidth("500px")
                 .addTo(map);
         });

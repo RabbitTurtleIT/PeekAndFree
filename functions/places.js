@@ -45,7 +45,7 @@ function getFestivalInfo(country, month) {
     if (!country || !month) {
         return { error: "국가명, 월이 제공되지 않았습니다." };
     }
-    const inputCountry = country.trim().toUpperCase();
+    const inputCountry = country.trim();
     const inputMonth = month.trim().toUpperCase();
     const csvPath = path.join(__dirname, 'festival.csv');
 

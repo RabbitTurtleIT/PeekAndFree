@@ -87,7 +87,7 @@ async function getLatestExchangeRate() {
         return null;
     });
 
-    if (!apiData || !apiData.StatisticSearch || !apiApidata.StatisticSearch.row) {
+    if (!apiData || !apiData.StatisticSearch || !apiData.StatisticSearch.row) {
         console.log("[ExchangeRate] No data from API and no fallback data in DB.");
         return [];
     }

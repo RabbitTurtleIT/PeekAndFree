@@ -210,7 +210,7 @@ function initCalendar() {
     renderCalendar();
 }
 
-function renderCalendar() {
+function renderCalendar(festivalDates = []) {
     const firstMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const secondMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
 
@@ -238,11 +238,11 @@ function renderCalendar() {
     document.getElementById('monthTitle1').textContent = month1Title;
     document.getElementById('monthTitle2').textContent = month2Title;
 
-    renderMonthCalendar('calendar1', firstMonth);
-    renderMonthCalendar('calendar2', secondMonth);
+    renderMonthCalendar('calendar1', firstMonth, festivalDates);
+    renderMonthCalendar('calendar2', secondMonth, festivalDates);
 }
 
-function renderMonthCalendar(containerId, monthDate) {
+function renderMonthCalendar(containerId, monthDate, festivalDates = []) {
     const container = document.getElementById(containerId);
     container.innerHTML = '';
 
@@ -295,6 +295,11 @@ function renderMonthCalendar(containerId, monthDate) {
         const dayStr = String(cellDate.getDate()).padStart(2, '0');
         const dateString = `${year}-${month}-${dayStr}`;
         dayCell.dataset.date = dateString;
+        
+        // 축제 날짜 하이라이트
+        if (festivalDates.includes(dateString)) {
+            dayCell.classList.add('festival-date'); // Add a class for styling
+        }
         
         // 기존 가격 정보 복원
         restorePriceInfo(dayCell, dateString);

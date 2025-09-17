@@ -435,29 +435,6 @@ body {
 }
 
 .calendar-container {
-  padding: 20px;
-}
-
-.flight-results-section {
-  background: white;
-  margin: 20px;
-  padding: 20px;
-  border-radius: 15px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  min-height: 100px;
-}
-.reservation-background {
-  position: absolute;
-  top: 0;
-  max-width: 100%;
-  height: 100vh;
-  background-color: var(--orange-light);
-  border-bottom-left-radius: 50% 100%;
-  border-bottom-right-radius: 50% 100%;
-  z-index: 0;
-}
-
-.calendar-container {
   max-width: 1000px;
   margin: 0 auto;
   padding: 20px;
@@ -749,4 +726,66 @@ footer {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* For festival dates in calendar - Cell styling */
+.calendar-cell.festival-date {
+    /* Remove background and border from the cell itself */
+    background-color: transparent;
+    border: none;
+    /* Keep font-weight and color for the entire cell if desired, or move to .day-number */
+    font-weight: bold; /* Keep bold for the whole cell */
+    color: #e65100; /* Keep darker orange for the whole cell */
+}
+
+/* Circular highlight for the day number within a festival date cell */
+.calendar-cell.festival-date .day-number {
+    background-color: #ff9800; /* Orange background for the circle */
+    color: white; /* White text for contrast */
+    border-radius: 50%; /* Make it circular */
+    width: 24px; /* Adjust size as needed */
+    height: 24px; /* Adjust size as needed */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px; /* Adjust font size if needed */
+    line-height: 1; /* Ensure text is centered vertically */
+    box-shadow: 0 2px 4px rgba(255, 152, 0, 0.4); /* Subtle shadow */
+}
+
+.festival-info-block {
+    margin-top: 20px;
+    padding: 10px;
+    border-top: 1px solid #eee;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+}
+
+.festival-info-block h6 {
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.festival-info-block ul {
+    list-style: none;
+    padding: 0;
+}
+
+.festival-info-block li {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.festival-info-block li strong {
+    color: #007bff; /* Bootstrap primary blue */
+}
+
+.festival-info-block li a {
+    margin-left: 5px;
+    color: #28a745; /* Bootstrap success green */
+    text-decoration: none;
+}
+
+.festival-info-block li a:hover {
+    text-decoration: underline;
 }
