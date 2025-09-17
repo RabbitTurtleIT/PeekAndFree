@@ -464,9 +464,9 @@ async function appendFlightCard(IATA, korName, airportKor, coord) {
             let arrivalIata = result.data.data[0].itineraries[0].segments[0].arrival.iataCode
             let time = result.data.data[0].itineraries[0].duration
             time = time.replaceAll("PT", "").replaceAll("H", "시간 ").replaceAll("M","분")
-            $('#nearbyFlightList').append(FlightCard(korName + " " + airportKor + " (" + arrivalIata + ")", price, time, result.data))
+            // $('#nearbyFlightList').append(FlightCard(korName + " " + airportKor + " (" + arrivalIata + ")", price, time, result.data))
             //항공편 카드를 지도 아래 영역에 추가
-            $('#nearbyFlightList').empty(); // 기존 내용 제거
+            // $('#nearbyFlightList').empty(); // 기존 내용 제거
             $('#nearbyFlightList').append(FlightCard(korName + " " + airportKor + " (" + arrivalIata + ")", price, time, result.data))
             
             //항공편 목록이 보이는 영역으로 스크롤
