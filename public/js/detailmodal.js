@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let coord1 = param.get('coord2'); // Local, as it's only used here
     let coord2 = param.get('coord1'); // Local, as it's only used here
 
-    console.log("detailmodal.js DOMContentLoaded - Nationname:", current_nationname, "Cityname:", current_cityname);
+    // console.log("detailmodal.js DOMContentLoaded - Nationname:", current_nationname, "Cityname:", current_cityname);
 
     $("#name").text(current_nationname + " " + current_cityname);
 
@@ -137,13 +137,13 @@ document.addEventListener('DOMContentLoaded', function () {
             '미국': '미국달러', '중국': '위안', '일본': '일본엔', '영국': '영국파운드', '캐나다': '캐나다달러', '스위스': '스위스프랑', '홍콩': '홍콩달러', '스웨덴': '스웨덴크로나', '오스트레일리아': '호주달러', '덴마크': '덴마크크로나', '노르웨이': '노르웨이크로나', '사우디아라비아': '사우디아라비아리얄', '쿠웨이트': '쿠웨이트디나르', '바레인': '바레인디나르', '아랍에미리트': '아랍에미리트디르함', '싱가포르': '싱가포르달러', '말레이시아': '말레이지아링깃', '뉴질랜드': '뉴질랜드달러', '태국': '태국바트', '인도네시아': '인도네시아루피아', '대만': '대만달러', '몽골': '몽골투그릭', '카자흐스탄': '카자흐스탄텡게', '필리핀': '필리핀페소', '베트남': '베트남동', '브루나이': '브루나이달러', '인도': '인도루피', '파키스탄': '파키스탄루피', '방글라데시': '방글라데시타카', '멕시코': '멕시코 페소', '브라질': '브라질 헤알', '아르헨티나': '아르헨티나페소', '러시아': '러시아루블', '헝가리': '헝가리포린트', '폴란드': '폴란트즈워티', '체코': '체코코루나', '카타르': '카타르리얄', '이스라엘': '이스라엘셰켈', '요르단': '요르단디나르', '튀르키예': '튀르키예리라', '터키': '튀르키예리라', '남아프리카공화국': '남아프리카공화국랜드', '남아공': '남아프리카공화국랜드', '이집트': '이집트파운드'
         };
         const currencyToFind = countryMapping[current_nationname]; // Use global current_nationname
-        console.log("Currency to find:", currencyToFind); // Add this log
+        // console.log("Currency to find:", currencyToFind); // Add this log
         if (currencyToFind) {
             for (let item of result.data) {
                 if (item.id && item.id.indexOf(currencyToFind) != -1) {
                     $("#exchangerate").text(item.id + " " + item.value + "원");
                     found = true;
-                    console.log("Exchange rate found:", item.id, item.value); // Add this log
+                    // console.log("Exchange rate found:", item.id, item.value); // Add this log
                     break;
                 }
             }
@@ -253,18 +253,18 @@ async function loadImg(coord1, coord2, cityname, nationname) {
 
     const getImagesFn = firebase.functions().httpsCallable('getPlaceImages');
     try {
-        console.log("loadImg: Attempting to fetch cached images from Firebase.");
+        // console.log("loadImg: Attempting to fetch cached images from Firebase.");
         const cachedResult = await getImagesFn({ lat: coord1, lon: coord2 });
 
         if (cachedResult.data && cachedResult.data.length > 0) {
-            console.log("loadImg: Cached images found. Displaying them.");
+            // console.log("loadImg: Cached images found. Displaying them.");
             $("#imgDiv").empty();
             cachedResult.data.forEach(url => {
                 const img = $(`<img class="rounded m-1" src="${url}"/>`);
                 $("#imgDiv").append(img);
             });
         } else {
-            console.log("loadImg: No cached images. Attempting Google Places API.");
+            // console.log("loadImg: No cached images. Attempting Google Places API.");
             try {
                 // Ensure google.maps is available before calling importLibrary
                 if (typeof google === 'undefined' || typeof google.maps === 'undefined') {
@@ -273,7 +273,7 @@ async function loadImg(coord1, coord2, cityname, nationname) {
                     return;
                 }
                 const { Place, SearchNearbyRankPreference } = await google.maps.importLibrary("places");
-                console.log("loadImg: Google Places library imported.");
+                // console.log("loadImg: Google Places library imported.");
                 let center = new google.maps.LatLng(coord1, coord2);
                 const request = {
                     fields: ["displayName", "photos"],
@@ -287,10 +287,10 @@ async function loadImg(coord1, coord2, cityname, nationname) {
                     language: "ko-kr",
                 };
                 const { places } = await Place.searchNearby(request);
-                console.log("loadImg: Google Places searchNearby result:", places);
+                // console.log("loadImg: Google Places searchNearby result:", places);
 
                 if (places.length > 0 && places[0].photos && places[0].photos.length > 0) {
-                    console.log("loadImg: Google Places images found. Displaying and caching.");
+                    // console.log("loadImg: Google Places images found. Displaying and caching.");
                     const imageUrls = places.map(place => place.photos[0].getURI({ maxWidth: 400, maxHeight: 400 }));
                     $("#imgDiv").empty();
                     imageUrls.forEach(url => {
@@ -352,13 +352,13 @@ async function renderDetailCalendars() {
     document.getElementById('monthTitle2').textContent = `${secondMonth.getFullYear()}년 ${monthNames[secondMonth.getMonth()]}`;
 
     // Fetch festivals for both months
-    console.log("renderDetailCalendars: Fetching festivals for month 1:", firstMonth);
+    // console.log("renderDetailCalendars: Fetching festivals for month 1:", firstMonth);
     const festivalsMonth1 = await fetchFestivalsForMonth(firstMonth);
-    console.log("renderDetailCalendars: Festivals for month 1:", festivalsMonth1);
+    // console.log("renderDetailCalendars: Festivals for month 1:", festivalsMonth1);
 
-    console.log("renderDetailCalendars: Fetching festivals for month 2:", secondMonth);
+    // console.log("renderDetailCalendars: Fetching festivals for month 2:", secondMonth);
     const festivalsMonth2 = await fetchFestivalsForMonth(secondMonth);
-    console.log("renderDetailCalendars: Festivals for month 2:", festivalsMonth2);
+    // console.log("renderDetailCalendars: Festivals for month 2:", festivalsMonth2);
 
     // Extract festival dates for highlighting
     let allFestivalDatesMonth1 = [];
@@ -377,8 +377,8 @@ async function renderDetailCalendars() {
     });
     const festivalDatesMonth2 = [...new Set(allFestivalDatesMonth2)]; // Remove duplicates
 
-    console.log("renderDetailCalendars: Festival dates for month 1 (individual, formatted):", festivalDatesMonth1);
-    console.log("renderDetailCalendars: Festival dates for month 2 (individual, formatted):", festivalDatesMonth2);
+    // console.log("renderDetailCalendars: Festival dates for month 1 (individual, formatted):", festivalDatesMonth1);
+    // console.log("renderDetailCalendars: Festival dates for month 2 (individual, formatted):", festivalDatesMonth2);
 
     renderDetailMonthCalendar('calendar1', firstMonth, festivalDatesMonth1);
     renderDetailMonthCalendar('calendar2', secondMonth, festivalDatesMonth2);
@@ -429,12 +429,12 @@ function renderDetailMonthCalendar(containerId, monthDate, festivalDates = []) {
         const month = String(cellDate.getMonth() + 1).padStart(2, '0');
         const dayStr = String(cellDate.getDate()).padStart(2, '0');
         const dateString = `${year}-${month}-${dayStr}`;
-        console.log(`renderDetailMonthCalendar: Cell dateString: ${dateString}`); // Add this log
+        // console.log(`renderDetailMonthCalendar: Cell dateString: ${dateString}`); // Add this log
 
         // Highlight festival dates
         if (festivalDates.includes(dateString)) {
             dayCell.classList.add('festival-date');
-            console.log(`renderDetailMonthCalendar: Highlighting ${dateString} in ${containerId}`);
+            // console.log(`renderDetailMonthCalendar: Highlighting ${dateString} in ${containerId}`);
         }
 
         container.appendChild(dayCell);
@@ -487,7 +487,6 @@ function getDatesInRange(dateRangeString, year) {
 async function fetchFestivalsForMonth(monthDate) {
     const monthKey = `${monthDate.getFullYear()}-${monthDate.getMonth()}`;
     if (festivalDataCache[monthKey]) {
-        console.log(`fetchFestivalsForMonth: Returning cached data for ${monthKey}`);
         return festivalDataCache[monthKey];
     }
 
@@ -499,14 +498,14 @@ async function fetchFestivalsForMonth(monthDate) {
         return []; // Return empty array if nation name is missing
     }
 
-    console.log(`fetchFestivalsForMonth: Calling Firebase function for country: ${current_nationname.trim()}, month: ${monthName}`);
+    // console.log(`fetchFestivalsForMonth: Calling Firebase function for country: ${current_nationname.trim()}, month: ${monthName}`);
     try {
         const result = await firebase.functions().httpsCallable('getFestivalInfo')({
             country: current_nationname.trim(),
             month: monthName
         });
         if (result.data && result.data.festivals) {
-            console.log(`fetchFestivalsForMonth: Received festival data for ${monthKey}:`, result.data.festivals);
+            // console.log(`fetchFestivalsForMonth: Received festival data for ${monthKey}:`, result.data.festivals);
             festivalDataCache[monthKey] = result.data.festivals;
             return result.data.festivals;
         } else if (result.data && result.data.error) {
@@ -524,9 +523,9 @@ function updateFestivalList(containerId, festivals) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    let html = '<h6 class="mt-3">이달의 축제 및 행사:</h6>';
+    let html = '';
     if (festivals.length === 0) {
-        html += '<p>이번 달에는 예정된 축제가 없습니다.</p>';
+        html += '<p>해당 월에는 예정된 축제가 없습니다.</p>';
     } else {
         html += '<ul>';
         for (let item of festivals) {
@@ -536,10 +535,10 @@ function updateFestivalList(containerId, festivals) {
             const site = item["공식/정보 사이트"] || "";
 
             const siteLink = site
-                ? `<a href="${site}" target="_blank" rel="noopener noreferrer">관련링크</a>`
+                ? `<a class="badge bg-white" style="font-size:16px" href="${site}" target="_blank" rel="noopener noreferrer">🔗 관련링크</a>`
                 : "";
 
-            html += `<li>${date} <strong>${name}</strong> - ${feature} ${siteLink}</li>`;
+            html += `<li>${date} ${feature} ${siteLink}</li>`;
         }
         html += '</ul>';
     }

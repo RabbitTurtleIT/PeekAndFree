@@ -466,7 +466,7 @@ body {
   transition: all 0.2s;
   font-size: 14px;
   position: relative;
-  padding: 4px;
+  padding: 2px;
   overflow: hidden;
 }
 
@@ -505,21 +505,27 @@ body {
 }
 
 .calendar-cell.today {
-  background: #28a745;
-  color: white;
+  background: #28a745; /* Original green background */
+  color: white; /* Keep white text for contrast */
   font-weight: bold;
+  border-radius: 50%; /* Make it a circle */
+  border: none; /* Ensure no border if one was added */
 }
 
 .calendar-cell.selected-start {
-  background: #FF9000;
+  background: #FF9000; /* Google Blue */
   color: white;
   font-weight: bold;
+  border-top-left-radius: 50%;
+  border-bottom-left-radius: 50%;
 }
 
 .calendar-cell.selected-end {
-  background: #FF9000;
+  background: #FF9000; /* Google Blue */
   color: white;
   font-weight: bold;
+  border-top-right-radius: 50%;
+  border-bottom-right-radius: 50%;
 }
 
 .calendar-cell.in-range {
@@ -550,7 +556,7 @@ body {
 }
 
 .selected-range-info {
-  background: #FFF1DE;
+  background: #FF9000;
   padding: 15px;
   border-radius: 8px;
   border-left: 4px solid #007bff;
@@ -789,3 +795,25 @@ footer {
 .festival-info-block li a:hover {
     text-decoration: underline;
 }
+.date-selector {
+       display: flex;
+       align-items: center; /* Align items vertically */
+       gap: 5px; /* Reduce space between elements */
+     }
+     
+     .date-selector input[type="date"] {
+       padding: 5px 8px; /* Reduced padding */
+      height: 30px; /* Fixed height for thinner appearance */
+      font-size: 14px; /* Smaller font size */
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      appearance: none; /* Remove default browser styling for date input */
+      -webkit-appearance: none;
+      -moz-appearance: none;
+    }
+    
+    .date-selector span {
+      font-size: 14px; /* Match font size with inputs */
+      color: #555;
+    }
+
