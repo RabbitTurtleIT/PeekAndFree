@@ -5,7 +5,7 @@ require("dotenv").config();
 
 // Initialize Firebase
 initializeApp();
-const db = getFirestore();
+const db = getFirestore("peekandfree");
 
 // Import modularized functions
 const { requestTestAccessKey, requestFlightOffer } = require("./flights");

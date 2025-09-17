@@ -72,7 +72,7 @@ async function fetchAllDailyForecast({ lat, lon, days = 5, units = 'METRIC' }) {
 const GEOCODE_CACHE_TTL_MS = 24 * 60 * 60 * 1000 * 30; // 30일
 
 async function getGeocodeCache(geoKey) {
-  const db = getFirestore();
+  const db = getFirestore("peekandfree");
   const docRef = db.collection('geocodeCache').doc(geoKey);
   const docSnap = await docRef.get();
 
@@ -89,7 +89,7 @@ async function getGeocodeCache(geoKey) {
 }
 
 async function setGeocodeCache(geoKey, result) {
-  const db = getFirestore();
+  const db = getFirestore("peekandfree");
   const docRef = db.collection('geocodeCache').doc(geoKey);
   const expiresAt = new Date().getTime() + GEOCODE_CACHE_TTL_MS;
   await docRef.set({ result, expiresAt });

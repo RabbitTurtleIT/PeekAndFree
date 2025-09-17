@@ -101,7 +101,7 @@ async function loadWeather() {
         console.log("에러" + e);
     }
 
-    const db = getFirestore();
+    const db = getFirestore("peekandfree");
     const chunkSize = 500;
 
     for (let i = 0; i < filtered.length; i += chunkSize) {
@@ -119,7 +119,7 @@ async function loadWeather() {
 }
 
 async function getWeather() {
-    const db = getFirestore();
+    const db = getFirestore("peekandfree");
     const snapshot = await db.collection('weather').get();
     const weathers = [];
     snapshot.forEach(doc => {

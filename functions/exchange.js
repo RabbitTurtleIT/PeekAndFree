@@ -4,7 +4,7 @@ const { getFirestore, FieldPath } = require("firebase-admin/firestore");
 const agent = new https.Agent({keepAlive: true});
 
 async function getLatestExchangeRate() {
-    const db = getFirestore();
+    const db = getFirestore("peekandfree");
     const exchangeRateRef = db.collection('exchangeRatesByDate');
     const today = new Date();
     const todayStr = today.toISOString().slice(0, 10);
