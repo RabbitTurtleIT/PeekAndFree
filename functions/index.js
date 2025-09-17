@@ -12,7 +12,7 @@ const { requestTestAccessKey, requestFlightOffer } = require("./flights");
 const { getLatestExchangeRate } = require("./exchange");
 const { getAirportInfo, getFestivalInfo, getCountryInfo } = require("./places");
 const { fetchAllDailyForecast, reverseGeocodeCountry, mapDayToDoc } = require("./weather");
-const { getInformationOfCountry, getServiceDestinationInfo, loadWeather, getWeather } = require("./misc");
+const { getInformationOfCountry, getServiceDestinationInfo, loadWeather, getWeather, getWeatherAndLoadIfNeeded } = require("./misc");
 const { makeGeoKey } = require("./utils");
 
 // --- Re-exporting functions for Firebase --- //
@@ -157,4 +157,7 @@ exports.getLatestExchangeRate = onCall({cors: ["https://peekandfree.web.app", "h
 exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, () => getInformationOfCountry());
 exports.getServiceDestinationInfo = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, () => getServiceDestinationInfo());
 exports.loadWeather = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, () => loadWeather());
-exports.getWeather = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, () => getWeather());
+exports.getWeather = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, () => {
+  console.log("getWeather cloud function was triggered.");
+  return getWeatherAndLoadIfNeeded();
+});

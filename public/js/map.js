@@ -72,8 +72,9 @@ function loadDataSources() {
                 Promise.all([
                     fetch('popular.csv').then(res => res.text()),
                     fetch('Airport.geojson').then(res => res.json()),
-                    firebase.functions().httpsCallable('getServiceDestinationInfo')()
-                ]).then(([csvText, geojsonData, firebaseResult]) => {
+                    firebase.functions().httpsCallable('getServiceDestinationInfo')(),
+                    firebase.functions().httpsCallable('getWeather')()
+                ]).then(([csvText, geojsonData, firebaseResult, weatherResult]) => {
                     const data = {};
                     const rows = csvText.split('\n').slice(1);
                     rows.forEach(row => {
@@ -90,7 +91,23 @@ function loadDataSources() {
                         }
                     });
                     seasonData = data;
-                    window.seasonData = data; // Expose seasonData to global scope
+                    window.seasonData = data;
+
+                    const weatherByIATA = {};
+                    weatherResult.data.forEach(w => {
+                        weatherByIATA[w.id] = w;
+                    });
+
+                    geojsonData.features.forEach(feature => {
+                        const iata = feature.properties['공항코드1.IATA.'];
+                        if (iata && weatherByIATA[iata]) {
+                            feature.properties.weather = weatherByIATA[iata];
+                            if (!feature.properties.한글도시명 && weatherByIATA[iata].city) {
+                                feature.properties.한글도시명 = weatherByIATA[iata].city;
+                            }
+                        }
+                    });
+
                     airportGeoJSON = geojsonData;
                     serviceAirportInIncheon = firebaseResult.data;
                     console.log('모든 소스 데이터 로딩 완료');
@@ -136,9 +153,8 @@ function appendAirportOnMap() {
         return;
     }
     
-
     const currentMonth = new Date().getMonth() + 1;
-    updateAirportFeaturesWithSeason(currentMonth);
+    updateAirportFeatures(currentMonth);
 
     const preferredAirports = getPreferredAirports();
     const airportsByCountry = groupAirportsByCountry(preferredAirports);
@@ -194,7 +210,26 @@ function appendAirportOnMap() {
             layout: {
                 'icon-image': ['get', 'season_icon'],
                 'icon-size': 0.5,
-                'icon-allow-overlap': true
+                'icon-allow-overlap': true,
+                'text-field': [
+                    'case',
+                    ['has', 'weather_icon'],
+                    ['format',
+                        ['get', 'weather_icon'], { 'font-scale': 2 },
+                        ' ',
+                        ['coalesce', ['get', '한글도시명'], ['get', '한글공항']], { 'font-scale': 1.2 }
+                    ],
+                    ['coalesce', ['get', '한글도시명'], ['get', '한글공항']]
+                ],
+                'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                'text-size': 10,
+                'text-offset': [0, 0.8],
+                'text-anchor': 'top'
+            },
+            paint: {
+                'text-color': '#000000',
+                'text-halo-color': '#FFFFFF',
+                'text-halo-width': 1
             }
         });
 
@@ -235,7 +270,7 @@ function appendAirportOnMap() {
 
             new mapboxgl.Popup()
                 .setLngLat(coordinates)
-                .setHTML(`<p class="text-center p-1" style="opacity: 1"><span style="font-size:20px">${한글공항} ${iata}</span><br><a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${한글국가명} ${popupCityName || ''}</a></p><style>.mapboxgl-popup-content { position: relative; background: #fff; opacity: 0.9; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.10); pointer-events: auto; }</style>`) // Corrected escaping for inner HTML string
+                .setHTML(`<p class="text-center p-1" style="opacity: 1"><span style="font-size:20px">${한글공항} ${iata}</span><br><a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${한글국가명} ${popupCityName || ''}</a></p><style>.mapboxgl-popup-content { position: relative; background: #fff; opacity: 0.9; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.10); pointer-events: auto; }</style>`) 
                 .setMaxWidth("500px")
                 .addTo(map);
         });
@@ -246,12 +281,25 @@ function appendAirportOnMap() {
     console.log('=== 공항 데이터 추가/업데이트 완료 ===');
 }
 
-function updateAirportFeaturesWithSeason(month) {
+function updateAirportFeatures(month) {
     if (!airportGeoJSON || !seasonData) return;
     airportGeoJSON.features.forEach(feature => {
         const countryName = feature.properties.한글국가명;
         const seasonInfo = seasonData[countryName];
         feature.properties.season_icon = (seasonInfo && seasonInfo[month] == '1') ? 'hot' : 'sleep';
+
+        if (feature.properties.weather && feature.properties.weather.temp) {
+            const temp = parseFloat(feature.properties.weather.temp);
+            if (temp > 25) {
+                feature.properties.weather_icon = '☀️';
+            } else if (temp > 10) {
+                feature.properties.weather_icon = '☁️';
+            } else {
+                feature.properties.weather_icon = '❄️';
+            }
+        } else {
+            feature.properties.weather_icon = null;
+        }
     });
 }
 
@@ -261,7 +309,7 @@ window.updateAirportMarkers = function(month) {
         return;
     }
     console.log(`마커 업데이트, 월: ${month}`);
-    updateAirportFeaturesWithSeason(month);
+    updateAirportFeatures(month);
     
     const preferredAirports = getPreferredAirports();
     const airportsByCountry = groupAirportsByCountry(preferredAirports);

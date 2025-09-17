@@ -92,9 +92,31 @@ async function loadWeather() {
     try {
         const items = apiData.response.body.items;
         if (Array.isArray(items)) {
-            filtered = items.map(item => ({ airport: item.airport, himidity: item.himidity, temp: item.temp, wind: item.wind }));
+            filtered = items.map(item => {
+                let cityName = item.airport;
+                if (cityName.includes('-')) {
+                    cityName = cityName.split('-')[0];
+                }
+                return {
+                    iata: item.airportCode,
+                    city: cityName,
+                    himidity: item.himidity,
+                    temp: item.temp,
+                    wind: item.wind
+                };
+            });
         } else if (typeof items === 'object' && items !== null) {
-            filtered = [{ airport: items.airport, himidity: items.himidity, temp: items.temp, wind: items.wind }];
+            let cityName = items.airport;
+            if (cityName.includes('-')) {
+                cityName = cityName.split('-')[0];
+            }
+            filtered = [{
+                iata: items.airportCode,
+                city: cityName,
+                himidity: items.himidity,
+                temp: items.temp,
+                wind: items.wind
+            }];
         }
     } catch (e) {
         filtered = [];
@@ -108,9 +130,15 @@ async function loadWeather() {
         const batch = db.batch();
         const chunk = filtered.slice(i, i + chunkSize);
         chunk.forEach(item => {
-            const safeId = item.airport.replace(/\//g, '-');
-            const docRef = db.collection('weather').doc(safeId);
-            batch.set(docRef, item);
+            if (item.iata) {
+                const docRef = db.collection('weather').doc(item.iata);
+                batch.set(docRef, {
+                    city: item.city,
+                    himidity: item.himidity,
+                    temp: item.temp,
+                    wind: item.wind
+                });
+            }
         });
         await batch.commit();
     }
@@ -128,9 +156,53 @@ async function getWeather() {
     return weathers;
 }
 
+const WEATHER_LOAD_INTERVAL_HOURS = 24;
+
+async function getWeatherAndLoadIfNeeded() {
+    const db = getFirestore("peekandfree");
+    const metadataRef = db.collection('metadata').doc('weather');
+    const metadataDoc = await metadataRef.get();
+
+    let shouldLoad = false;
+    if (!metadataDoc.exists) {
+        shouldLoad = true;
+        console.log('Weather metadata not found. Forcing a refresh.');
+    } else {
+        const lastLoaded = metadataDoc.data().lastLoaded;
+        if (lastLoaded && typeof lastLoaded.toDate === 'function') {
+            const lastLoadedDate = lastLoaded.toDate();
+            const now = new Date();
+            const hoursSinceLastLoad = (now.getTime() - lastLoadedDate.getTime()) / (1000 * 60 * 60);
+            if (hoursSinceLastLoad > WEATHER_LOAD_INTERVAL_HOURS) {
+                shouldLoad = true;
+                console.log(`Weather data is stale (loaded ${hoursSinceLastLoad.toFixed(1)} hours ago). Refreshing.`);
+            } else {
+                 console.log(`Weather data is fresh (loaded ${hoursSinceLastLoad.toFixed(1)} hours ago). Skipping refresh.`);
+            }
+        } else {
+            shouldLoad = true;
+            console.log('lastLoaded field is missing or not a valid timestamp in weather metadata. Forcing a refresh.');
+        }
+    }
+
+    if (shouldLoad) {
+        console.log('Executing loadWeather...');
+        try {
+            await loadWeather();
+            await metadataRef.set({ lastLoaded: new Date() }, { merge: true });
+            console.log('loadWeather finished and timestamp updated.');
+        } catch (e) {
+            console.error('Error during automatic weather load:', e);
+        }
+    }
+
+    return await getWeather();
+}
+
 module.exports = {
     getInformationOfCountry,
     getServiceDestinationInfo,
     loadWeather,
-    getWeather
+    getWeather,
+    getWeatherAndLoadIfNeeded
 };
