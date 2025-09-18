@@ -39,8 +39,18 @@ function initializeMap() {
         });
 
         map.addSource('route', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } } });
-        // map.addLayer({ id: 'route', type: 'line', source: 'route', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#080', 'line-width': 8 } });
         
+        map.addLayer({
+        id: 'route',
+        source: 'route',
+        type: 'line',
+        paint: {
+            'line-width': 3,
+            'line-color': '#007cbf', // 눈에 띄는 파란색
+            'line-dasharray': [0, 2, 2] // 점선 효과로 비행 경로 느낌을 줍니다.
+            }
+        });
+
         setTimeout(replaceWithSeoulButton, 500);
     });
 }
@@ -251,8 +261,59 @@ function appendAirportOnMap() {
             if (typeof clearAllPrices === 'function') clearAllPrices();
             if (typeof setIATA === 'function') setIATA({ korName: 한글국가명, airportKor: 한글공항, iata: iata, coord: coordinates });
 
-            map.getSource('route').setData({ 'type': 'Feature', 'properties': {}, 'geometry': { 'type': 'LineString', 'coordinates': [[126.4406957, 37.4601908], coordinates] } });
+            // 1. 시작점과 도착점 설정
+            const origin = [126.4406957, 37.4601908];
+            const destination = coordinates;
+
+            // 2. 대권 항로 계산 (여기까지는 동일)
+            const routeFeature = {
+                'type': 'Feature',
+                'geometry': {
+                    'type': 'LineString',
+                    'coordinates': [origin, destination]
+                }
+            };
+            const lineDistance = turf.length(routeFeature);
+            const steps = 500; // 정밀도를 위해 step 값을 조금 더 높입니다.
+            const arc = [];
+            for (let i = 0; i < lineDistance; i += lineDistance / steps) {
+                const segment = turf.along(routeFeature, i);
+                arc.push(segment.geometry.coordinates);
+            }
+            // 마지막 지점을 명확하게 추가
+            arc.push(destination);
+
+            // 3. (핵심) 날짜 변경선을 기준으로 경로 분할
+            const multiLineStrings = [];
+            let currentLine = [];
             
+            for (let i = 0; i < arc.length; i++) {
+                currentLine.push(arc[i]);
+                if (i < arc.length - 1) {
+                    // 현재 지점과 다음 지점의 경도 차이가 180도를 초과하면 (날짜 변경선을 넘으면)
+                    if (Math.abs(arc[i+1][0] - arc[i][0]) > 180) {
+                        multiLineStrings.push(currentLine); // 현재까지의 라인을 저장하고
+                        currentLine = []; // 새로운 라인을 시작합니다.
+                    }
+                }
+            }
+            multiLineStrings.push(currentLine); // 마지막 라인 추가
+
+            // 4. 분할된 경로들을 GeoJSON FeatureCollection으로 만듦
+            const routeGeoJSON = {
+                'type': 'FeatureCollection',
+                'features': multiLineStrings.map(line => ({
+                    'type': 'Feature',
+                    'geometry': {
+                        'type': 'LineString',
+                        'coordinates': line
+                    }
+                }))
+            };
+            
+            // 5. 생성된 GeoJSON으로 지도 소스 업데이트
+            map.getSource('route').setData(routeGeoJSON);
+                    
             let citydata = await IATAtoCityInformation(iata);
             console.log("map.js: citydata from IATAtoCityInformation:", citydata); // Add this log
             if (citydata) {
