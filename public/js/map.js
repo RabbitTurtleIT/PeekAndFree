@@ -95,7 +95,7 @@ function initializeMap() {
             source: 'hotel-source',
             filter: ['has', 'point_count'],
             layout: {
-                'icon-image': 'sleep',
+                'icon-image': 'hotel',
                 'icon-size': 0.8,
                 'text-field': '{point_count_abbreviated}',
                 'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
@@ -109,7 +109,7 @@ function initializeMap() {
             source: 'hotel-source',
             filter: ['!', ['has', 'point_count']],
             layout: {
-                'icon-image': 'sleep', // 'sleep.png' 아이콘 사용
+                'icon-image': 'hotel', // 'sleep.png' 아이콘 사용
                 'icon-size': 0.5,
                 'icon-allow-overlap': true,
                 'icon-ignore-placement': true, // 다른 요소와 겹쳐도 아이콘 표시

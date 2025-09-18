@@ -540,7 +540,7 @@ window.appendHotelCard = function(hotelOfferResponse) {
 
     const card = $(`
         <div class="rounded-pill bg-light p-1 mt-1">
-            <span style='font-size:16px'>🏨 ${hotel.name} <strong>${priceInKRW.toLocaleString('ko-KR')}원</strong> | ✈️+🏨 <strong>${combinedPrice.toLocaleString('ko-KR')}원</strong></span>
+            <span style='font-size:16px'>호텔 : ${hotel.name} <strong>${priceInKRW.toLocaleString('ko-KR')}원</strong> | ✈️+🏨 <strong>${combinedPrice.toLocaleString('ko-KR')}원</strong></span>
         </div>
     `);
 
