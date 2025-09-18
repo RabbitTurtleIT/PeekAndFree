@@ -5,6 +5,7 @@ let airportGeoJSON;
 let isMapReady = false;
 let queuedMonthUpdate = null;
 let lastTempRouteGeoJSON = { type: 'FeatureCollection', features: [] };
+let isFetchingHotelOffers = false;
 
 window.addFixedRoute = function(routeGeoJSON) {
     const currentFixedRoutes = map.getSource('fixed-routes')._data;
@@ -79,6 +80,65 @@ function initializeMap() {
             }
         });
 
+        // 호텔 레이어 추가
+        map.addSource('hotel-source', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: [] },
+            cluster: true,
+            clusterMaxZoom: 14,
+            clusterRadius: 50
+        });
+
+        map.addLayer({
+            id: 'hotel-clusters',
+            type: 'symbol',
+            source: 'hotel-source',
+            filter: ['has', 'point_count'],
+            layout: {
+                'icon-image': 'sleep',
+                'icon-size': 0.8,
+                'text-field': '{point_count_abbreviated}',
+                'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                'text-size': 12
+            }
+        });
+
+        map.addLayer({
+            id: 'hotel-pins',
+            type: 'symbol',
+            source: 'hotel-source',
+            filter: ['!', ['has', 'point_count']],
+            layout: {
+                'icon-image': 'sleep', // 'sleep.png' 아이콘 사용
+                'icon-size': 0.5,
+                'icon-allow-overlap': true,
+                'icon-ignore-placement': true, // 다른 요소와 겹쳐도 아이콘 표시
+                'text-ignore-placement': true, // 다른 요소와 겹쳐도 텍스트 표시
+                'text-field': ['get', 'name'],
+                'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                'text-size': 10,
+                'text-offset': [0, 0.8],
+                'text-anchor': 'top'
+            },
+            paint: {
+                'text-color': '#000000',
+                'text-halo-color': '#FFFFFF',
+                'text-halo-width': 1
+            }
+        });
+
+        map.on('click', 'hotel-clusters', (e) => {
+            const features = map.queryRenderedFeatures(e.point, { layers: ['hotel-clusters'] });
+            const clusterId = features[0].properties.cluster_id;
+            map.getSource('hotel-source').getClusterExpansionZoom(clusterId, (err, zoom) => {
+                if (err) return;
+                map.easeTo({
+                    center: features[0].geometry.coordinates,
+                    zoom: zoom
+                });
+            });
+        });
+
         setTimeout(replaceWithSeoulButton, 500);
     });
 }
@@ -88,6 +148,13 @@ function loadMapImages() {
             map.loadImage('img/hot.png', (error, image) => {
                 if (error) return reject(error);
                 if (!map.hasImage('hot')) map.addImage('hot', image);
+                resolve();
+            });
+        }),
+        new Promise((resolve, reject) => {
+            map.loadImage('img/hotel.png', (error, image) => {
+                if (error) return reject(error);
+                if (!map.hasImage('hotel')) map.addImage('hotel', image);
                 resolve();
             });
         }),
@@ -236,7 +303,7 @@ function appendAirportOnMap() {
                 'text-halo-color': '#FFFFFF',
                 'text-halo-width': 1
             }
-        });
+        }, 'hotel-pins');
 
         const unclusteredLayerId = `unclustered-point-${country}`;
         map.addLayer({
@@ -248,6 +315,8 @@ function appendAirportOnMap() {
                 'icon-image': ['get', 'season_icon'],
                 'icon-size': 0.5,
                 'icon-allow-overlap': true,
+                'icon-ignore-placement': true, // 다른 요소와 겹쳐도 아이콘 표시
+                'text-ignore-placement': true, // 다른 요소와 겹쳐도 텍스트 표시
                 'text-field': [
                     'case',
                     ['has', 'weather_icon'],
@@ -268,7 +337,7 @@ function appendAirportOnMap() {
                 'text-halo-color': '#FFFFFF',
                 'text-halo-width': 1
             }
-        });
+        }, 'hotel-pins');
 
         map.on('click', clusterLayerId, (e) => {
             const features = map.queryRenderedFeatures(e.point, { layers: [clusterLayerId] });
@@ -341,6 +410,31 @@ function appendAirportOnMap() {
             // 5. 생성된 GeoJSON으로 지도 소스 업데이트
             map.getSource('temp-route').setData(routeGeoJSON);
             lastTempRouteGeoJSON = routeGeoJSON; // Store the last drawn temp route
+
+            // 6. 주변 호텔 정보 가져오기
+            firebase.functions().httpsCallable('getHotels')({ iata: iata, latitude: coordinates[1], longitude: coordinates[0] })
+                .then(result => {
+                    const hotels = result.data.data; // API 응답 구조에 따라 .data를 추가하거나 삭제해야 할 수 있습니다.
+                    if (hotels && hotels.length > 0) {
+                        const hotelFeatures = hotels.map(hotel => ({
+                            type: 'Feature',
+                            geometry: {
+                                type: 'Point',
+                                coordinates: [hotel.geoCode.longitude, hotel.geoCode.latitude]
+                            },
+                            properties: {
+                                hotelId: hotel.hotelId,
+                                name: hotel.name
+                            }
+                        }));
+                        map.getSource('hotel-source').setData({ type: 'FeatureCollection', features: hotelFeatures });
+                    } else {
+                        map.getSource('hotel-source').setData({ type: 'FeatureCollection', features: [] });
+                    }
+                }).catch(error => {
+                    console.error("Error fetching hotels:", error);
+                    map.getSource('hotel-source').setData({ type: 'FeatureCollection', features: [] });
+                });
                     
             let citydata = await IATAtoCityInformation(iata);
             console.log("map.js: citydata from IATAtoCityInformation:", citydata); // Add this log
@@ -362,6 +456,38 @@ function appendAirportOnMap() {
                 .setHTML(`<p class="text-center p-1" style="opacity: 1"><span style="font-size:20px">${한글공항} ${iata}</span><br><a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${한글국가명} ${popupCityName || ''}</a></p><style>.mapboxgl-popup-content { position: relative; background: #fff; opacity: 0.9; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.10); pointer-events: auto; }</style>`)
                 .setMaxWidth("500px")
                 .addTo(map);
+        });
+
+        map.on('click', 'hotel-pins', (e) => {
+            if (isFetchingHotelOffers) return;
+
+            const hotelId = e.features[0].properties.hotelId;
+            const hotelName = e.features[0].properties.name;
+            if (!startTripDate || !endTripDate) {
+                window.showToast('항공권 날짜를 먼저 선택해주세요.');
+                return;
+            }
+
+            isFetchingHotelOffers = true;
+            firebase.functions().httpsCallable('getHotelOffers')({ hotelId: hotelId, checkInDate: startTripDate, checkOutDate: endTripDate })
+                .then(result => {
+                    if (result.data.data && result.data.data.length > 0) {
+                        const hotelOffer = result.data;
+                        if (window.appendHotelCard) {
+                            console.log(hotelOffer)
+                            window.appendHotelCard(hotelOffer);
+                        }
+                    } else {
+                        window.showToast(`${hotelName}에 대한 호텔 정보를 찾을 수 없습니다.`);
+                    }
+                }).catch(error => {
+                    console.error('Error fetching hotel offers:', error);
+                    window.showToast('호텔 정보를 가져오는 중 오류가 발생했습니다.');
+                }).finally(() => {
+                    setTimeout(() => {
+                        isFetchingHotelOffers = false;
+                    }, 500);
+                });
         });
 
         map.on('mouseenter', clusterLayerId, () => { map.getCanvas().style.cursor = 'pointer'; });

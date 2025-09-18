@@ -19,6 +19,22 @@ body {
   padding: 0;
 }
 
+/* Toast Notification */
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.75);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 20px;
+    z-index: 2000;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
 /*웹 상단 바*/
 .top {
   height: 8vh;

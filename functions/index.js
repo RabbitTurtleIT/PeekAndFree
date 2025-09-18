@@ -13,6 +13,7 @@ const { getLatestExchangeRate } = require("./exchange");
 const { getAirportInfo, getFestivalInfo, getCountryInfo } = require("./places");
 const { fetchAllDailyForecast, reverseGeocodeCountry, mapDayToDoc } = require("./weather");
 const { getInformationOfCountry, getServiceDestinationInfo, loadWeather, getWeather, getWeatherAndLoadIfNeeded } = require("./misc");
+const { getHotels, getHotelOffers } = require("./hotels");
 const { makeGeoKey } = require("./utils");
 
 // --- Re-exporting functions for Firebase --- //
@@ -160,4 +161,15 @@ exports.loadWeather = onCall({cors: ["https://peekandfree.web.app", "https://pea
 exports.getWeather = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, () => {
   console.log("getWeather cloud function was triggered.");
   return getWeatherAndLoadIfNeeded();
+});
+
+// Hotel-related functions
+exports.getHotels = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, async (req) => {
+    const { iata, latitude, longitude } = req.data;
+    return await getHotels(iata, latitude, longitude);
+});
+
+exports.getHotelOffers = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, async (req) => {
+    const { hotelId, checkInDate, checkOutDate } = req.data;
+    return await getHotelOffers(hotelId, checkInDate, checkOutDate);
 });

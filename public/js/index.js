@@ -5,6 +5,23 @@ let endTripDate = '';
 let isDateReady = false;
 let isFetchingFlightNearby = false;
 let selectedIATA = undefined;
+let lastFlightPrice = 0;
+
+window.showToast = function(message) {
+    const toast = document.getElementById('toast-notification');
+    toast.textContent = message;
+    toast.style.display = 'block';
+    setTimeout(() => {
+        toast.style.opacity = '1';
+    }, 10);
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 300);
+    }, 3000);
+}
 
 window.clearFlightList = function() {
     $('#nearbyFlightList').empty();
@@ -464,7 +481,8 @@ async function appendFlightCard(IATA, korName, airportKor, coord) {
             const flightData = result.data.data[0];
             console.log('항공편 데이터:', flightData);
             
-            let price = result.data.data[0].price.total
+            let price = result.data.data[0].price.total;
+            lastFlightPrice = Number(price);
             let arrivalIata = result.data.data[0].itineraries[0].segments[0].arrival.iataCode
             let time = result.data.data[0].itineraries[0].duration
             time = time.replaceAll("PT", "").replaceAll("H", "시간 ").replaceAll("M","분")
@@ -500,6 +518,35 @@ async function appendFlightCard(IATA, korName, airportKor, coord) {
         alert("캘린더에서 여행 날짜를 먼저 선택해주세요! 그런 다음, 여러 공항의 최저가를 확인하실 수 있습니다")
     }
 }
+
+window.appendHotelCard = function(hotelOfferResponse) {
+    const hotelOffer = hotelOfferResponse.data[0];
+    const dictionaries = hotelOfferResponse.dictionaries;
+
+    const hotel = hotelOffer.hotel;
+    const offer = hotelOffer.offers[0];
+    const price = offer.price.total;
+    const currency = offer.price.currency;
+
+    let priceInKRW = Number(price);
+
+    // Perform currency conversion if necessary
+    if (currency !== 'KRW' && dictionaries?.currencyConversionLookupRates?.[currency]) {
+        const rate = dictionaries.currencyConversionLookupRates[currency].rate;
+        priceInKRW = Math.round(price * rate);
+    }
+
+    const combinedPrice = lastFlightPrice + priceInKRW;
+
+    const card = $(`
+        <div class="rounded-pill bg-light p-1 mt-1">
+            <span style='font-size:16px'>🏨 ${hotel.name} <strong>${priceInKRW.toLocaleString('ko-KR')}원</strong> | ✈️+🏨 <strong>${combinedPrice.toLocaleString('ko-KR')}원</strong></span>
+        </div>
+    `);
+
+    $('#nearbyFlightList').append(card);
+}
+
 
 function FlightCard(locName, price, time, data) {
         let startDate = data.data[0].itineraries[0].segments[0].arrival.at.split("T")[0]
