@@ -6,6 +6,10 @@ let isDateReady = false;
 let isFetchingFlightNearby = false;
 let selectedIATA = undefined;
 
+window.clearFlightList = function() {
+    $('#nearbyFlightList').empty();
+}
+
 function setIATA(selected) {
     selectedIATA = selected;
     renderCalendar();
@@ -467,19 +471,25 @@ async function appendFlightCard(IATA, korName, airportKor, coord) {
             // $('#nearbyFlightList').append(FlightCard(korName + " " + airportKor + " (" + arrivalIata + ")", price, time, result.data))
             //항공편 카드를 지도 아래 영역에 추가
             // $('#nearbyFlightList').empty(); // 기존 내용 제거
-            $('#nearbyFlightList').append(FlightCard(korName + " " + airportKor + " (" + arrivalIata + ")", price, time, result.data))
+                        $('#nearbyFlightList').append(FlightCard(korName + " " + airportKor + " (" + arrivalIata + ")", price, time, result.data))
+                        
+                        if (window.getLastTempRouteGeoJSON) {
+                            const tempRoute = window.getLastTempRouteGeoJSON();
+                            if (tempRoute && tempRoute.features.length > 0) {
+                                window.addFixedRoute(tempRoute);
+                            }
+                        }
             
-            //항공편 목록이 보이는 영역으로 스크롤
-             $('.flight-results-section').show(); // 섹션 표시
-            setTimeout(() => {
-                $('.flight-results-section')[0].scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'start' 
-                });
-            }, 100);
-            
-            console.log('항공편 카드 생성 완료');
-            
+                        //항공편 목록이 보이는 영역으로 스크롤
+                         $('.flight-results-section').show(); // 섹션 표시
+                        setTimeout(() => {
+                            $('.flight-results-section')[0].scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start'
+                            });
+                        }, 100);
+                        
+                        console.log('항공편 카드 생성 완료');            
         } catch(e) {
             console.error('항공편 조회 에러:', e);
             console.log('에러 상세:', e.message);

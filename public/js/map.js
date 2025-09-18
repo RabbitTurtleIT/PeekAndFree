@@ -4,6 +4,23 @@ let seasonData = {};
 let airportGeoJSON;
 let isMapReady = false;
 let queuedMonthUpdate = null;
+let lastTempRouteGeoJSON = { type: 'FeatureCollection', features: [] };
+
+window.addFixedRoute = function(routeGeoJSON) {
+    const currentFixedRoutes = map.getSource('fixed-routes')._data;
+    currentFixedRoutes.features.push(...routeGeoJSON.features);
+    map.getSource('fixed-routes').setData(currentFixedRoutes);
+    map.getSource('temp-route').setData({ type: 'FeatureCollection', features: [] });
+}
+
+window.clearAllRoutes = function() {
+    map.getSource('temp-route').setData({ type: 'FeatureCollection', features: [] });
+    map.getSource('fixed-routes').setData({ type: 'FeatureCollection', features: [] });
+}
+
+window.getLastTempRouteGeoJSON = function() {
+    return lastTempRouteGeoJSON;
+}
 
 $(document).ready(function () {
     console.log('map.js 로딩 시작');
@@ -38,23 +55,33 @@ function initializeMap() {
             console.error("데이터 또는 이미지 로딩 실패:", error);
         });
 
-        map.addSource('route', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } } });
-        
+        map.addSource('temp-route', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [] } } });
         map.addLayer({
-        id: 'route',
-        source: 'route',
-        type: 'line',
-        paint: {
-            'line-width': 3,
-            'line-color': '#007cbf', // 눈에 띄는 파란색
-            'line-dasharray': [0, 2, 2] // 점선 효과로 비행 경로 느낌을 줍니다.
+            id: 'temp-route',
+            source: 'temp-route',
+            type: 'line',
+            paint: {
+                'line-width': 3,
+                'line-color': '#007cbf', // 눈에 띄는 파란색
+                'line-dasharray': [0, 2, 2]
+            }
+        });
+
+        map.addSource('fixed-routes', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+        map.addLayer({
+            id: 'fixed-routes',
+            source: 'fixed-routes',
+            type: 'line',
+            paint: {
+                'line-width': 3,
+                'line-color': '#FF0000', // A different color for fixed routes (e.g., red)
+                'line-dasharray': [0, 2, 2]
             }
         });
 
         setTimeout(replaceWithSeoulButton, 500);
     });
 }
-
 function loadMapImages() {
     return Promise.all([
         new Promise((resolve, reject) => {
@@ -312,7 +339,8 @@ function appendAirportOnMap() {
             };
             
             // 5. 생성된 GeoJSON으로 지도 소스 업데이트
-            map.getSource('route').setData(routeGeoJSON);
+            map.getSource('temp-route').setData(routeGeoJSON);
+            lastTempRouteGeoJSON = routeGeoJSON; // Store the last drawn temp route
                     
             let citydata = await IATAtoCityInformation(iata);
             console.log("map.js: citydata from IATAtoCityInformation:", citydata); // Add this log
@@ -331,7 +359,7 @@ function appendAirportOnMap() {
 
             new mapboxgl.Popup()
                 .setLngLat(coordinates)
-                .setHTML(`<p class="text-center p-1" style="opacity: 1"><span style="font-size:20px">${한글공항} ${iata}</span><br><a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${한글국가명} ${popupCityName || ''}</a></p><style>.mapboxgl-popup-content { position: relative; background: #fff; opacity: 0.9; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.10); pointer-events: auto; }</style>`) 
+                .setHTML(`<p class="text-center p-1" style="opacity: 1"><span style="font-size:20px">${한글공항} ${iata}</span><br><a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${한글국가명} ${popupCityName || ''}</a></p><style>.mapboxgl-popup-content { position: relative; background: #fff; opacity: 0.9; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.10); pointer-events: auto; }</style>`)
                 .setMaxWidth("500px")
                 .addTo(map);
         });
@@ -433,7 +461,8 @@ function setupSearchbox() {
                 
                 if (searchText === '') {
                     map.setFilter(layerId, baseUnclusteredFilter);
-                } else {
+                }
+                else {
                     const searchFilter = [
                         'any',
                         ['in', searchText, ['downcase', ['get', '한글공항']]],
@@ -551,9 +580,11 @@ window.selectAirportByIATA = async function(iata) {
         }))
     };
     
-    map.getSource('route').setData(routeGeoJSON);
+    map.getSource('temp-route').setData(routeGeoJSON);
+    lastTempRouteGeoJSON = routeGeoJSON; // Store the last drawn temp route
             
-    let citydata = await IATAtoCityInformation(iataCode);
+    let citydata = await IATAtoCityInformation(iata);
+    console.log("map.js: citydata from IATAtoCityInformation:", citydata); // Add this log
     if (citydata) {
         let cityname = citydata.한글도시명;
         if (!cityname && 한글공항) {
@@ -566,17 +597,10 @@ window.selectAirportByIATA = async function(iata) {
     if (!popupCityName && 한글공항) {
         popupCityName = 한글공항.split(' ')[0];
     }
-    
-    const popups = document.getElementsByClassName('mapboxgl-popup');
-    if (popups.length) {
-        for (let i = popups.length - 1; i >= 0; i--) {
-            popups[i].remove();
-        }
-    }
 
     new mapboxgl.Popup()
         .setLngLat(coordinates)
-        .setHTML(`<p class="text-center p-1" style="opacity: 1"><span style="font-size:20px">${한글공항} ${iataCode}</span><br><a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${한글국가명} ${popupCityName || ''}</a></p><style>.mapboxgl-popup-content { position: relative; background: #fff; opacity: 0.9; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.10); pointer-events: auto; }</style>`) 
+        .setHTML(`<p class="text-center p-1" style="opacity: 1"><span style="font-size:20px">${한글공항} ${iata}</span><br><a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${한글국가명} ${popupCityName || ''}</a></p><style>.mapboxgl-popup-content { position: relative; background: #fff; opacity: 0.9; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.10); pointer-events: auto; }</style>`)
         .setMaxWidth("500px")
         .addTo(map);
 }
