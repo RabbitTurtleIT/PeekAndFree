@@ -107,7 +107,7 @@ exports.getWeatherForecast = onCall({cors: ["https://peekandfree.web.app", "http
     console.log(`[Weather] Cached data for ${geoKey} is insufficient. Fetching from API...`);
     const forecastDays = await fetchAllDailyForecast({ lat, lon, days: normalizedDays, units: 'METRIC' });
     if (!forecastDays.length) {
-        throw new functions.https.HttpsError('not-found', 'Weather API에서 예보를 받지 못했습니다.');
+        throw new HttpsError('not-found', 'Weather API에서 예보를 받지 못했습니다.');
     }
 
     let country = null;

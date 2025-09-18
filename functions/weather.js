@@ -4,6 +4,8 @@ const { makeGeoKey, delay } = require("./utils");
 
 const agent = new https.Agent({keepAlive: true});
 
+// --- Google Weather API Functions ---
+
 function buildDailyForecastPath({ lat, lon, days = 5, pageSize = 5, pageToken = "", units = "METRIC" }) {
   const params = new URLSearchParams({
     key: process.env.GOOGLEMAP_API_KEY,
@@ -31,43 +33,193 @@ async function fetchDailyForecastPage({ lat, lon, days, pageSize, pageToken, uni
       let data = '';
       res.on('data', (chunk) => data += chunk);
       res.on('end', () => {
-        console.log('[WeatherAPI] status =', res.statusCode);
-        console.log('[WeatherAPI] body =', data);
+        console.log('[GoogleWeatherAPI] status =', res.statusCode);
         try {
+          if (res.statusCode === 204 || data.length === 0) {
+            console.log('[GoogleWeatherAPI] No content returned.');
+            resolve({ forecastDays: [], nextPageToken: '' });
+            return;
+          }
           const json = JSON.parse(data);
           if (res.statusCode >= 400 || json.error) {
             const msg = json.error?.message || `HTTP ${res.statusCode}`;
-            return reject(new Error(`Weather API error: ${msg}`));
+            return reject(new Error(`Google Weather API error: ${msg}`));
           }
           resolve(json);
         } catch (e) {
-          reject(new Error('JSON 파싱 실패'));
+          reject(new Error('Google Weather JSON parsing failed'));
         }
       });
     });
     req.on('error', reject);
-    req.setTimeout(30000, () => { req.destroy(); reject(new Error('요청 타임아웃')); });
+    req.setTimeout(15000, () => { req.destroy(); reject(new Error('Google Weather request timed out')); });
     req.end();
   });
 }
 
+// --- OpenWeatherMap API Functions ---
+
+async function fetchWeatherFromOpenWeatherMap({ lat, lon }) {
+  const params = new URLSearchParams({
+    lat: String(lat),
+    lon: String(lon),
+    appid: process.env.OPENWEATHER,
+    units: 'metric',
+    lang: 'ko'
+  });
+  const options = {
+    hostname: 'api.openweathermap.org',
+    port: 443,
+    path: `/data/2.5/forecast?${params.toString()}`,
+    method: 'GET',
+    agent
+  };
+
+  return new Promise((resolve, reject) => {
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => data += chunk);
+      res.on('end', () => {
+        console.log('[OpenWeatherMap] status =', res.statusCode);
+        if (res.statusCode >= 400) {
+            return reject(new Error(`OpenWeatherMap API error: HTTP ${res.statusCode}`));
+        }
+        try {
+          const json = JSON.parse(data);
+          resolve(json);
+        } catch (e) {
+          reject(new Error('OpenWeatherMap JSON parsing failed'));
+        }
+      });
+    });
+    req.on('error', reject);
+    req.setTimeout(15000, () => { req.destroy(); reject(new Error('OpenWeatherMap request timed out')); });
+    req.end();
+  });
+}
+
+function mapOpenWeatherTypeToGoogleType(owmType) {
+    if (!owmType) return null;
+    const owmTypeStr = String(owmType).toUpperCase();
+    switch (owmTypeStr) {
+        case 'CLEAR':
+            return 'CLEAR';
+        case 'CLOUDS':
+            return 'CLOUDY';
+        case 'RAIN':
+            return 'RAIN';
+        case 'DRIZZLE':
+            return 'LIGHT_RAIN';
+        case 'THUNDERSTORM':
+            return 'THUNDERSTORM';
+        case 'SNOW':
+            return 'SNOW';
+        case 'MIST':
+        case 'SMOKE':
+        case 'HAZE':
+        case 'DUST':
+        case 'FOG':
+            return 'FOG';
+        default:
+            return null;
+    }
+}
+
+function mapOpenWeatherResponseToGoogleFormat(openWeatherResponse) {
+    if (!openWeatherResponse || !openWeatherResponse.list) return [];
+
+    const dailyData = {};
+    openWeatherResponse.list.forEach(item => {
+        const date = item.dt_txt.split(' ')[0];
+        if (!dailyData[date]) {
+            dailyData[date] = {
+                minTemps: [], maxTemps: [], weather: [], humidity: [], wind: [], pop: []
+            };
+        }
+        dailyData[date].minTemps.push(item.main.temp_min);
+        dailyData[date].maxTemps.push(item.main.temp_max);
+        dailyData[date].weather.push(item.weather[0]);
+        dailyData[date].humidity.push(item.main.humidity);
+        dailyData[date].wind.push(item.wind);
+        dailyData[date].pop.push(item.pop);
+    });
+
+    const forecastDays = Object.keys(dailyData).map(date => {
+        const dayData = dailyData[date];
+        const avgHumidity = dayData.humidity.reduce((a, b) => a + b, 0) / dayData.humidity.length;
+        const avgWind = {
+            speed: dayData.wind.reduce((a, b) => a + b.speed, 0) / dayData.wind.length,
+            deg: dayData.wind.reduce((a, b) => a + b.deg, 0) / dayData.wind.length,
+        };
+        const maxPop = Math.max(...dayData.pop);
+        const noonWeather = dayData.weather[Math.floor(dayData.weather.length / 2)] || dayData.weather[0];
+        const googleWeatherType = mapOpenWeatherTypeToGoogleType(noonWeather.main);
+
+        return {
+            maxTemperature: { degrees: Math.max(...dayData.maxTemps) },
+            minTemperature: { degrees: Math.min(...dayData.minTemps) },
+            daytimeForecast: {
+                weatherCondition: { description: { text: noonWeather.description }, type: googleWeatherType, iconBaseUri: `http://openweathermap.org/img/wn/${noonWeather.icon}.png` },
+                relativeHumidity: avgHumidity,
+                precipitation: { probability: { percent: maxPop * 100 } },
+                wind: { speed: { value: avgWind.speed * 3.6 }, direction: { degrees: avgWind.deg } }
+            },
+            nighttimeForecast: { // No separate nighttime data, so duplicate
+                weatherCondition: { description: { text: noonWeather.description }, type: googleWeatherType, iconBaseUri: `http://openweathermap.org/img/wn/${noonWeather.icon}.png` },
+                relativeHumidity: avgHumidity,
+                precipitation: { probability: { percent: maxPop * 100 } },
+                wind: { speed: { value: avgWind.speed * 3.6 }, direction: { degrees: avgWind.deg } }
+            },
+            interval: { startTime: new Date(date).toISOString() }
+        };
+    });
+
+    return forecastDays;
+}
+
+
+// --- Main Fetch Function with Fallback ---
+
 async function fetchAllDailyForecast({ lat, lon, days = 5, units = 'METRIC' }) {
   let all = [];
-  let remaining = Math.min(Math.max(Number(days) || 5, 1), 10);
-  let pageToken = '';
+  try {
+    console.log(`[Weather] Attempting to fetch from Google Weather API for lat=${lat}, lon=${lon}`);
+    let remaining = Math.min(Math.max(Number(days) || 5, 1), 10);
+    let pageToken = '';
 
-  do {
-    const pageSize = Math.min(remaining, 5);
-    const page = await fetchDailyForecastPage({ lat, lon, days, pageSize, pageToken, units });
-    const items = Array.isArray(page.forecastDays) ? page.forecastDays : [];
-    all = all.concat(items);
-    remaining -= items.length;
-    pageToken = page.nextPageToken || '';
-    if (pageToken) await delay(200);
-  } while (pageToken && remaining > 0);
+    do {
+      const pageSize = Math.min(remaining, 5);
+      const page = await fetchDailyForecastPage({ lat, lon, days, pageSize, pageToken, units });
+      const items = Array.isArray(page.forecastDays) ? page.forecastDays : [];
+      all = all.concat(items);
+      remaining -= items.length;
+      pageToken = page.nextPageToken || '';
+      if (pageToken) await delay(200);
+    } while (pageToken && remaining > 0);
 
-  return all;
+    if (all.length > 0) {
+      console.log(`[Weather] Google Weather API successful, found ${all.length} days.`);
+      return all;
+    }
+    console.log(`[Weather] Google Weather API returned no data.`);
+  } catch (error) {
+    console.warn(`[Weather] Google Weather API failed for lat=${lat}, lon=${lon}. Error: ${error.message}`);
+  }
+
+  // Fallback to OpenWeatherMap
+  console.log(`[Weather] Falling back to OpenWeatherMap for lat=${lat}, lon=${lon}`);
+  try {
+    const openWeatherResponse = await fetchWeatherFromOpenWeatherMap({ lat, lon });
+    const mappedForecast = mapOpenWeatherResponseToGoogleFormat(openWeatherResponse);
+    console.log(`[Weather] OpenWeatherMap fallback successful, found ${mappedForecast.length} days.`);
+    return mappedForecast;
+  } catch (fallbackError) {
+    console.error(`[Weather] OpenWeatherMap fallback also failed. Error: ${fallbackError.message}`);
+    return []; // Return empty array if both fail
+  }
 }
+
+// --- Geocoding Functions ---
 
 const GEOCODE_CACHE_TTL_MS = 24 * 60 * 60 * 1000 * 30; // 30일
 
@@ -123,11 +275,11 @@ async function reverseGeocodeCountry(lat, lon, lang = 'ko') {
       res.on('data', c => buf += c);
       res.on('end', () => {
         try { resolve(JSON.parse(buf)); }
-        catch { reject(new Error('Geocoding JSON 파싱 실패')); }
+        catch { reject(new Error('Geocoding JSON parsing failed')); }
       });
     });
     req.on('error', reject);
-    req.setTimeout(30000, () => { req.destroy(); reject(new Error('Geocoding 요청 타임아웃')); });
+    req.setTimeout(30000, () => { req.destroy(); reject(new Error('Geocoding request timed out')); });
     req.end();
   });
 
@@ -146,6 +298,8 @@ async function reverseGeocodeCountry(lat, lon, lang = 'ko') {
   await setGeocodeCache(geoKey, result);
   return result;
 }
+
+// --- Data Mapping Function ---
 
 function mapDayToDoc(day, idx, lat, lon, units, country) {
     const display = day?.displayDate;
