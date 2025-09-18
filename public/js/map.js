@@ -119,7 +119,7 @@ function loadDataSources() {
                     });
 
                     airportGeoJSON = geojsonData;
-                    serviceAirportInIncheon = firebaseResult.data;
+                    serviceAirportInIncheon = Object.keys(weatherByIATA);
                     console.log('모든 소스 데이터 로딩 완료');
                     resolve();
                 }).catch(reject);
@@ -482,4 +482,101 @@ function replaceWithSeoulButton() {
     const testButton = document.querySelector('[style*="background: red"]');
     if (testButton) testButton.remove();
     addReturnToSeoulButton();
+}
+
+window.selectAirportByIATA = async function(iata) {
+    if (!isMapReady || !airportGeoJSON) {
+        console.warn("Map or airport data is not ready yet.");
+        return;
+    }
+
+    const airportFeature = airportGeoJSON.features.find(f => f.properties['공항코드1.IATA.'] === iata);
+
+    if (!airportFeature) {
+        console.error(`Airport with IATA code ${iata} not found.`);
+        return;
+    }
+
+    const coordinates = airportFeature.geometry.coordinates.slice();
+    const { 한글공항, 한글국가명 } = airportFeature.properties;
+    const iataCode = airportFeature.properties['공항코드1.IATA.'];
+
+    map.flyTo({ center: coordinates, zoom: 5 });
+
+    $(".calendar-section").show();
+    if (typeof clearAllPrices === 'function') clearAllPrices();
+    if (typeof setIATA === 'function') setIATA({ korName: 한글국가명, airportKor: 한글공항, iata: iataCode, coord: coordinates });
+
+    const origin = [126.4406957, 37.4601908];
+    const destination = coordinates;
+
+    const routeFeature = {
+        'type': 'Feature',
+        'geometry': {
+            'type': 'LineString',
+            'coordinates': [origin, destination]
+        }
+    };
+    const lineDistance = turf.length(routeFeature);
+    const steps = 500;
+    const arc = [];
+    for (let i = 0; i < lineDistance; i += lineDistance / steps) {
+        const segment = turf.along(routeFeature, i);
+        arc.push(segment.geometry.coordinates);
+    }
+    arc.push(destination);
+
+    const multiLineStrings = [];
+    let currentLine = [];
+    
+    for (let i = 0; i < arc.length; i++) {
+        currentLine.push(arc[i]);
+        if (i < arc.length - 1) {
+            if (Math.abs(arc[i+1][0] - arc[i][0]) > 180) {
+                multiLineStrings.push(currentLine);
+                currentLine = [];
+            }
+        }
+    }
+    multiLineStrings.push(currentLine);
+
+    const routeGeoJSON = {
+        'type': 'FeatureCollection',
+        'features': multiLineStrings.map(line => ({
+            'type': 'Feature',
+            'geometry': {
+                'type': 'LineString',
+                'coordinates': line
+            }
+        }))
+    };
+    
+    map.getSource('route').setData(routeGeoJSON);
+            
+    let citydata = await IATAtoCityInformation(iataCode);
+    if (citydata) {
+        let cityname = citydata.한글도시명;
+        if (!cityname && 한글공항) {
+            cityname = 한글공항.split(' ')[0];
+        }
+        $("#detailFrame").attr("src", `detailmodal.html?coord1=${citydata.longitude}&coord2=${citydata.Latitude}&Cityname=${cityname}&Nationname=${citydata.한글국가명}`);
+    }
+
+    let popupCityName = citydata?.한글도시명;
+    if (!popupCityName && 한글공항) {
+        popupCityName = 한글공항.split(' ')[0];
+    }
+    
+    const popups = document.getElementsByClassName('mapboxgl-popup');
+    if (popups.length) {
+        for (let i = popups.length - 1; i >= 0; i--) {
+            popups[i].remove();
+        }
+    }
+
+    new mapboxgl.Popup()
+        .setLngLat(coordinates)
+        .setHTML(`<p class="text-center p-1" style="opacity: 1"><span style="font-size:20px">${한글공항} ${iataCode}</span><br><a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${한글국가명} ${popupCityName || ''}</a></p><style>.mapboxgl-popup-content { position: relative; background: #fff; opacity: 0.9; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.10); pointer-events: auto; }</style>`) 
+        .setMaxWidth("500px")
+        .addTo(map);
 }
