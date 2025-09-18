@@ -176,9 +176,8 @@ function loadDataSources() {
                 Promise.all([
                     fetch('popular.csv').then(res => res.text()),
                     fetch('Airport.geojson').then(res => res.json()),
-                    firebase.functions().httpsCallable('getServiceDestinationInfo')(),
                     firebase.functions().httpsCallable('getWeather')()
-                ]).then(([csvText, geojsonData, firebaseResult, weatherResult]) => {
+                ]).then(([csvText, geojsonData, weatherResult]) => {
                     const data = {};
                     const rows = csvText.split('\n').slice(1);
                     rows.forEach(row => {
