@@ -2,6 +2,7 @@
 console.log("detailmodal.js loaded!"); // Add this line
 
 // Global variables for detailmodal.html
+let seasonData = {}; // For peak/off-peak data
 let current_nationname = "";
 let current_cityname = ""; // Add this global variable
 let currentDate = new Date(); // Current date for calendar navigation
@@ -9,7 +10,37 @@ const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8�
 const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
 const festivalDataCache = {}; // Cache for festival data
 
-document.addEventListener('DOMContentLoaded', function () {
+async function loadSeasonData() {
+    try {
+        const response = await fetch('popular.csv'); // Corrected path
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.text();
+        const rows = data.split('\n').slice(1); // Skip header row
+        rows.forEach(row => {
+            const columns = row.split(',');
+            if (columns.length > 13) { // 국가명 + 12 months
+                const countryName = columns[1].replace(/"/g, '').trim();
+                if (countryName) {
+                    const monthlyData = {};
+                    for (let i = 2; i <= 13; i++) {
+                        monthlyData[i - 1] = columns[i].replace(/"/g, '').trim();
+                    }
+                    seasonData[countryName] = monthlyData;
+                }
+            }
+        });
+        console.log("Season data loaded successfully");
+    } catch (error) {
+        console.error('Error loading or parsing season data:', error);
+    }
+}
+
+
+document.addEventListener('DOMContentLoaded', async function () {
+    await loadSeasonData(); // Ensure season data is loaded first
+
     let query = window.location.search;
     let param = new URLSearchParams(query);
     // Assign to global variables
@@ -348,8 +379,29 @@ async function renderDetailCalendars() {
     const firstMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
     const secondMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
 
-    document.getElementById('monthTitle1').textContent = `${firstMonth.getFullYear()}년 ${monthNames[firstMonth.getMonth()]}`;
-    document.getElementById('monthTitle2').textContent = `${secondMonth.getFullYear()}년 ${monthNames[secondMonth.getMonth()]}`;
+    let month1Title = `${firstMonth.getFullYear()}년 ${monthNames[firstMonth.getMonth()]}`;
+    let month2Title = `${secondMonth.getFullYear()}년 ${monthNames[secondMonth.getMonth()]}`;
+
+    if (seasonData && current_nationname && seasonData[current_nationname]) {
+        const countrySeasonData = seasonData[current_nationname];
+        const month1 = firstMonth.getMonth() + 1;
+        const month2 = secondMonth.getMonth() + 1;
+
+        if (countrySeasonData[month1] === '1') {
+            month1Title += ' 🔥';
+        } else if (countrySeasonData[month1] === '2' || countrySeasonData[month1] === '3') {
+            month1Title += ' 😴';
+        }
+
+        if (countrySeasonData[month2] === '1') {
+            month2Title += ' 🔥';
+        } else if (countrySeasonData[month2] === '2' || countrySeasonData[month2] === '3') {
+            month2Title += ' 😴';
+        }
+    }
+
+    document.getElementById('monthTitle1').textContent = month1Title;
+    document.getElementById('monthTitle2').textContent = month2Title;
 
     // Fetch festivals for both months
     // console.log("renderDetailCalendars: Fetching festivals for month 1:", firstMonth);
@@ -377,8 +429,8 @@ async function renderDetailCalendars() {
     });
     const festivalDatesMonth2 = [...new Set(allFestivalDatesMonth2)]; // Remove duplicates
 
-    // console.log("renderDetailCalendars: Festival dates for month 1 (individual, formatted):", festivalDatesMonth1);
-    // console.log("renderDetailCalendars: Festival dates for month 2 (individual, formatted):", festivalDatesMonth2);
+    // console.log("renderDetailCalendars: Festival dates for month 1 (individual, formatted):"), festivalDatesMonth1);
+    // console.log("renderDetailCalendars: Festival dates for month 2 (individual, formatted):"), festivalDatesMonth2);
 
     renderDetailMonthCalendar('calendar1', firstMonth, festivalDatesMonth1);
     renderDetailMonthCalendar('calendar2', secondMonth, festivalDatesMonth2);
