@@ -150,7 +150,7 @@ function initializeMap() {
             }
 
             isFetchingHotelOffers = true;
-            firebase.functions().httpsCallable('getHotelOffers')({ hotelId: hotelId, checkInDate: startTripDate, checkOutDate: endTripDate })
+            firebase.app().functions('asia-northeast3').httpsCallable('getHotelOffers')({ hotelId: hotelId, checkInDate: startTripDate, checkOutDate: endTripDate })
                 .then(result => {
                     if (result.data.data && result.data.data.length > 0) {
                         const hotelOffer = result.data;
