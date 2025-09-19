@@ -57,7 +57,7 @@ async function fetchHotelsFromAPI(latitude, longitude) {
         });
 
         const options = {
-            hostname: 'test.api.amadeus.com',
+            hostname: 'api.amadeus.com',
             port: 443,
             path: `/v1/reference-data/locations/hotels/by-geocode?${params.toString()}`,
             method: 'GET',
@@ -104,7 +104,7 @@ async function getHotelOffers(hotelId, checkInDate, checkOutDate) {
         });
 
         const options = {
-            hostname: 'test.api.amadeus.com',
+            hostname: 'api.amadeus.com',
             port: 443,
             path: `/v3/shopping/hotel-offers?${params.toString()}`,
             method: 'GET',

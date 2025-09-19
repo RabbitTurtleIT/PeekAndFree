@@ -21,7 +21,7 @@ async function requestTestAccessKey() {
 
   const apiData = await new Promise((resolve, reject) => {
     const options = {
-      hostname: 'test.api.amadeus.com',
+      hostname: 'api.amadeus.com',
       port: 443,
       path: `/v1/security/oauth2/token`,
       method: 'POST',
@@ -62,7 +62,7 @@ async function requestFlightOffer(accessKey, startAirport, destAirport, startDat
   console.log(startDate, endDate);
   const apiData = await new Promise((resolve, reject) => {
     const options = {
-      hostname: 'test.api.amadeus.com',
+      hostname: 'api.amadeus.com',
       port: 443,
       path: `/v2/shopping/flight-offers?originLocationCode=${startAirport}&destinationLocationCode=${destAirport}&departureDate=${startDate}&returnDate=${endDate}&adults=1&nonStop=true&currencyCode=KRW&max=1`,
       method: 'GET',
