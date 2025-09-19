@@ -35,7 +35,7 @@ function setIATA(selected) {
 async function IATAtoCityInformation(IATA) {
     let cityData = undefined
           
-      await firebase.functions().httpsCallable('getAirportInfo')({iata : IATA}).then((result) => {
+      await firebase.app().functions('asia-northeast3').httpsCallable('getAirportInfo')({iata : IATA}).then((result) => {
         cityData = result.data
       }).catch((error) => {
         return "ERROR"
@@ -433,7 +433,7 @@ async function fetchFlightDataNearby(startDate, endDate) {
     if (!isFetchingFlightNearby) {
         showLoading();
         isFetchingFlightNearby = true;
-        const result = await firebase.functions().httpsCallable('fetchFlightNearby')({
+        const result = await firebase.app().functions('asia-northeast3').httpsCallable('fetchFlightNearby')({
             startDate: startDate,
             endDate: endDate,
         });
@@ -471,7 +471,7 @@ async function appendFlightCard(IATA, korName, airportKor, coord) {
         console.log(startTripDate)
         console.log(endTripDate)
         try {
-            const result = await firebase.functions().httpsCallable('fetchFlight')({
+            const result = await firebase.app().functions('asia-northeast3').httpsCallable('fetchFlight')({
                 startDate: startTripDate,
                 endDate: endTripDate,
                 iata: IATA
@@ -544,6 +544,17 @@ window.appendHotelCard = function(hotelOfferResponse) {
         </div>
     `);
 
+    card.on("click", function() {
+            $(".final-reservation").show() 
+            setTimeout(() => {
+            $(".final-reservation")[0].scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }, 100);
+            viewTripWithHotel(hotel.name, startTripDate, endTripDate)
+        })
+
     $('#nearbyFlightList').append(card);
 }
 
@@ -590,6 +601,33 @@ function viewTrip(locName, peopleNum, seatClass, startDate, endDate) {
     skyscanner.attr("data-flight-type","return")
 
     $("#skyscannerDiv").append(skyscanner)
+    
+}
+
+function viewTripWithHotel(hotelName, startDate, endDate) {
+    // $("#viewLocationName").text(locName)
+    // $("#viewCountPeople").text(peopleNum)
+    // $("#viewSeatClass").text(seatClass)
+    // $("span#startDate").text(startDate)
+    // $("span#endDate").text(endDate)
+    // $("#skyscannerDiv").empty()
+    // let skyscanner = $('<div id="skyscanner" data-skyscanner-widget="FlightSearchWidget" data-locale="ko-KR"></div> <script src="https://widgets.skyscanner.net/widget-server/js/loader.js" async></script>')
+    // skyscanner.attr("data-market","KR")
+    // skyscanner.attr("data-currency","KRW")
+    // skyscanner.attr("data-origin-iata-code","ICN")
+    // console.log(locName.split("(")[1].split(")")[0])
+    // skyscanner.attr("data-destination-iata-code", locName.split("(")[1].split(")")[0])
+    // skyscanner.attr("data-flight-outbound-date",startDate)
+    // skyscanner.attr("data-flight-inbound-date",endDate)
+    // skyscanner.attr("data-flight-type","return")
+
+    let hotel = $('<div data-skyscanner-widget="HotelSearchWidget" data-locale="ko-KR"></div>  <script src="https://widgets.skyscanner.net/widget-server/js/loader.js" async></script>')
+    hotel.attr("data-market","KR")
+    hotel.attr("data-currency","KRW")
+    hotel.attr("data-hotel-check-in-date",startDate)
+    hotel.attr("data-hotel-check-out-date",endDate)
+    hotel.attr("data-destination-name", hotelName)
+    $("#skyscannerDiv").append(hotel)
     
 }
 
@@ -753,7 +791,7 @@ async function fetchIndividualPrices(dates, priceData) {
             console.log(`API 호출 시작: 가는날=${startDateStr}, 오는날=${dateStr}`);
             
             // 왕복 요청: 가는날은 시작일, 오는날은 각 날짜
-            const result = await firebase.functions().httpsCallable('fetchFlightForCalendar')({
+            const result = await firebase.app().functions('asia-northeast3').httpsCallable('fetchFlightForCalendar')({
                 startDate: startDateStr,
                 endDate: dateStr,
                 iata: selectedIATA.iata

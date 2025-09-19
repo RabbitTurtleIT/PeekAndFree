@@ -45,8 +45,8 @@ function initializeMap() {
             loadMapImages()
         ]).then(() => {
             console.log('모든 데이터와 이미지 로딩 완료');
-            appendAirportOnMap();
             isMapReady = true; // 맵과 데이터가 준비되었음을 표시
+            appendAirportOnMap();
             if (queuedMonthUpdate) {
                 console.log(`큐에 저장된 월(${queuedMonthUpdate})로 마커 업데이트 실행`);
                 window.updateAirportMarkers(queuedMonthUpdate);
@@ -139,6 +139,38 @@ function initializeMap() {
             });
         });
 
+        map.on('click', 'hotel-pins', (e) => {
+            if (isFetchingHotelOffers) return;
+
+            const hotelId = e.features[0].properties.hotelId;
+            const hotelName = e.features[0].properties.name;
+            if (!startTripDate || !endTripDate) {
+                window.showToast('항공권 날짜를 먼저 선택해주세요.');
+                return;
+            }
+
+            isFetchingHotelOffers = true;
+            firebase.functions().httpsCallable('getHotelOffers')({ hotelId: hotelId, checkInDate: startTripDate, checkOutDate: endTripDate })
+                .then(result => {
+                    if (result.data.data && result.data.data.length > 0) {
+                        const hotelOffer = result.data;
+                        if (window.appendHotelCard) {
+                            console.log(hotelOffer)
+                            window.appendHotelCard(hotelOffer);
+                        }
+                    } else {
+                        window.showToast(`${hotelName}에 대한 호텔 정보를 찾을 수 없습니다.`);
+                    }
+                }).catch(error => {
+                    console.error('Error fetching hotel offers:', error);
+                    window.showToast('호텔 정보를 가져오는 중 오류가 발생했습니다.');
+                }).finally(() => {
+                    setTimeout(() => {
+                        isFetchingHotelOffers = false;
+                    }, 500);
+                });
+        });
+
         setTimeout(replaceWithSeoulButton, 500);
     });
 }
@@ -176,7 +208,7 @@ function loadDataSources() {
                 Promise.all([
                     fetch('popular.csv').then(res => res.text()),
                     fetch('Airport.geojson').then(res => res.json()),
-                    firebase.functions().httpsCallable('getWeather')()
+                    firebase.app().functions('asia-northeast3').httpsCallable('getWeather')()
                 ]).then(([csvText, geojsonData, weatherResult]) => {
                     const data = {};
                     const rows = csvText.split('\n').slice(1);
@@ -255,7 +287,30 @@ function appendAirportOnMap() {
         console.warn("맵 스타일이 아직 로드되지 않았습니다.");
         return;
     }
-    
+
+    // 기존에 추가된 모든 공항 관련 소스와 레이어를 정리합니다.
+    // 이전에 추가된 레이어 ID 패턴을 기반으로 모든 레이어를 찾아서 제거합니다.
+    const layerIdsToRemove = map.getStyle().layers.filter(layer =>
+        layer.id.startsWith('clusters-') || layer.id.startsWith('unclustered-point-')
+    ).map(layer => layer.id);
+
+    layerIdsToRemove.forEach(layerId => {
+        if (map.getLayer(layerId)) {
+            map.removeLayer(layerId);
+        }
+    });
+
+    // 이전에 추가된 소스 ID 패턴을 기반으로 모든 소스를 찾아서 제거합니다.
+    const sourceIdsToRemove = Object.keys(map.getStyle().sources).filter(sourceId =>
+        sourceId.startsWith('airport-')
+    );
+
+    sourceIdsToRemove.forEach(sourceId => {
+        if (map.getSource(sourceId)) {
+            map.removeSource(sourceId);
+        }
+    });
+
     const currentMonth = new Date().getMonth() + 1;
     updateAirportFeatures(currentMonth);
 
@@ -275,7 +330,7 @@ function appendAirportOnMap() {
             data: countryData,
             cluster: true,
             clusterMaxZoom: 3,
-            clusterRadius: 1000
+            clusterRadius: 60 // 클러스터 반경을 60으로 줄여 경고 방지
         });
 
         const countryName = country;
@@ -304,7 +359,19 @@ function appendAirportOnMap() {
             }
         }, 'hotel-pins');
 
+        map.on('click', clusterLayerId, (e) => {
+            const features = map.queryRenderedFeatures(e.point, { layers: [clusterLayerId] });
+            const clusterId = features[0].properties.cluster_id;
+            map.getSource(sourceId).getClusterExpansionZoom(clusterId, (err, zoom) => {
+                if (err) return;
+                map.easeTo({ center: features[0].geometry.coordinates, zoom: zoom });
+            });
+        });
+        map.on('mouseenter', clusterLayerId, () => { map.getCanvas().style.cursor = 'pointer'; });
+        map.on('mouseleave', clusterLayerId, () => { map.getCanvas().style.cursor = ''; });
+
         const unclusteredLayerId = `unclustered-point-${country}`;
+
         map.addLayer({
             id: unclusteredLayerId,
             type: 'symbol',
@@ -338,15 +405,6 @@ function appendAirportOnMap() {
             }
         }, 'hotel-pins');
 
-        map.on('click', clusterLayerId, (e) => {
-            const features = map.queryRenderedFeatures(e.point, { layers: [clusterLayerId] });
-            const clusterId = features[0].properties.cluster_id;
-            map.getSource(sourceId).getClusterExpansionZoom(clusterId, (err, zoom) => {
-                if (err) return;
-                map.easeTo({ center: features[0].geometry.coordinates, zoom: zoom });
-            });
-        });
-
         map.on('click', unclusteredLayerId, async (e) => {
             const coordinates = e.features[0].geometry.coordinates.slice();
             const { 한글공항, 한글국가명 } = e.features[0].properties;
@@ -356,11 +414,9 @@ function appendAirportOnMap() {
             if (typeof clearAllPrices === 'function') clearAllPrices();
             if (typeof setIATA === 'function') setIATA({ korName: 한글국가명, airportKor: 한글공항, iata: iata, coord: coordinates });
 
-            // 1. 시작점과 도착점 설정
             const origin = [126.4406957, 37.4601908];
             const destination = coordinates;
 
-            // 2. 대권 항로 계산 (여기까지는 동일)
             const routeFeature = {
                 'type': 'Feature',
                 'geometry': {
@@ -369,23 +425,20 @@ function appendAirportOnMap() {
                 }
             };
             const lineDistance = turf.length(routeFeature);
-            const steps = 500; // 정밀도를 위해 step 값을 조금 더 높입니다.
+            const steps = 100; // 정밀도를 위해 step 값을 조금 더 높입니다.
             const arc = [];
             for (let i = 0; i < lineDistance; i += lineDistance / steps) {
                 const segment = turf.along(routeFeature, i);
                 arc.push(segment.geometry.coordinates);
             }
-            // 마지막 지점을 명확하게 추가
             arc.push(destination);
 
-            // 3. (핵심) 날짜 변경선을 기준으로 경로 분할
             const multiLineStrings = [];
             let currentLine = [];
             
             for (let i = 0; i < arc.length; i++) {
                 currentLine.push(arc[i]);
                 if (i < arc.length - 1) {
-                    // 현재 지점과 다음 지점의 경도 차이가 180도를 초과하면 (날짜 변경선을 넘으면)
                     if (Math.abs(arc[i+1][0] - arc[i][0]) > 180) {
                         multiLineStrings.push(currentLine); // 현재까지의 라인을 저장하고
                         currentLine = []; // 새로운 라인을 시작합니다.
@@ -394,104 +447,70 @@ function appendAirportOnMap() {
             }
             multiLineStrings.push(currentLine); // 마지막 라인 추가
 
-            // 4. 분할된 경로들을 GeoJSON FeatureCollection으로 만듦
             const routeGeoJSON = {
                 'type': 'FeatureCollection',
                 'features': multiLineStrings.map(line => ({
                     'type': 'Feature',
                     'geometry': {
                         'type': 'LineString',
-                        'coordinates': line
-                    }
-                }))
-            };
-            
-            // 5. 생성된 GeoJSON으로 지도 소스 업데이트
-            map.getSource('temp-route').setData(routeGeoJSON);
-            lastTempRouteGeoJSON = routeGeoJSON; // Store the last drawn temp route
-
-            // 6. 주변 호텔 정보 가져오기
-            firebase.functions().httpsCallable('getHotels')({ iata: iata, latitude: coordinates[1], longitude: coordinates[0] })
-                .then(result => {
-                    const hotels = result.data.data; // API 응답 구조에 따라 .data를 추가하거나 삭제해야 할 수 있습니다.
-                    if (hotels && hotels.length > 0) {
-                        const hotelFeatures = hotels.map(hotel => ({
-                            type: 'Feature',
-                            geometry: {
-                                type: 'Point',
-                                coordinates: [hotel.geoCode.longitude, hotel.geoCode.latitude]
-                            },
-                            properties: {
-                                hotelId: hotel.hotelId,
-                                name: hotel.name
-                            }
-                        }));
-                        map.getSource('hotel-source').setData({ type: 'FeatureCollection', features: hotelFeatures });
-                    } else {
-                        map.getSource('hotel-source').setData({ type: 'FeatureCollection', features: [] });
-                    }
-                }).catch(error => {
-                    console.error("Error fetching hotels:", error);
-                    map.getSource('hotel-source').setData({ type: 'FeatureCollection', features: [] });
-                });
-                    
-            let citydata = await IATAtoCityInformation(iata);
-            console.log("map.js: citydata from IATAtoCityInformation:", citydata); // Add this log
-            if (citydata) {
-                let cityname = citydata.한글도시명;
-                if (!cityname && 한글공항) {
-                    cityname = 한글공항.split(' ')[0];
-                }
-                $("#detailFrame").attr("src", `detailmodal.html?coord1=${citydata.longitude}&coord2=${citydata.Latitude}&Cityname=${cityname}&Nationname=${citydata.한글국가명}`);
-            }
-
-            let popupCityName = citydata?.한글도시명;
-            if (!popupCityName && 한글공항) {
-                popupCityName = 한글공항.split(' ')[0];
-            }
-
-            new mapboxgl.Popup()
-                .setLngLat(coordinates)
-                .setHTML(`<p class="text-center p-1" style="opacity: 1"><span style="font-size:20px">${한글공항} ${iata}</span><br><a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${한글국가명} ${popupCityName || ''}</a></p><style>.mapboxgl-popup-content { position: relative; background: #fff; opacity: 0.9; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.10); pointer-events: auto; }</style>`)
-                .setMaxWidth("500px")
-                .addTo(map);
-        });
-
-        map.on('click', 'hotel-pins', (e) => {
-            if (isFetchingHotelOffers) return;
-
-            const hotelId = e.features[0].properties.hotelId;
-            const hotelName = e.features[0].properties.name;
-            if (!startTripDate || !endTripDate) {
-                window.showToast('항공권 날짜를 먼저 선택해주세요.');
-                return;
-            }
-
-            isFetchingHotelOffers = true;
-            firebase.functions().httpsCallable('getHotelOffers')({ hotelId: hotelId, checkInDate: startTripDate, checkOutDate: endTripDate })
-                .then(result => {
-                    if (result.data.data && result.data.data.length > 0) {
-                        const hotelOffer = result.data;
-                        if (window.appendHotelCard) {
-                            console.log(hotelOffer)
-                            window.appendHotelCard(hotelOffer);
+                            'coordinates': line
                         }
-                    } else {
-                        window.showToast(`${hotelName}에 대한 호텔 정보를 찾을 수 없습니다.`);
-                    }
-                }).catch(error => {
-                    console.error('Error fetching hotel offers:', error);
-                    window.showToast('호텔 정보를 가져오는 중 오류가 발생했습니다.');
-                }).finally(() => {
-                    setTimeout(() => {
-                        isFetchingHotelOffers = false;
-                    }, 500);
-                });
-        });
+                    }))
+                };
+                
+                map.getSource('temp-route').setData(routeGeoJSON);
+                lastTempRouteGeoJSON = routeGeoJSON; // Store the last drawn temp route
 
-        map.on('mouseenter', clusterLayerId, () => { map.getCanvas().style.cursor = 'pointer'; });
-        map.on('mouseleave', clusterLayerId, () => { map.getCanvas().style.cursor = ''; });
-    }
+                firebase.app().functions('asia-northeast3').httpsCallable('getHotels')({ iata: iata, latitude: coordinates[1], longitude: coordinates[0] })
+                    .then(result => {
+                        const hotels = result.data.data; // API 응답 구조에 따라 .data를 추가하거나 삭제해야 할 수 있습니다.
+                        if (hotels && hotels.length > 0) {
+                            const hotelFeatures = hotels.map(hotel => ({
+                                type: 'Feature',
+                                geometry: {
+                                    type: 'Point',
+                                    coordinates: [hotel.geoCode.longitude, hotel.geoCode.latitude]
+                                },
+                                properties: {
+                                    hotelId: hotel.hotelId,
+                                    name: hotel.name
+                                }
+                            }));
+                            map.getSource('hotel-source').setData({ type: 'FeatureCollection', features: hotelFeatures });
+                        } else {
+                            map.getSource('hotel-source').setData({ type: 'FeatureCollection', features: [] });
+                        }
+                    }).catch(error => {
+                        console.error("Error fetching hotels:", error);
+                        map.getSource('hotel-source').setData({ type: 'FeatureCollection', features: [] });
+                    });
+                        
+                let citydata = await IATAtoCityInformation(iata);
+                console.log("map.js: citydata from IATAtoCityInformation:", citydata); // Add this log
+                if (citydata) {
+                    let cityname = citydata.한글도시명;
+                    if (!cityname && 한글공항) {
+                        cityname = 한글공항.split(' ')[0];
+                    }
+                    $("#detailFrame").attr("src", `detailmodal.html?coord1=${citydata.longitude}&coord2=${citydata.Latitude}&Cityname=${cityname}&Nationname=${citydata.한글국가명}`);
+                }
+
+                let popupCityName = citydata?.한글도시명;
+                if (!popupCityName && 한글공항) {
+                    popupCityName = 한글공항.split(' ')[0];
+                }
+                
+                $("#initialAction").hide() // 잠금 화면 숨기기
+                $("#flightResultsSection").hide() 
+                clearAllPrices() // 가격 캐시 초기화
+
+                new mapboxgl.Popup()
+                    .setLngLat(coordinates)
+                    .setHTML(`<p class="text-center p-1" style="opacity: 1"><span style="font-size:20px">${한글공항} ${iata}</span><br><a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${한글국가명} ${popupCityName || ''}</a></p><style>.mapboxgl-popup-content { position: relative; background: #fff; opacity: 0.9; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.10); pointer-events: auto; }</style>`)
+                    .setMaxWidth("500px")
+                    .addTo(map);
+            });
+        }
     console.log('=== 공항 데이터 추가/업데이트 완료 ===');
 }
 
@@ -605,7 +624,7 @@ function setupSearchbox() {
 
 async function IATAtoCityInformation(IATA) {
     try {
-        const result = await firebase.functions().httpsCallable('getAirportInfo')({iata: IATA});
+        const result = await firebase.app().functions('asia-northeast3').httpsCallable('getAirportInfo')({iata: IATA});
         return result.data;
     } catch (error) {
         console.error('도시 정보 조회 실패:', error);
@@ -636,96 +655,4 @@ function replaceWithSeoulButton() {
     const testButton = document.querySelector('[style*="background: red"]');
     if (testButton) testButton.remove();
     addReturnToSeoulButton();
-}
-
-window.selectAirportByIATA = async function(iata) {
-    if (!isMapReady || !airportGeoJSON) {
-        console.warn("Map or airport data is not ready yet.");
-        return;
-    }
-
-    const airportFeature = airportGeoJSON.features.find(f => f.properties['공항코드1.IATA.'] === iata);
-
-    if (!airportFeature) {
-        console.error(`Airport with IATA code ${iata} not found.`);
-        return;
-    }
-
-    const coordinates = airportFeature.geometry.coordinates.slice();
-    const { 한글공항, 한글국가명 } = airportFeature.properties;
-    const iataCode = airportFeature.properties['공항코드1.IATA.'];
-
-    map.flyTo({ center: coordinates, zoom: 5 });
-
-    $(".calendar-section").show();
-    if (typeof clearAllPrices === 'function') clearAllPrices();
-    if (typeof setIATA === 'function') setIATA({ korName: 한글국가명, airportKor: 한글공항, iata: iataCode, coord: coordinates });
-
-    const origin = [126.4406957, 37.4601908];
-    const destination = coordinates;
-
-    const routeFeature = {
-        'type': 'Feature',
-        'geometry': {
-            'type': 'LineString',
-            'coordinates': [origin, destination]
-        }
-    };
-    const lineDistance = turf.length(routeFeature);
-    const steps = 500;
-    const arc = [];
-    for (let i = 0; i < lineDistance; i += lineDistance / steps) {
-        const segment = turf.along(routeFeature, i);
-        arc.push(segment.geometry.coordinates);
-    }
-    arc.push(destination);
-
-    const multiLineStrings = [];
-    let currentLine = [];
-    
-    for (let i = 0; i < arc.length; i++) {
-        currentLine.push(arc[i]);
-        if (i < arc.length - 1) {
-            if (Math.abs(arc[i+1][0] - arc[i][0]) > 180) {
-                multiLineStrings.push(currentLine);
-                currentLine = [];
-            }
-        }
-    }
-    multiLineStrings.push(currentLine);
-
-    const routeGeoJSON = {
-        'type': 'FeatureCollection',
-        'features': multiLineStrings.map(line => ({
-            'type': 'Feature',
-            'geometry': {
-                'type': 'LineString',
-                'coordinates': line
-            }
-        }))
-    };
-    
-    map.getSource('temp-route').setData(routeGeoJSON);
-    lastTempRouteGeoJSON = routeGeoJSON; // Store the last drawn temp route
-            
-    let citydata = await IATAtoCityInformation(iata);
-    console.log("map.js: citydata from IATAtoCityInformation:", citydata); // Add this log
-    if (citydata) {
-        let cityname = citydata.한글도시명;
-        if (!cityname && 한글공항) {
-            cityname = 한글공항.split(' ')[0];
-        }
-        $("#detailFrame").attr("src", `detailmodal.html?coord1=${citydata.longitude}&coord2=${citydata.Latitude}&Cityname=${cityname}&Nationname=${citydata.한글국가명}`);
-    }
-
-    let popupCityName = citydata?.한글도시명;
-    if (!popupCityName && 한글공항) {
-        popupCityName = 한글공항.split(' ')[0];
-    }
-
-    new mapboxgl.Popup()
-        .setLngLat(coordinates)
-        .setHTML(`<p class="text-center p-1" style="opacity: 1"><span style="font-size:20px">${한글공항} ${iata}</span><br><a style="width:100%" data-bs-toggle="modal" data-bs-target="#detailModal" class="text-muted btn btn-light d-block">${한글국가명} ${popupCityName || ''}</a></p><style>.mapboxgl-popup-content { position: relative; background: #fff; opacity: 0.9; border-radius: 3px; box-shadow: 0 1px 2px rgba(0,0,0,0.10); pointer-events: auto; }</style>`)
-        .setMaxWidth("500px")
-        .addTo(map);
 }

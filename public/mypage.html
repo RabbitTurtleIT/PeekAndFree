@@ -131,7 +131,7 @@
       // firebase.auth().onAuthStateChanged(user => { });
       // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
       // firebase.firestore().doc('/foo/bar').get().then(() => { });
-      firebase.functions().httpsCallable('heejinTest')().then((result) => { 
+      firebase.app().functions('asia-northeast3').httpsCallable('heejinTest')().then((result) => { 
         console.log("heejinTest");
         console.log(result);
       }).catch((error) => {
@@ -140,7 +140,7 @@
         console.log(error)
       });
 
-      firebase.functions().httpsCallable('openpage')().then((result) => { 
+      firebase.app().functions('asia-northeast3').httpsCallable('openpage')().then((result) => { 
         console.log("openpage");
         console.log(result);
       }).catch((error) => {
@@ -149,7 +149,7 @@
         console.log(error)
       });
 
-      firebase.functions().httpsCallable('openpagetoo')().then((result) => { 
+      firebase.app().functions('asia-northeast3').httpsCallable('openpagetoo')().then((result) => { 
         console.log("openpagetoo");
         console.log(result);
       }).catch((error) => {
@@ -159,7 +159,7 @@
       });
 
 
-      firebase.functions().httpsCallable('getInformationOfCountry')().then((result) => { 
+      firebase.app().functions('asia-northeast3').httpsCallable('getInformationOfCountry')().then((result) => { 
         displaySafetyNotices(result.data.response.body);
       }).catch((error) => {
         console.log("ERROR!")

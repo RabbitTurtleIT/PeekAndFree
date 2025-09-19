@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     initDetailCalendar();
 
     // Load images (existing logic)
-    firebase.functions().httpsCallable('getGoogleMapAPIKey')().then((result) => {
+    firebase.app().functions('asia-northeast3').httpsCallable('getGoogleMapAPIKey')().then((result) => {
         (g => { var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__", m = document, b = window; b = b[c] || (b[c] = {}); var d = b.maps || (b.maps = {}), r = new Set, e = new URLSearchParams, u = () => h || (h = new Promise(async (f, n) => { await (a = m.createElement("script")); e.set("libraries", [...r] + ""); for (k in g) e.set(k.replace(/[A-Z]/g, t => "_" + t[0].toLowerCase()), g[k]); e.set("callback", c + ".maps." + q); a.src = `https://maps.${c}apis.com/maps/api/js?` + e; d[q] = f; a.onerror = () => h = n(Error(p + " could not load.")); a.nonce = m.querySelector("script[nonce]")?.nonce || ""; m.head.append(a) })); d[l] ? console.warn(p + " only loads once. Ignoring:", g) : d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n)) })({
             key: result.data,
             v: "weekly",
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
 
     // Fetch and display weather forecast (existing logic)
-    firebase.functions().httpsCallable('getWeatherForecast')({
+    firebase.app().functions('asia-northeast3').httpsCallable('getWeatherForecast')({
         lat: Number(coord1),
         lon: Number(coord2),
         days: 8,
@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Exchange rate logic (existing logic)
     console.log("Attempting to fetch exchange rate information..."); // Add this log
-    firebase.functions().httpsCallable('getLatestExchangeRate')().then((result) => {
+    firebase.app().functions('asia-northeast3').httpsCallable('getLatestExchangeRate')().then((result) => {
         console.log("Exchange rate Firebase function call successful. Result:", result); // Add this log
         if (!result.data || !Array.isArray(result.data)) {
             console.log("Exchange rate data is not an array or is empty."); // Add this log
@@ -189,7 +189,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
 
     // Country info logic (existing logic)
-    firebase.functions().httpsCallable('getCountryInfo')({
+    firebase.app().functions('asia-northeast3').httpsCallable('getCountryInfo')({
         country: current_nationname ? current_nationname.trim() : "",
     }).then((result) => {
         if (result.data.country) {
@@ -282,7 +282,7 @@ async function loadImg(coord1, coord2, cityname, nationname) {
         }
     };
 
-    const getImagesFn = firebase.functions().httpsCallable('getPlaceImages');
+    const getImagesFn = firebase.app().functions('asia-northeast3').httpsCallable('getPlaceImages');
     try {
         // console.log("loadImg: Attempting to fetch cached images from Firebase.");
         const cachedResult = await getImagesFn({ lat: coord1, lon: coord2 });
@@ -328,7 +328,7 @@ async function loadImg(coord1, coord2, cityname, nationname) {
                         const img = $(`<img class="rounded m-1" src="${url}"/>`);
                         $("#imgDiv").append(img);
                     });
-                    const storeImagesFn = firebase.functions().httpsCallable('storePlaceImages');
+                    const storeImagesFn = firebase.app().functions('asia-northeast3').httpsCallable('storePlaceImages');
                     await storeImagesFn({ lat: coord1, lon: coord2, urls: imageUrls });
                 } else {
                     console.log("loadImg: No Google Places images found. Falling back to Pixabay.");
@@ -552,7 +552,7 @@ async function fetchFestivalsForMonth(monthDate) {
 
     // console.log(`fetchFestivalsForMonth: Calling Firebase function for country: ${current_nationname.trim()}, month: ${monthName}`);
     try {
-        const result = await firebase.functions().httpsCallable('getFestivalInfo')({
+        const result = await firebase.app().functions('asia-northeast3').httpsCallable('getFestivalInfo')({
             country: current_nationname.trim(),
             month: monthName
         });

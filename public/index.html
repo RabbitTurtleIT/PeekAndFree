@@ -265,14 +265,14 @@
     $("#adbig").addClass("d-none d-md-block");
     $("#adsmall").addClass("d-md-none");
     // 안전정보
-    // firebase.functions().httpsCallable('getInformationOfCountry')({iata : "ICN"}).then((result) => {
+    // firebase.app().functions('asia-northeast3').httpsCallable('getInformationOfCountry')({iata : "ICN"}).then((result) => {
     //   displaySafetyNotices(result.data.response.body);
     // }).catch((error) => {
     //   console.log("ERROR!", error);
     // });
 
 
-    // firebase.functions().httpsCallable('getInformationOfCountry')().then((result) => {
+    // firebase.app().functions('asia-northeast3').httpsCallable('getInformationOfCountry')().then((result) => {
     //   console.log("해외안전정보");
     //   displaySafetyNotices(result.data.response.body);
     // }).catch((error) => {

@@ -19,12 +19,12 @@ const { makeGeoKey } = require("./utils");
 // --- Re-exporting functions for Firebase --- //
 
 // Simple API Key function
-exports.getGoogleMapAPIKey = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, () => {
+exports.getGoogleMapAPIKey = onCall({cors: ["https://peakandfree.com", "http://localhost:5002", "https://peekandfree.web.app"], region: 'asia-northeast3'}, () => {
   return process.env.GOOGLEMAP_API_KEY;
 });
 
 // Flight-related functions
-exports.fetchFlightForCalendar = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, async (data) => {
+exports.fetchFlightForCalendar = onCall({cors: ["https://peakandfree.com", "http://localhost:5002", "https://peekandfree.web.app"], region: 'asia-northeast3'}, async (data) => {
     const { startDate, endDate, iata } = data.data;
     const today = new Date();
     const nextMonthEnd = new Date(today.getFullYear(), today.getMonth() + 2, 0);
@@ -74,14 +74,14 @@ exports.fetchFlightForCalendar = onCall({cors: ["https://peakandfree.com", "http
     return { data: { data: apiResult.data || [] } };
 });
 
-exports.fetchFlight = onCall({cors: ["https://peakandfree.com", "https://peekandfree.web.app"]}, async (data) => { 
+exports.fetchFlight = onCall({cors: ["https://peakandfree.com", "http://localhost:5002", "https://peekandfree.web.app"], region: 'asia-northeast3'}, async (data) => { 
   const { iata, startDate, endDate } = data.data;
   let accessKey = await requestTestAccessKey();
   return await requestFlightOffer(accessKey.access_token, 'ICN', iata, startDate, endDate);
 });
 
 // Weather-related functions
-exports.getWeatherForecast = onCall({cors: ["https://peekandfree.web.app", "http://localhost:5002", "https://peakandfree.com"]}, async (data) => {
+exports.getWeatherForecast = onCall({cors: ["https://peekandfree.web.app", "http://localhost:5002", "https://peakandfree.com"], region: 'asia-northeast3'}, async (data) => {
     const { lat, lon, days = 10 } = data.data || data;
     const normalizedDays = Math.min(Math.max(Number(days) || 10, 1), 10);
 
@@ -128,7 +128,7 @@ exports.getWeatherForecast = onCall({cors: ["https://peekandfree.web.app", "http
 });
 
 // Place and Info functions
-exports.getPlaceImages = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, async (data) => {
+exports.getPlaceImages = onCall({cors: ["https://peekandfree.web.app", "http://localhost:5002", "https://peakandfree.com"], region: 'asia-northeast3'}, async (data) => {
     const { lat, lon } = data.data || data;
     const { geoKey } = makeGeoKey(lon, lat);
     const docRef = db.collection('placeImageCache').doc(geoKey);
@@ -139,7 +139,7 @@ exports.getPlaceImages = onCall({cors: ["https://peekandfree.web.app", "https://
     return null;
 });
 
-exports.storePlaceImages = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, async (data) => {
+exports.storePlaceImages = onCall({cors: ["https://peekandfree.web.app", "http://localhost:5002", "https://peakandfree.com"], region: 'asia-northeast3'}, async (data) => {
     const { lat, lon, urls } = data.data || data;
     const { geoKey } = makeGeoKey(lon, lat);
     const docRef = db.collection('placeImageCache').doc(geoKey);
@@ -147,29 +147,29 @@ exports.storePlaceImages = onCall({cors: ["https://peekandfree.web.app", "https:
     return { success: true };
 });
 
-exports.getAirportInfo = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, (data) => getAirportInfo(data.data.iata));
-exports.getFestivalInfo = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, (data) => getFestivalInfo(data.data.country, data.data.month));
-exports.getCountryInfo = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, (data) => getCountryInfo(data.data.country));
+exports.getAirportInfo = onCall({cors: ["https://peekandfree.web.app", "http://localhost:5002", "https://peakandfree.com"], region: 'asia-northeast3'}, (data) => getAirportInfo(data.data.iata));
+exports.getFestivalInfo = onCall({cors: ["https://peekandfree.web.app", "http://localhost:5002", "https://peakandfree.com"], region: 'asia-northeast3'}, (data) => getFestivalInfo(data.data.country, data.data.month));
+exports.getCountryInfo = onCall({cors: ["https://peekandfree.web.app", "http://localhost:5002", "https://peakandfree.com"], region: 'asia-northeast3'}, (data) => getCountryInfo(data.data.country));
 
 // Exchange Rate function
-exports.getLatestExchangeRate = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, () => getLatestExchangeRate());
+exports.getLatestExchangeRate = onCall({cors: ["https://peekandfree.web.app", "http://localhost:5002", "https://peakandfree.com"], region: 'asia-northeast3'}, () => getLatestExchangeRate());
 
 // Misc Gov API functions
-exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, () => getInformationOfCountry());
-exports.getServiceDestinationInfo = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, () => getServiceDestinationInfo());
-exports.loadWeather = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, () => loadWeather());
-exports.getWeather = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, () => {
+exports.getInformationOfCountry = onCall({cors: ["https://peekandfree.web.app", "http://localhost:5002", "https://peakandfree.com"], region: 'asia-northeast3'}, () => getInformationOfCountry());
+exports.getServiceDestinationInfo = onCall({cors: ["https://peekandfree.web.app", "http://localhost:5002", "https://peakandfree.com"], region: 'asia-northeast3'}, () => getServiceDestinationInfo());
+exports.loadWeather = onCall({cors: ["https://peekandfree.web.app", "http://localhost:5002", "https://peakandfree.com"], region: 'asia-northeast3'}, () => loadWeather());
+exports.getWeather = onCall({cors: ["https://peekandfree.web.app", "http://localhost:5002", "https://peakandfree.com"], region: 'asia-northeast3'}, () => {
   console.log("getWeather cloud function was triggered.");
   return getWeatherAndLoadIfNeeded();
 });
 
 // Hotel-related functions
-exports.getHotels = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, async (req) => {
+exports.getHotels = onCall({cors: ["https://peekandfree.web.app", "http://localhost:5002", "https://peakandfree.com"], region: 'asia-northeast3'}, async (req) => {
     const { iata, latitude, longitude } = req.data;
     return await getHotels(iata, latitude, longitude);
 });
 
-exports.getHotelOffers = onCall({cors: ["https://peekandfree.web.app", "https://peakandfree.com"]}, async (req) => {
+exports.getHotelOffers = onCall({cors: ["https://peekandfree.web.app", "http://localhost:5002", "https://peakandfree.com"], region: 'asia-northeast3'}, async (req) => {
     const { hotelId, checkInDate, checkOutDate } = req.data;
     return await getHotelOffers(hotelId, checkInDate, checkOutDate);
 });
