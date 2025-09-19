@@ -181,6 +181,7 @@ window.unlockCalendarSectionFromMap = function() {
     $("#initialAction").hide() // 잠금 화면 숨기기
     $("#flightResultsSection").hide() 
     clearAllPrices() // 가격 캐시 초기화
+    updateSelectedTitle()
     
     // 달력 섹션으로 스크롤
     setTimeout(() => {
@@ -215,7 +216,7 @@ function checkBookingFromMap() {
 }
 
 function updateSelectedTitle() {
-    $("#selectedTitle").text(`지금 ${selectedIATA.korName}는 `)
+    $("#selectedTitle").text(`지금 ${selectedIATA.korName}의 항공권 가격을 확인해볼까요?`)
 }
 let currentDate = new Date();
 let selectedStartDate = null;
