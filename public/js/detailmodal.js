@@ -9,6 +9,15 @@ let currentDate = new Date(); // Current date for calendar navigation
 const monthNames = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
 const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
 const festivalDataCache = {}; // Cache for festival data
+let functions = undefined
+  document.addEventListener('DOMContentLoaded', function () {
+    functions = firebase.app().functions("asia-northeast3");
+
+    // 로컬 에뮬레이터로 테스트 하기 위한 코드
+    if (location.hostname === "localhost") {
+        functions.useEmulator("localhost", 5001);
+    }
+});
 
 async function loadSeasonData() {
     try {
@@ -57,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     initDetailCalendar();
 
     // Load images (existing logic)
-    firebase.app().functions('asia-northeast3').httpsCallable('getGoogleMapAPIKey')().then((result) => {
+    functions.httpsCallable('getGoogleMapAPIKey')().then((result) => {
         (g => { var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__", m = document, b = window; b = b[c] || (b[c] = {}); var d = b.maps || (b.maps = {}), r = new Set, e = new URLSearchParams, u = () => h || (h = new Promise(async (f, n) => { await (a = m.createElement("script")); e.set("libraries", [...r] + ""); for (k in g) e.set(k.replace(/[A-Z]/g, t => "_" + t[0].toLowerCase()), g[k]); e.set("callback", c + ".maps." + q); a.src = `https://maps.${c}apis.com/maps/api/js?` + e; d[q] = f; a.onerror = () => h = n(Error(p + " could not load.")); a.nonce = m.querySelector("script[nonce]")?.nonce || ""; m.head.append(a) })); d[l] ? console.warn(p + " only loads once. Ignoring:", g) : d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n)) })({
             key: result.data,
             v: "weekly",
@@ -72,7 +81,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
 
     // Fetch and display weather forecast (existing logic)
-    firebase.app().functions('asia-northeast3').httpsCallable('getWeatherForecast')({
+    functions.httpsCallable('getWeatherForecast')({
         lat: Number(coord1),
         lon: Number(coord2),
         days: 8,
@@ -151,13 +160,16 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Exchange rate logic (existing logic)
     console.log("Attempting to fetch exchange rate information..."); // Add this log
-    firebase.app().functions('asia-northeast3').httpsCallable('getLatestExchangeRate')().then((result) => {
+    functions.httpsCallable('getLatestExchangeRate')().then((result) => {
         console.log("Exchange rate Firebase function call successful. Result:", result); // Add this log
-        if (!result.data || !Array.isArray(result.data)) {
-            console.log("Exchange rate data is not an array or is empty."); // Add this log
+        if (!result.data || !result.data.todayRates) {
+            console.log("Exchange rate data is not an object or todayRates is missing."); // Add this log
             $("#exchangerate").text("환율 정보를 가져올 수 없습니다.");
             return;
         }
+        const todayRates = result.data.todayRates;
+        const previousDayRates = result.data.previousDayRates;
+
         if (!current_nationname) { // Use global current_nationname
             console.log("current_nationname is not defined for exchange rate."); // Add this log
             $("#exchangerate").text("국가 정보가 없습니다.");
@@ -170,13 +182,49 @@ document.addEventListener('DOMContentLoaded', async function () {
         const currencyToFind = countryMapping[current_nationname]; // Use global current_nationname
         // console.log("Currency to find:", currencyToFind); // Add this log
         if (currencyToFind) {
-            for (let item of result.data) {
+            let todayRate = null;
+            let previousRate = null;
+
+            for (let item of todayRates) {
                 if (item.id && item.id.indexOf(currencyToFind) != -1) {
-                    $("#exchangerate").text(item.id + " " + item.value + "원");
-                    found = true;
-                    // console.log("Exchange rate found:", item.id, item.value); // Add this log
+                    todayRate = item;
                     break;
                 }
+            }
+
+            if (previousDayRates) {
+                for (let item of previousDayRates) {
+                    if (item.id && item.id.indexOf(currencyToFind) != -1) {
+                        previousRate = item;
+                        break;
+                    }
+                }
+            }
+
+            if (todayRate) {
+                let exchangeRateText = `💵 ${todayRate.id} ${todayRate.value}원`;
+                if (previousRate) {
+                    const diff = todayRate.value - previousRate.value;
+                    let diffText = '';
+                    if (diff > 0) {
+                        diffText = `<span style="color: red;"> ▲${diff.toFixed(2)}</span>`;
+                    } else if (diff < 0) {
+                        diffText = `<span style="color: blue;"> ▼${Math.abs(diff).toFixed(2)}</span>`;
+                    } else {
+                        diffText = ` -`;
+                    }
+                    exchangeRateText += ` (전일 대비: ${diffText})`;
+                }
+                $("#exchangerate").html(exchangeRateText);
+                $("#exchangerate").css('cursor', 'pointer');
+                $("#exchangerate").off('click').on('click', function() {
+                    const currencyName = todayRate.id;
+                    const googleSearchUrl = `https://www.google.com/search?q=${encodeURIComponent(currencyName.replace("(매매기준율)",""))} 환율 그래프`;
+                    window.open(googleSearchUrl, '_blank');
+                });
+                found = true;
+            } else {
+                console.log("No today's exchange rate found for the current nation.");
             }
         }
         if (!found) {
@@ -189,7 +237,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
 
     // Country info logic (existing logic)
-    firebase.app().functions('asia-northeast3').httpsCallable('getCountryInfo')({
+    functions.httpsCallable('getCountryInfo')({
         country: current_nationname ? current_nationname.trim() : "",
     }).then((result) => {
         if (result.data.country) {
@@ -282,7 +330,7 @@ async function loadImg(coord1, coord2, cityname, nationname) {
         }
     };
 
-    const getImagesFn = firebase.app().functions('asia-northeast3').httpsCallable('getPlaceImages');
+    const getImagesFn = functions.httpsCallable('getPlaceImages');
     try {
         // console.log("loadImg: Attempting to fetch cached images from Firebase.");
         const cachedResult = await getImagesFn({ lat: coord1, lon: coord2 });
@@ -328,7 +376,7 @@ async function loadImg(coord1, coord2, cityname, nationname) {
                         const img = $(`<img class="rounded m-1" src="${url}"/>`);
                         $("#imgDiv").append(img);
                     });
-                    const storeImagesFn = firebase.app().functions('asia-northeast3').httpsCallable('storePlaceImages');
+                    const storeImagesFn = functions.httpsCallable('storePlaceImages');
                     await storeImagesFn({ lat: coord1, lon: coord2, urls: imageUrls });
                 } else {
                     console.log("loadImg: No Google Places images found. Falling back to Pixabay.");
@@ -552,7 +600,7 @@ async function fetchFestivalsForMonth(monthDate) {
 
     // console.log(`fetchFestivalsForMonth: Calling Firebase function for country: ${current_nationname.trim()}, month: ${monthName}`);
     try {
-        const result = await firebase.app().functions('asia-northeast3').httpsCallable('getFestivalInfo')({
+        const result = await functions.httpsCallable('getFestivalInfo')({
             country: current_nationname.trim(),
             month: monthName
         });

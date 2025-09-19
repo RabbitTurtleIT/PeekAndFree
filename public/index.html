@@ -261,18 +261,26 @@
 
 <!-- Firebase Initialization -->
 <script>
+  var functions = undefined
   document.addEventListener('DOMContentLoaded', function () {
+    functions = firebase.app().functions("asia-northeast3");
+
+    // 로컬 에뮬레이터로 테스트 하기 위한 코드
+    if (location.hostname === "localhost") {
+        functions.useEmulator("localhost", 5001);
+    }
+
     $("#adbig").addClass("d-none d-md-block");
     $("#adsmall").addClass("d-md-none");
     // 안전정보
-    // firebase.app().functions('asia-northeast3').httpsCallable('getInformationOfCountry')({iata : "ICN"}).then((result) => {
+    // functions.httpsCallable('getInformationOfCountry')({iata : "ICN"}).then((result) => {
     //   displaySafetyNotices(result.data.response.body);
     // }).catch((error) => {
     //   console.log("ERROR!", error);
     // });
 
 
-    // firebase.app().functions('asia-northeast3').httpsCallable('getInformationOfCountry')().then((result) => {
+    // functions.httpsCallable('getInformationOfCountry')().then((result) => {
     //   console.log("해외안전정보");
     //   displaySafetyNotices(result.data.response.body);
     // }).catch((error) => {

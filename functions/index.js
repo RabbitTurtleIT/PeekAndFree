@@ -1,6 +1,8 @@
 const { onCall } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
+const { setGlobalOptions } = require('firebase-functions/v2');
+setGlobalOptions({ region: 'asia-northeast3' })
 require("dotenv").config();
 
 // Initialize Firebase

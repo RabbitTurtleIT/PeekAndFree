@@ -150,7 +150,7 @@ function initializeMap() {
             }
 
             isFetchingHotelOffers = true;
-            firebase.app().functions('asia-northeast3').httpsCallable('getHotelOffers')({ hotelId: hotelId, checkInDate: startTripDate, checkOutDate: endTripDate })
+            functions.httpsCallable('getHotelOffers')({ hotelId: hotelId, checkInDate: startTripDate, checkOutDate: endTripDate })
                 .then(result => {
                     if (result.data.data && result.data.data.length > 0) {
                         const hotelOffer = result.data;
@@ -208,7 +208,7 @@ function loadDataSources() {
                 Promise.all([
                     fetch('popular.csv').then(res => res.text()),
                     fetch('Airport.geojson').then(res => res.json()),
-                    firebase.app().functions('asia-northeast3').httpsCallable('getWeather')()
+                    functions.httpsCallable('getWeather')()
                 ]).then(([csvText, geojsonData, weatherResult]) => {
                     const data = {};
                     const rows = csvText.split('\n').slice(1);
@@ -463,7 +463,7 @@ function appendAirportOnMap() {
                 map.getSource('temp-route').setData(routeGeoJSON);
                 lastTempRouteGeoJSON = routeGeoJSON; // Store the last drawn temp route
 
-                firebase.app().functions('asia-northeast3').httpsCallable('getHotels')({ iata: iata, latitude: coordinates[1], longitude: coordinates[0] })
+                functions.httpsCallable('getHotels')({ iata: iata, latitude: coordinates[1], longitude: coordinates[0] })
                     .then(result => {
                         const hotels = result.data.data; // API 응답 구조에 따라 .data를 추가하거나 삭제해야 할 수 있습니다.
                         if (hotels && hotels.length > 0) {
@@ -626,7 +626,7 @@ function setupSearchbox() {
 
 async function IATAtoCityInformation(IATA) {
     try {
-        const result = await firebase.app().functions('asia-northeast3').httpsCallable('getAirportInfo')({iata: IATA});
+        const result = await functions.httpsCallable('getAirportInfo')({iata: IATA});
         return result.data;
     } catch (error) {
         console.error('도시 정보 조회 실패:', error);

@@ -35,7 +35,7 @@ function setIATA(selected) {
 async function IATAtoCityInformation(IATA) {
     let cityData = undefined
           
-      await firebase.app().functions('asia-northeast3').httpsCallable('getAirportInfo')({iata : IATA}).then((result) => {
+      await functions.httpsCallable('getAirportInfo')({iata : IATA}).then((result) => {
         cityData = result.data
       }).catch((error) => {
         return "ERROR"
@@ -434,7 +434,7 @@ async function fetchFlightDataNearby(startDate, endDate) {
     if (!isFetchingFlightNearby) {
         showLoading();
         isFetchingFlightNearby = true;
-        const result = await firebase.app().functions('asia-northeast3').httpsCallable('fetchFlightNearby')({
+        const result = await functions.httpsCallable('fetchFlightNearby')({
             startDate: startDate,
             endDate: endDate,
         });
@@ -472,7 +472,7 @@ async function appendFlightCard(IATA, korName, airportKor, coord) {
         console.log(startTripDate)
         console.log(endTripDate)
         try {
-            const result = await firebase.app().functions('asia-northeast3').httpsCallable('fetchFlight')({
+            const result = await functions.httpsCallable('fetchFlight')({
                 startDate: startTripDate,
                 endDate: endTripDate,
                 iata: IATA
@@ -792,7 +792,7 @@ async function fetchIndividualPrices(dates, priceData) {
             console.log(`API 호출 시작: 가는날=${startDateStr}, 오는날=${dateStr}`);
             
             // 왕복 요청: 가는날은 시작일, 오는날은 각 날짜
-            const result = await firebase.app().functions('asia-northeast3').httpsCallable('fetchFlightForCalendar')({
+            const result = await functions.httpsCallable('fetchFlightForCalendar')({
                 startDate: startDateStr,
                 endDate: dateStr,
                 iata: selectedIATA.iata
