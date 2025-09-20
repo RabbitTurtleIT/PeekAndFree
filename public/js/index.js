@@ -611,7 +611,7 @@ function viewTripWithHotel(hotelName, startDate, endDate) {
     // $("#viewSeatClass").text(seatClass)
     $("span#startDate").text(startDate)
     $("span#endDate").text(endDate)
-    // $("#skyscannerDiv").empty()
+    $("#skyscannerDiv").empty()
     // let skyscanner = $('<div id="skyscanner" data-skyscanner-widget="FlightSearchWidget" data-locale="ko-KR"></div> <script src="https://widgets.skyscanner.net/widget-server/js/loader.js" async></script>')
     // skyscanner.attr("data-market","KR")
     // skyscanner.attr("data-currency","KRW")
