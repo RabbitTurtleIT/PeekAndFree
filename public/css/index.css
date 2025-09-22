@@ -230,7 +230,8 @@ body {
 
 .map-background {
   background-color: white;
-  margin: 0;
+  margin-left: auto;
+  margin-right: auto;
   max-width: 95vw;
   height: 60vh;
   position: relative;
@@ -354,10 +355,10 @@ body {
 /* 초기 액션 섹션 (달력 대신 보이는 부분) */
 .initial-action-overlay {
   position: absolute;
-  top: 2vb;
-  left: 5vb;
-  right: 5vb;
-  bottom: 2vb;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: rgba(255, 241, 222, 0.95);  
   border-radius: 20px;
   padding: 40px 20px;

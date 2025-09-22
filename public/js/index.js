@@ -84,6 +84,12 @@ document.querySelectorAll('[data-filter]').forEach(item => {
         });
     });
     console.log('드롭다운 이벤트 핸들러가 등록되었습니다.');
+
+    // 현재 월로 드롭다운 초기화
+    const currentMonthLinkForInit = document.querySelector(`.dropdown-item[data-month="${currentMonth}"]`);
+    if (currentMonthLinkForInit) {
+        currentMonthLinkForInit.click();
+    }
     
     const carousel = document.getElementById('mainCarousel');
     const indicators = document.querySelectorAll('.indicator-dot'); 
